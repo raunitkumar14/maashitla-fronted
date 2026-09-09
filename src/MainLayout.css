@@ -1,0 +1,87 @@
+/* ─── OUTER LAYOUT SHELL ──────────────────────────────────────────────────── */
+
+/*
+ * Full-viewport flex row: sidebar on the left, content on the right.
+ * min-height: 100vh ensures the layout fills the screen even on short pages.
+ */
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f0f2f5;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ─── CONTENT COLUMN (everything right of the sidebar) ───────────────────── */
+
+/*
+ * margin-left: 140px offsets the content past the fixed-position sidebar
+ * (which is 140px wide — must match the sidebar's width in Sidebar.css).
+ * flex: 1 makes this column grow to fill all remaining horizontal space.
+ * min-width: 0 prevents flex children from overflowing on narrow screens.
+ */
+.layout-content {
+  /* Must match .sidebar width in Sidebar.css (200px) */
+  margin-left: 200px;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── BREADCRUMB BAR ──────────────────────────────────────────────────────── */
+
+/*
+ * Sticky top bar that stays visible as the page scrolls.
+ * background: white + border-bottom gives it a clean "toolbar" look.
+ * z-index: 10 keeps it above the page content (below the sidebar at z-index:100).
+ */
+.breadcrumb-bar {
+  position: sticky;
+  top: 0;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #555;
+  z-index: 10;
+}
+
+.breadcrumb-home {
+  font-size: 14px;
+}
+
+.breadcrumb-sep {
+  color: #aaa;
+}
+
+/* Intermediate segments (e.g. "User-Management") — lighter, not clickable yet */
+.breadcrumb-segment {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.breadcrumb-ancestor {
+  color: #888;
+}
+
+/* Last segment — slightly bolder to show it's the active/current page */
+.breadcrumb-current {
+  font-weight: 600;
+  color: #333;
+}
+
+/* ─── MAIN CONTENT AREA ───────────────────────────────────────────────────── */
+
+/*
+ * padding gives breathing room between the breadcrumb and page content.
+ * flex: 1 makes this grow to fill the remaining vertical space so short pages
+ * don't leave a white gap at the bottom.
+ */
+.layout-main {
+  flex: 1;
+  padding: 20px;
+}

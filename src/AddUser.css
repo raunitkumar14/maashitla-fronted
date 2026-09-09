@@ -1,0 +1,127 @@
+/* ─── FORM WRAPPER ────────────────────────────────────────────────────────── */
+
+.adduser-form {
+  padding: 28px 24px 24px;
+}
+
+/* ─── TOP-OF-FORM ERROR BANNER ────────────────────────────────────────────── */
+
+.adduser-error-banner {
+  margin-bottom: 20px;
+  padding: 10px 14px;
+  background-color: #fff0f0;
+  border: 1px solid #f5c6c6;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #c0392b;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ─── SUCCESS BANNER ──────────────────────────────────────────────────────── */
+
+.adduser-success-banner {
+  margin-bottom: 20px;
+  padding: 10px 14px;
+  background-color: #f0fff4;
+  border: 1px solid #a3d9a5;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #276749;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ─── 3-COLUMN GRID ───────────────────────────────────────────────────────── */
+
+/*
+ * grid-template-columns: 1fr 1fr 1fr gives three equal-width columns.
+ * Items with `grid-column: span 2` stretch across two of them.
+ * gap: 32px 20px → 32px between rows (leaves room for floating labels),
+ * 20px between columns.
+ */
+.adduser-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 32px 20px;
+}
+
+/* ─── INPUT OVERRIDES ─────────────────────────────────────────────────────── */
+
+/*
+ * filter-input (from Users.css) has a fixed width (160 / 190px).
+ * Inside the grid we want each input to fill its cell instead, so we override
+ * width to 100% and use border-box sizing so padding doesn't add to the width.
+ */
+.adduser-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/*
+ * Native <select> keeps the browser's default dropdown arrow.
+ * cursor: pointer signals it's interactive.
+ */
+.adduser-select {
+  cursor: pointer;
+}
+
+/* ─── INLINE FIELD ERRORS & WARNINGS ────────────────────────────────────── */
+
+/*
+ * .field-error — red text rendered directly below an invalid input after blur
+ * or a failed submit attempt. Used by all user and role forms (all import this
+ * file). See src/validation.js for the full validation pattern.
+ */
+.field-error {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #c0392b;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/*
+ * .field-warning — amber text for soft warnings that don't block submission
+ * (e.g. saving a role with zero permissions selected).
+ */
+.field-warning {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #b45309;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ─── SUBMIT ROW ──────────────────────────────────────────────────────────── */
+
+/* Spans all 3 columns and centres the button, matching the screenshot */
+.adduser-submit-row {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+/* ─── ADD USER BUTTON ─────────────────────────────────────────────────────── */
+
+.btn-adduser {
+  padding: 12px 52px;
+  background-color: #e91e8c;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.15s ease;
+}
+
+.btn-adduser:hover {
+  background-color: #c2177a;
+}
+
+.btn-adduser:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}

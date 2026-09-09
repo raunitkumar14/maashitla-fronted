@@ -1,0 +1,220 @@
+/* ─── OVERLAY ─────────────────────────────────────────────────────────────── */
+
+/*
+ * position: fixed + inset: 0 stretches the overlay across the entire viewport —
+ * it covers the sidebar too, not just the content area.
+ *
+ * background: rgba(0,0,0,0.55) is the semi-transparent dark dim behind the modals.
+ *
+ * z-index: 300 — higher than the sidebar (z-index: 100) so the overlay sits
+ * in front of everything on the page.
+ *
+ * display: flex + justify/align center puts the two modals in the middle of the screen.
+ */
+.upload-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 300;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px; /* space between the two side-by-side modals */
+}
+
+/* ─── INDIVIDUAL MODAL CARD ───────────────────────────────────────────────── */
+
+.upload-modal {
+  width: 300px; /* 230 → 300: more horizontal breathing room for the drop zone text */
+  background: #ffffff;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+  display: flex;
+  flex-direction: column;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ─── MODAL HEADER ────────────────────────────────────────────────────────── */
+
+/*
+ * Same blue gradient as the ISIN Master card headers — visual consistency.
+ * flex layout: badge icon + title fill the left, X button sits on the right.
+ */
+.um-header {
+  background: linear-gradient(to right, #1565c0, #1e88e5);
+  padding: 9px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Amber/orange badge that wraps the file icon — matches the screenshot accent */
+.um-header-badge {
+  background-color: #f59e0b;
+  border-radius: 3px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.um-header-title {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.3;
+}
+
+/* X close button — transparent background, white × character */
+.um-close-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  flex-shrink: 0;
+  opacity: 0.85;
+  transition: opacity 0.15s ease;
+}
+
+.um-close-btn:hover {
+  opacity: 1;
+}
+
+/* ─── DROP ZONE BODY ──────────────────────────────────────────────────────── */
+
+/*
+ * margin: 14px creates the white gap between the modal's white background
+ * and the dashed box on all four sides — this is the breathing room visible
+ * in the reference screenshot.
+ *
+ * border: 1.5px dashed #d0d0d0 — light gray dashed outline, not bold/dark.
+ * border-radius rounds the corners of the dashed box slightly.
+ *
+ * padding: 24px 20px gives internal space so the icon and text don't sit
+ * right against the dashed border.
+ *
+ * cursor: pointer signals the whole zone is clickable to open the file picker.
+ */
+.um-body {
+  margin: 14px;
+  padding: 24px 20px;
+  border: 1.5px dashed #d0d0d0;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.um-body:hover {
+  background-color: #fafcff;
+  border-color: #1976d2; /* border tints blue on hover to reinforce interactivity */
+}
+
+/* Cloud upload SVG — sized to match the screenshot */
+.um-cloud-icon {
+  width: 52px;
+  height: 52px;
+  margin-bottom: 4px;
+}
+
+.um-drop-text {
+  font-size: 12px;
+  color: #444;
+  text-align: center;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* "or click to browse" — styled as a link to signal interactivity */
+.um-browse-text {
+  font-size: 11px;
+  color: #1976d2;
+  margin: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Filename shown after a file is selected — green tint to confirm success */
+.um-filename {
+  font-size: 11px;
+  color: #2e7d32;
+  margin: 4px 0 0;
+  text-align: center;
+  word-break: break-all;
+  max-width: 100%;
+}
+
+/* Error message — red text, shown when FileReader or parseCdslFile throws */
+.um-error {
+  font-size: 11px;
+  color: #c62828;
+  margin: 4px 0 0;
+  text-align: center;
+  word-break: break-all;
+  max-width: 100%;
+}
+
+/* ─── PARSING / LOADING STATE ─────────────────────────────────────────────── */
+
+/* Drop zone variant while file is being read + parsed */
+.um-body--parsing {
+  cursor: default;
+  background-color: #fafcff;
+  border-color: #1976d2;
+}
+
+.um-body--parsing:hover {
+  background-color: #fafcff;
+  border-color: #1976d2;
+}
+
+/* Centered column: spinner above the status text */
+.um-parsing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+/*
+ * CSS-only spinner: a circle with one colored arc, rotated by the animation.
+ * No library dependency needed for a simple loading indicator.
+ */
+.um-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e0e0e0;
+  border-top-color: #1976d2;
+  border-radius: 50%;
+  animation: um-spin 0.75s linear infinite;
+}
+
+@keyframes um-spin {
+  to { transform: rotate(360deg); }
+}
+
+.um-parsing-text {
+  font-size: 12px;
+  color: #555;
+  margin: 0;
+  text-align: center;
+  max-width: 220px;
+  word-break: break-all;
+}
+
+/* Dim the X close button while parsing — disabled state */
+.um-close-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}

@@ -1,0 +1,313 @@
+/* ─── PAGE WRAPPER ────────────────────────────────────────────────────────── */
+
+.isin-master {
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* 16 → 12: less breathing room between the two cards */
+}
+
+/* ─── RECORD COUNT BADGE ──────────────────────────────────────────────────── */
+
+/* Shown in the blue header bar after a CDSL file is successfully parsed */
+.record-count-badge {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 2px 8px;
+  background-color: rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+/* Bold "IsinMaster" heading just below the breadcrumb bar */
+.page-heading {
+  font-size: 20px; /* 22 → 20: matches the tighter heading size in the screenshot */
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 2px; /* 4 → 2: closes the gap between heading and first card */
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ─── SHARED CARD ─────────────────────────────────────────────────────────── */
+
+/*
+ * White card with a subtle shadow — used for both the filter section
+ * and the table section so they feel like distinct panels.
+ */
+.im-card {
+  background: #ffffff;
+  border-radius: 6px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* ─── BLUE GRADIENT HEADER BAR ────────────────────────────────────────────── */
+
+/*
+ * Gradient from a deep blue to a slightly brighter blue — matches the
+ * "ISIN Master" and "ISIN Master List" bars in the screenshot.
+ * flex layout: label on left, action widget (button / dropdown) on right.
+ */
+.im-card-header {
+  background: linear-gradient(to right, #1565c0, #1e88e5);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 14px; /* 10/16 → 8/14: slimmer bar, matches screenshot height */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ─── UPLOAD BUTTON ───────────────────────────────────────────────────────── */
+
+.btn-upload {
+  background-color: #e91e8c;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 11px; /* 6/14 → 5/11: slightly smaller to sit tighter in the bar */
+  font-size: 11px;   /* 12 → 11: reduces the icon+text size proportionally */
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: background-color 0.15s ease;
+}
+
+.btn-upload:hover {
+  background-color: #c2177a;
+}
+
+/* ─── FILTER ROW ──────────────────────────────────────────────────────────── */
+
+/*
+ * Horizontal row: inputs take available space, buttons are fixed-size.
+ * flex-wrap: wrap lets it reflow on very narrow screens.
+ */
+.im-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;          /* 10 → 8: tighter spacing between inputs and buttons */
+  padding: 10px 14px; /* 14/16 → 10/14: less vertical air inside the filter section */
+  flex-wrap: wrap;
+}
+
+.im-input {
+  padding: 5px 8px; /* 7/10 → 5/8: shorter inputs to match the slimmer row */
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #333;
+  outline: none;
+  width: 130px;
+  transition: border-color 0.15s ease;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Company Name input is wider because the text is longer */
+.im-input--wide {
+  width: 200px;
+}
+
+.im-input:focus {
+  border-color: #1976d2;
+}
+
+/* ─── ACTION BUTTONS (SEARCH / EXPORT / RESET) ────────────────────────────── */
+
+.btn-action {
+  padding: 5px 11px; /* 7/16 → 5/11: matches the slimmer input height */
+  border-radius: 4px;
+  font-size: 11px;   /* 12 → 11: reduces emoji icon size proportionally */
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  border: none;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Pink variant — used for SEARCH and EXPORT */
+.btn-action--pink {
+  background-color: #e91e8c;
+  color: #ffffff;
+}
+
+.btn-action--pink:hover {
+  background-color: #c2177a;
+}
+
+/* White variant — used for RESET */
+.btn-action--white {
+  background-color: #ffffff;
+  color: #333;
+  border: 1px solid #cccccc;
+}
+
+.btn-action--white:hover {
+  background-color: #f5f5f5;
+}
+
+/* ─── ENTRIES-PER-PAGE CONTROL ────────────────────────────────────────────── */
+
+.entries-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 400;
+  color: #ffffff;
+}
+
+.entries-select {
+  padding: 3px 6px;
+  border-radius: 4px;
+  border: none;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  outline: none;
+}
+
+/* ─── TABLE WRAPPER ───────────────────────────────────────────────────────── */
+
+/*
+ * overflow-x: auto makes the table scroll horizontally when columns overflow
+ * the available width — matching the reference screenshot's scrollbar.
+ */
+.im-table-wrapper {
+  overflow-x: auto;
+}
+
+/* ─── TABLE ───────────────────────────────────────────────────────────────── */
+
+.im-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-family: Arial, Helvetica, sans-serif;
+  white-space: nowrap; /* keep cells single-line; wrapper scrolls instead */
+}
+
+.im-table th {
+  background-color: #f5f7fa;
+  color: #444;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 7px 12px; /* 10/14 → 7/12: compact header row, matches screenshot */
+  border-bottom: 2px solid #e0e0e0;
+  text-align: left;
+}
+
+.im-table td {
+  padding: 7px 12px; /* 10/14 → 7/12: tighter data rows */
+  color: #555;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* Subtle stripe on hover to aid row tracking across wide tables */
+.im-table tbody tr:hover td {
+  background-color: #fafcff;
+}
+
+/* Empty-state cell — spans all 87 columns, centered hint text */
+.im-empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* ─── PAGINATION BAR ──────────────────────────────────────────────────────── */
+
+/*
+ * Space-between: info text on the left, page buttons on the right.
+ * flex-wrap: wrap so it doesn't overflow on small screens.
+ */
+.im-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px; /* 12/16 → 8/14: slimmer pagination bar */
+  border-top: 1px solid #f0f0f0;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.pagination-info {
+  font-size: 12px;
+  color: #777;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Individual page number buttons */
+.page-btn {
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 50%;
+  border: 1px solid #ddd;
+  background: #ffffff;
+  color: #555;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.page-btn:hover {
+  background-color: #f0f0f0;
+}
+
+/*
+ * Active page button gets a dark filled circle — matches the
+ * filled "1" shown in the screenshot.
+ */
+.page-btn--active {
+  background-color: #1a1a2e;
+  color: #ffffff;
+  border-color: #1a1a2e;
+}
+
+.page-btn--active:hover {
+  background-color: #2d2d50;
+}
+
+.page-ellipsis {
+  font-size: 14px;
+  color: #aaa;
+  padding: 0 4px;
+}
+
+.goto-label {
+  font-size: 12px;
+  color: #666;
+  margin-left: 8px;
+}
+
+/* "Go to:" number input */
+.goto-input {
+  width: 44px;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 12px;
+  text-align: center;
+  outline: none;
+}
+
+.goto-input:focus {
+  border-color: #1976d2;
+}

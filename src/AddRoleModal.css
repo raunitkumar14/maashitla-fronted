@@ -1,0 +1,233 @@
+/* ─── OVERLAY ─────────────────────────────────────────────────────────────── */
+
+/*
+ * Covers the full viewport with a semi-transparent backdrop.
+ * z-index: 200 sits above the sidebar (z-index: 100) and breadcrumb (z-index: 10).
+ * Clicking the backdrop (not the dialog) closes the modal — handled in JSX via
+ * onClick + e.target === e.currentTarget.
+ */
+.add-role-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.50);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+/* ─── DIALOG ──────────────────────────────────────────────────────────────── */
+
+.add-role-modal {
+  background: #ffffff;
+  border-radius: 8px;
+  width: 780px;
+  max-width: 96vw;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+/* ─── HEADER ──────────────────────────────────────────────────────────────── */
+
+.add-role-header {
+  background: linear-gradient(to right, #1565c0, #1e88e5);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 14px 20px;
+  font-family: Arial, Helvetica, sans-serif;
+  flex-shrink: 0;
+}
+
+/* ─── BODY ────────────────────────────────────────────────────────────────── */
+
+.add-role-body {
+  padding: 22px 24px 16px;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ─── TOP INPUTS (Name + Description side-by-side) ───────────────────────── */
+
+.add-role-top-row {
+  display: flex;
+  gap: 16px;
+  /* Give the floating labels room to breathe above the inputs */
+  padding-top: 10px;
+}
+
+.add-role-top-row .filter-group {
+  flex: 1;
+  margin-top: 0;
+}
+
+/* ─── ERROR MESSAGE (below Name/Description row) ─────────────────────────── */
+
+.add-role-error {
+  font-size: 12px;
+  color: #c0392b;
+  font-family: Arial, Helvetica, sans-serif;
+  margin-top: -10px;
+}
+
+/* ─── DUAL LISTBOX CONTAINER ──────────────────────────────────────────────── */
+
+.duallist-container {
+  display: flex;
+  gap: 0;
+  align-items: stretch;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* ─── INDIVIDUAL BOX (Available / Selected) ───────────────────────────────── */
+
+.duallist-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+}
+
+.duallist-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  font-family: Arial, Helvetica, sans-serif;
+  margin-bottom: 8px;
+}
+
+/* ─── SEARCH INPUT INSIDE EACH BOX ───────────────────────────────────────── */
+
+.duallist-search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 10px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #333;
+  outline: none;
+  font-family: Arial, Helvetica, sans-serif;
+  margin-bottom: 8px;
+  transition: border-color 0.15s ease;
+}
+
+.duallist-search:focus {
+  border-color: #1976d2;
+}
+
+/* ─── SCROLLABLE LIST ─────────────────────────────────────────────────────── */
+
+.duallist-list {
+  height: 240px;
+  overflow-y: auto;
+  border: 1px solid #ebebeb;
+  border-radius: 4px;
+  background: #fafafa;
+  scrollbar-width: thin;
+  scrollbar-color: #ccc #fafafa;
+}
+
+/* ─── INDIVIDUAL PERMISSION ITEM ──────────────────────────────────────────── */
+
+/*
+ * Using <label> wrapping the checkbox makes the entire row clickable —
+ * clicking anywhere on the text also toggles the checkbox.
+ */
+.duallist-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: #333;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.1s ease;
+}
+
+.duallist-item:hover {
+  background-color: #f0f0f0;
+}
+
+.duallist-item input[type='checkbox'] {
+  cursor: pointer;
+  accent-color: #e91e8c;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.duallist-empty {
+  padding: 20px;
+  text-align: center;
+  font-size: 12px;
+  color: #aaa;
+  font-style: italic;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ─── TRANSFER BUTTON COLUMN ──────────────────────────────────────────────── */
+
+.duallist-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 10px;
+  border-left: 1px solid #e0e0e0;
+  border-right: 1px solid #e0e0e0;
+  background: #fafafa;
+}
+
+/* ─── TRANSFER BUTTONS (>, >>, <, <<) ────────────────────────────────────── */
+
+.btn-transfer {
+  width: 46px;
+  height: 32px;
+  border: 1px solid #e91e8c;
+  color: #e91e8c;
+  background: #ffffff;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-transfer:hover:not(:disabled) {
+  background-color: #fce4f0;
+}
+
+.btn-transfer:disabled {
+  border-color: #ddd;
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+/* ─── FOOTER (Cancel + Save) ──────────────────────────────────────────────── */
+
+.add-role-footer {
+  padding: 14px 24px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid #f0f0f0;
+  background: #ffffff;
+  flex-shrink: 0;
+}

@@ -1,0 +1,251 @@
+/* ─── FULL-SCREEN PAGE WRAPPER ────────────────────────────────────────────── */
+
+/*
+ * Fills the entire viewport so the login card is always perfectly centered,
+ * regardless of what #root or any parent element does.
+ * background-color: #fff keeps the plain white background as requested.
+ * font-family set here so every element inside inherits it.
+ */
+.login-page {
+  width: 100vw;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ─── LAYOUT WRAPPER ──────────────────────────────────────────────────────── */
+
+/*
+ * Stacks the header and card vertically with no gap between them
+ * so the bottom edge of the header meets the top edge of the card flush.
+ */
+.login-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ─── FLOATING HEADER ─────────────────────────────────────────────────────── */
+
+/*
+ * Wider than the card (360px vs 340px) so it "overhangs" 10px on each side —
+ * this creates the visual impression that the header floats outside/above the card.
+ *
+ * border-radius only on the top two corners; the bottom edge is flat so it connects
+ * seamlessly with the card below.
+ *
+ * linear-gradient: dark slate (#2c2c44) → near-black (#0f0f1e) adds depth
+ * instead of a flat colour.
+ *
+ * box-shadow cast downward is the key separator: the shadow falls onto the
+ * white card below, creating the "floating gap" look.
+ *
+ * z-index: 2 ensures the header's shadow renders in front of the card (z-index: 1).
+ */
+.login-header {
+  width: 360px;
+  background: linear-gradient(150deg, #2c2c44 0%, #0f0f1e 100%);
+  border-radius: 10px 10px 0 0;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  position: relative;
+  z-index: 2;
+}
+
+/* ─── "kt" MONOGRAM ───────────────────────────────────────────────────────── */
+
+/*
+ * Italic + heavy-weight serif mimics a designed lettermark without a custom SVG.
+ * Pink/magenta (#e91e8c) matches the reference screenshot's accent colour.
+ * text-shadow adds a soft glow against the dark header background.
+ */
+.kt-monogram {
+  font-size: 26px;
+  font-weight: 900;
+  font-style: italic;
+  font-family: Georgia, 'Times New Roman', serif;
+  color: #e91e8c;
+  letter-spacing: -1px;
+  line-height: 1;
+  text-shadow: 0 0 10px rgba(233, 30, 140, 0.45);
+}
+
+/*
+ * Logo text: bold "Krishna" via <strong> + normal-weight "Technosoft" — both white.
+ */
+.logo-text {
+  font-size: 16px;
+  font-weight: 400;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.logo-text strong {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* ─── CARD BODY ───────────────────────────────────────────────────────────── */
+
+/*
+ * Narrower than the header (340px) to allow the 10px header overhang on each side.
+ * Top corners are flat (radius 0) — they join the header's flat bottom edge.
+ * Bottom corners are rounded to give the card its finished shape.
+ * z-index: 1 keeps the card behind the header's shadow layer.
+ */
+.login-card {
+  width: 340px;
+  background: #ffffff;
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
+  padding: 28px 28px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── FORM ────────────────────────────────────────────────────────────────── */
+
+.login-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ─── FIELDSET/LEGEND-STYLE INPUTS ───────────────────────────────────────── */
+
+/*
+ * position: relative makes this the anchor point for the absolutely-placed label.
+ * margin-top: 6px gives clearance so the label (which sits 9px above the input top)
+ * is not clipped by the element above it.
+ */
+.form-group {
+  position: relative;
+  margin-top: 6px;
+}
+
+/*
+ * The label is placed at top: -9px — exactly on the input's top border line.
+ * background: #ffffff paints over the border behind the label text, which creates
+ * the "cut-out" / fieldset-legend illusion (the border looks broken at the label).
+ * padding: 0 4px gives a small white bleed on each side of the text.
+ * z-index: 1 ensures the label renders above the input border.
+ * pointer-events: none means clicks pass through to the input beneath.
+ * transition animates the colour change when the field is focused.
+ */
+.form-group label {
+  position: absolute;
+  top: -9px;
+  left: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #777;
+  background: #ffffff;
+  padding: 0 4px;
+  z-index: 1;
+  pointer-events: none;
+  transition: color 0.18s ease;
+}
+
+/*
+ * Default state: white background, light gray border (#ccc).
+ * transition on border-color and background-color smooths the focus animation.
+ */
+.form-group input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #333;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+/*
+ * FOCUS — border turns blue (#1976d2) to highlight the active field.
+ * background-color: #f0f7ff is a very faint blue tint — subtle, not harsh.
+ */
+.form-group input:focus {
+  border-color: #1976d2;
+  background-color: #f0f7ff;
+}
+
+/*
+ * :focus-within fires on the parent (.form-group) when any child has focus.
+ * Changing the label colour to blue in sync with the border ties both
+ * elements together visually and reinforces which field is active.
+ */
+.form-group:focus-within label {
+  color: #1976d2;
+}
+
+/* ─── LOGIN BUTTON ────────────────────────────────────────────────────────── */
+
+.btn-login {
+  width: 100%;
+  padding: 11px;
+  margin-top: 2px;
+  background-color: #1a1a2e;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  transition: background-color 0.18s ease;
+}
+
+.btn-login:hover {
+  background-color: #2d2d50;
+}
+
+/* ─── FORGOT PASSWORD ─────────────────────────────────────────────────────── */
+
+.forgot-password {
+  display: block;
+  margin-top: 16px;
+  font-size: 13px;
+  color: #2980b9;
+  text-decoration: none;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+}
+
+/* ─── ERROR MESSAGES ──────────────────────────────────────────────────────── */
+
+/* Banner shown when the server rejects credentials */
+.login-error {
+  margin: -8px 0 0;
+  padding: 8px 10px;
+  background-color: #fff0f0;
+  border: 1px solid #f5c6c6;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #c0392b;
+}
+
+/* Inline error rendered directly below an invalid input after blur or submit.
+   Matches the .field-error in AddUser.css; duplicated here because LoginPage
+   does not import AddUser.css. */
+.field-error {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #c0392b;
+  font-family: Arial, Helvetica, sans-serif;
+}

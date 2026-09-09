@@ -1,0 +1,120 @@
+/* ─── FILTER SECTION ──────────────────────────────────────────────────────── */
+
+.user-filter {
+  padding: 16px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Inputs sit in a single flex row; flex-wrap lets them reflow on narrow screens */
+.user-filter-fields {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+/*
+ * Floating-label "cut-out" pattern: the label sits at top: -9px so it bisects
+ * the input's top border. A white background behind the label text paints over
+ * the border, creating the visual gap — the same technique used in LoginPage.css.
+ * margin-top: 8px gives the label room to sit above the neighbouring element.
+ */
+.filter-group {
+  position: relative;
+  margin-top: 8px;
+}
+
+.filter-group label {
+  position: absolute;
+  top: -9px;
+  left: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #777;
+  background: #ffffff;
+  padding: 0 4px;
+  z-index: 1;
+  pointer-events: none;
+  transition: color 0.15s ease;
+}
+
+.filter-input {
+  padding: 8px 12px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #333;
+  outline: none;
+  width: 160px;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #ffffff;
+  transition: border-color 0.15s ease;
+}
+
+/* Date inputs need a little extra width so the calendar icon doesn't overlap the text */
+.filter-input--date {
+  width: 190px;
+}
+
+.filter-input:focus {
+  border-color: #1976d2;
+}
+
+.filter-group:focus-within label {
+  color: #1976d2;
+}
+
+/* Grayed-out state for fields not yet supported by the backend */
+.filter-group--disabled label {
+  color: #bbb;
+}
+
+.filter-group--disabled .filter-input {
+  background: #f5f5f5;
+  color: #bbb;
+  border-color: #e0e0e0;
+  cursor: not-allowed;
+}
+
+/* Small italic note rendered below a disabled input */
+.filter-hint {
+  display: block;
+  font-size: 10px;
+  color: #bbb;
+  font-style: italic;
+  margin-top: 3px;
+  padding-left: 2px;
+}
+
+/* Row below the inputs — holds the SEARCH and RESET buttons */
+.user-filter-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ─── EDIT BUTTON (ACTIONS column) ───────────────────────────────────────── */
+
+/*
+ * Outlined style: white background + blue border + blue text.
+ * Contrasts with the pink action buttons (btn-action--pink) so EDIT reads
+ * as a secondary, row-level action rather than a primary page action.
+ */
+.btn-edit {
+  padding: 4px 12px;
+  border: 1px solid #1976d2;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #1976d2;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-edit:hover {
+  background-color: #e3f2fd;
+}
