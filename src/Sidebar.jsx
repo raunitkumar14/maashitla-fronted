@@ -12,7 +12,7 @@ import './Sidebar.css';
  */
 const NAV_ITEMS = [
   { label: 'Dashboard',         icon: '⊞' },
-  { label: 'Company',           icon: '🏢' },
+  { label: 'Company',           icon: '🏢', path: '/company' },
   { label: 'Inward',            icon: '📥' },
   { label: 'Outward',           icon: '📤' },
   { label: 'Daak Entry',        icon: '📮' },

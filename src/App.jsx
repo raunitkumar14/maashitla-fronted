@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './LoginPage';
 import MainLayout from './MainLayout';
 import IsinMaster from './IsinMaster';
+import Company from './Company';
 import Users from './Users';
 import AddUser from './AddUser';
 import EditUser from './EditUser';
@@ -69,6 +70,10 @@ function App() {
 
       {/* Login page — full screen, no sidebar */}
       <Route path="/login" element={<LoginPage />} />
+
+      <Route path="/company" element={
+        <ProtectedPage pageName="Company"><Company /></ProtectedPage>
+      } />
 
       <Route path="/isin-master" element={
         <ProtectedPage pageName="ISIN Master"><IsinMaster /></ProtectedPage>

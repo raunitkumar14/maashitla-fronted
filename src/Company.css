@@ -1,0 +1,47 @@
+/* Right-aligned action row above the Company List card */
+.company-action-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Search input padding inside the card body */
+.company-search-row {
+  padding: 10px 14px 0;
+}
+
+/* Disabled grey variant for the "UPLOAD DENIED" placeholder button */
+.btn-action--grey {
+  background-color: #e0e0e0;
+  color: #9e9e9e;
+  border: 1px solid #d0d0d0;
+}
+
+.btn-action--grey:hover,
+.btn-action--grey:disabled {
+  background-color: #e0e0e0;
+  cursor: not-allowed;
+}
+
+/* Action column in the issuer table */
+.company-action-cell {
+  white-space: nowrap;
+}
+
+.company-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  font-size: 14px;
+  color: #555;
+  border-radius: 4px;
+  font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.company-icon-btn:hover {
+  background-color: #f0f4ff;
+  color: #1565c0;
+}

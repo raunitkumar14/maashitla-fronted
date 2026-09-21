@@ -38,6 +38,11 @@ function UploadModal({ title, depository, onClose, onParsed }) {
     setSelectedFile(file);
     setParseError(null);
 
+    if (depository === 'NSDL' && onParsed) {
+      onParsed(file); // pass raw File/Blob — parseNsdlZip reads it via arrayBuffer()
+      return;
+    }
+
     if (depository === 'CDSL' && onParsed) {
       setIsParsing(true);
 
@@ -71,7 +76,7 @@ function UploadModal({ title, depository, onClose, onParsed }) {
     if (isParsing) return; // ignore clicks while file is being processed
     fileInputRef.current.click();
   }
-x
+
   function handleDragOver(e) {
     e.preventDefault();
   }
