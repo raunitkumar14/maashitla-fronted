@@ -7,8 +7,6 @@ import { parseCdslBenposZip } from './parseCdslBenposZip';
 import { uploadCdslBenpos } from './uploadCdslBenpos';
 import { parseNsdlBenpos } from './parseNsdlBenpos';
 import { uploadNsdlBenpos } from './uploadNsdlBenpos';
-import { parsePhysicalBenpos } from './parsePhysicalBenpos';
-import { uploadPhysicalBenpos } from './uploadPhysicalBenpos';
 
 // ── CDSL table column definitions (105 columns: 104 raw fields + derived) ─────
 
@@ -286,34 +284,6 @@ function UploadProgressCard({ progress }) {
   );
 }
 
-// ── Physical upload progress card (two-phase) ─────────────────────────────────
-
-function PhysicalUploadProgressCard({ progress }) {
-  const processed = progress.phase === 'polling'
-    ? progress.recordsBefore + (progress.currentBatchProcessed ?? 0)
-    : progress.recordsBefore;
-  const pct = progress.totalRecords > 0
-    ? Math.min(100, Math.round((processed / progress.totalRecords) * 100))
-    : 0;
-  const phaseLabel = `Phase ${progress.uploadPhase}/2: ${progress.uploadPhaseLabel}`;
-  return (
-    <div className="im-card benpos-progress-card">
-      <div className="benpos-progress-header">
-        {progress.phase === 'posting'
-          ? `${phaseLabel} — ⬆ Uploading batch ${progress.batchNum} of ${progress.totalBatches}…`
-          : `${phaseLabel} — ⏳ Processing batch ${progress.batchNum} of ${progress.totalBatches}…`}
-      </div>
-      <div className="benpos-progress-counts">
-        {progress.phase === 'polling'
-          ? `Batch rows: ${(progress.currentBatchProcessed ?? 0).toLocaleString()} / ${(progress.currentBatchTotal ?? 0).toLocaleString()} — Overall: ${processed.toLocaleString()} / ${progress.totalRecords.toLocaleString()} records`
-          : `${processed.toLocaleString()} / ${progress.totalRecords.toLocaleString()} records sent`}
-      </div>
-      <div className="benpos-progress-bar-wrap">
-        <div className="benpos-progress-bar-fill" style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
-}
 
 // ── Main component ────────────────────────────────────────────────────────────
 
@@ -340,15 +310,6 @@ function BenPos() {
   const [nsdlUploadProgress, setNsdlUploadProgress] = useState(null);
   const [nsdlUploadSummary,  setNsdlUploadSummary]  = useState(null);
   const [nsdlUploadError,    setNsdlUploadError]    = useState('');
-
-  // ── Physical upload/parse state ────────────────────────────────────────────
-
-  const [physParseStatus,    setPhysParseStatus]    = useState(null);
-  const [physParseMessage,   setPhysParseMessage]   = useState('');
-  const [physUploadStatus,   setPhysUploadStatus]   = useState(null);
-  const [physUploadProgress, setPhysUploadProgress] = useState(null);
-  const [physUploadSummary,  setPhysUploadSummary]  = useState(null);
-  const [physUploadError,    setPhysUploadError]    = useState('');
 
   // ── View Uploaded Data: shared tab ─────────────────────────────────────────
 
@@ -538,42 +499,6 @@ function BenPos() {
     setNsdlUploadProgress(null);
   }
 
-  async function handlePhysicalParsed(file) {
-    setShowUploadModal(false);
-    setPhysParseStatus('parsing');
-    setPhysParseMessage('Parsing Physical BenPos CSV file…');
-    setPhysUploadStatus(null);
-    setPhysUploadSummary(null);
-    setPhysUploadError('');
-    setPhysUploadProgress(null);
-
-    let shareholders, shareholdings;
-    try {
-      const result = await parsePhysicalBenpos(file);
-      ({ shareholders, shareholdings } = result);
-      setPhysParseStatus('done');
-      setPhysParseMessage(
-        `${shareholders.length.toLocaleString()} shareholders (deduplicated), ` +
-        `${shareholdings.length.toLocaleString()} shareholding records parsed`
-      );
-    } catch (err) {
-      setPhysParseStatus('error');
-      setPhysParseMessage(`Parse failed: ${err.message}`);
-      return;
-    }
-
-    setPhysUploadStatus('uploading');
-    try {
-      const summary = await uploadPhysicalBenpos(shareholders, shareholdings, setPhysUploadProgress);
-      setPhysUploadSummary(summary);
-      setPhysUploadStatus('done');
-    } catch (err) {
-      setPhysUploadError(err.response?.data?.error?.message ?? err.message ?? 'Upload failed.');
-      setPhysUploadStatus('error');
-    }
-    setPhysUploadProgress(null);
-  }
-
   // View tab pagination handlers
   function handleCdslViewPerPageChange(e) { setCdslViewPerPage(Number(e.target.value)); setCdslViewPage(1); }
   function handleCdslViewGoto() {
@@ -590,8 +515,7 @@ function BenPos() {
 
   const isBusy =
     cdslParseStatus === 'parsing' || cdslUploadStatus === 'uploading' ||
-    nsdlParseStatus === 'parsing' || nsdlUploadStatus === 'uploading' ||
-    physParseStatus === 'parsing' || physUploadStatus === 'uploading';
+    nsdlParseStatus === 'parsing' || nsdlUploadStatus === 'uploading';
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -729,58 +653,6 @@ function BenPos() {
 
       {nsdlUploadStatus === 'error' && (
         <div className="im-banner im-banner--error">⚠ NSDL upload failed: {nsdlUploadError}</div>
-      )}
-
-      {/* ════════════════ PHYSICAL UPLOAD STATUS ════════════════ */}
-
-      {physParseStatus === 'parsing' && (
-        <div className="im-banner im-banner--info">⏳ {physParseMessage}</div>
-      )}
-      {physParseStatus === 'done' && (
-        <div className="im-banner im-banner--success">✓ Physical BenPos — {physParseMessage}</div>
-      )}
-      {physParseStatus === 'error' && (
-        <div className="im-banner im-banner--error">⚠ Physical BenPos — {physParseMessage}</div>
-      )}
-
-      {physUploadStatus === 'uploading' && physUploadProgress && (
-        <PhysicalUploadProgressCard progress={physUploadProgress} />
-      )}
-
-      {physUploadStatus === 'done' && physUploadSummary && (
-        <div className="im-banner im-banner--success">
-          ✓ Physical BenPos upload complete —{' '}
-          {physUploadSummary.shareholders.totalSucceeded.toLocaleString()} shareholders succeeded
-          {physUploadSummary.shareholders.totalFailed > 0 && (
-            `, ${physUploadSummary.shareholders.totalFailed.toLocaleString()} failed`
-          )}
-          {' | '}
-          {physUploadSummary.shareholdings.totalSucceeded.toLocaleString()} shareholdings succeeded
-          {physUploadSummary.shareholdings.totalFailed > 0 && (
-            `, ${physUploadSummary.shareholdings.totalFailed.toLocaleString()} failed`
-          )}
-          {(() => {
-            const allErrs = [
-              ...physUploadSummary.shareholders.errors,
-              ...physUploadSummary.shareholdings.errors,
-            ];
-            if (allErrs.length === 0) return null;
-            return (
-              <div className="benpos-error-list">
-                {allErrs.slice(0, 3).map((e, i) => (
-                  <div key={i} className="benpos-error-item">• {String(e?.message ?? e)}</div>
-                ))}
-                {allErrs.length > 3 && (
-                  <div className="benpos-error-item">…and {allErrs.length - 3} more errors</div>
-                )}
-              </div>
-            );
-          })()}
-        </div>
-      )}
-
-      {physUploadStatus === 'error' && (
-        <div className="im-banner im-banner--error">⚠ Physical BenPos upload failed: {physUploadError}</div>
       )}
 
       {/* ════════════════ VIEW UPLOADED DATA ════════════════ */}
@@ -950,13 +822,6 @@ function BenPos() {
             depository="CDSL"
             onClose={() => setShowUploadModal(false)}
             onParsed={handleCdslParsed}
-            passRawFile
-          />
-          <UploadModal
-            title="Upload Physical Benpos"
-            depository="Physical"
-            onClose={() => setShowUploadModal(false)}
-            onParsed={handlePhysicalParsed}
             passRawFile
           />
         </div>
