@@ -13,7 +13,7 @@ import { parseCdslFile } from './parseCdslFile';
  *   onParsed   — (optional) called with the parsed records array once the
  *                file has been read and parsed; only wired up for CDSL today
  */
-function UploadModal({ title, depository, onClose, onParsed }) {
+function UploadModal({ title, depository, onClose, onParsed, passRawFile }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isParsing, setIsParsing]       = useState(false);
   const [parseError, setParseError]     = useState(null);
@@ -37,6 +37,13 @@ function UploadModal({ title, depository, onClose, onParsed }) {
     if (!file) return;
     setSelectedFile(file);
     setParseError(null);
+
+    // passRawFile: skip inline parsing and hand the File directly to the parent.
+    // Used when the parent owns its own parser (e.g. BenPos CDSL zip).
+    if (passRawFile && onParsed) {
+      onParsed(file);
+      return;
+    }
 
     if (depository === 'NSDL' && onParsed) {
       onParsed(file); // pass raw File/Blob — parseNsdlZip reads it via arrayBuffer()

@@ -9,6 +9,7 @@ import EditUser from './EditUser';
 import Roles from './Roles';
 import LoginHistoryList from './LoginHistoryList';
 import Profile from './Profile';
+import BenPos from './BenPos';
 
 /*
  * ── How React Router works ──────────────────────────────────────────────────
@@ -97,6 +98,11 @@ function App() {
       } />
       <Route path="/profile" element={
         <ProtectedPage pageName="Profile"><Profile /></ProtectedPage>
+      } />
+
+      {/* Reports sub-pages */}
+      <Route path="/reports/benpos" element={
+        <ProtectedPage breadcrumbs={['Reports', 'Benpost']}><BenPos /></ProtectedPage>
       } />
     </Routes>
   );

@@ -1,0 +1,184 @@
+/* ─── FILTER BODY ─────────────────────────────────────────────────────────── */
+
+.benpos-filter-body {
+  padding: 16px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ─── FILTER ROW ──────────────────────────────────────────────────────────── */
+
+.benpos-filter-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.benpos-filter-row--actions {
+  align-items: center;
+}
+
+/* ─── FIELD (label + select wrapper) ─────────────────────────────────────── */
+
+.benpos-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+}
+
+.benpos-field--half {
+  flex: 1 1 calc(50% - 8px);
+  min-width: 200px;
+}
+
+.benpos-field--date {
+  width: 200px;
+  flex-shrink: 0;
+}
+
+/* ─── FLOATING LABEL ──────────────────────────────────────────────────────── */
+
+.benpos-label {
+  position: absolute;
+  top: -8px;
+  left: 10px;
+  font-size: 11px;
+  color: #888;
+  background: #ffffff;
+  padding: 0 4px;
+  pointer-events: none;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ─── SELECT ──────────────────────────────────────────────────────────────── */
+
+.benpos-select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  padding: 10px 32px 10px 12px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #333;
+  background-color: #ffffff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  cursor: pointer;
+  outline: none;
+  font-family: Arial, Helvetica, sans-serif;
+  transition: border-color 0.15s ease;
+}
+
+.benpos-select:focus {
+  border-color: #1976d2;
+}
+
+/* ─── DOWNLOAD BUTTON ─────────────────────────────────────────────────────── */
+
+.benpos-download-btn {
+  padding: 9px 18px;
+  font-size: 12px;
+  align-self: center;
+  margin-top: 12px;
+}
+
+/* ─── UPLOAD PROGRESS CARD ────────────────────────────────────────────────── */
+
+.benpos-progress-card {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.benpos-progress-header {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.benpos-progress-counts {
+  font-size: 12px;
+  color: #555;
+}
+
+.benpos-progress-bar-wrap {
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.benpos-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(to right, #1565c0, #1e88e5);
+  border-radius: 4px;
+  transition: width 0.4s ease;
+  min-width: 2px;
+}
+
+/* ─── VIEW DATA TAB TOGGLE ────────────────────────────────────────────────── */
+
+.benpos-tab-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px 0;
+}
+
+.benpos-tab-btn {
+  padding: 7px 22px;
+  font-size: 13px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 500;
+  border: 1px solid #cccccc;
+  background: #f5f5f5;
+  color: #555;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  line-height: 1.4;
+}
+
+.benpos-tab-btn:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.benpos-tab-btn:last-child {
+  border-radius: 0 4px 4px 0;
+  border-left: none;
+}
+
+.benpos-tab-btn--active {
+  background: #1565c0;
+  color: #ffffff;
+  border-color: #1565c0;
+}
+
+.benpos-tab-btn:not(.benpos-tab-btn--active):hover {
+  background: #e8e8e8;
+}
+
+/* ─── VIEW DATA SEARCH ROW ────────────────────────────────────────────────── */
+
+.benpos-search-row {
+  padding: 12px 16px 0;
+}
+
+/* ─── UPLOAD ERROR LIST ───────────────────────────────────────────────────── */
+
+.benpos-error-list {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.benpos-error-item {
+  font-size: 11px;
+  opacity: 0.85;
+}
