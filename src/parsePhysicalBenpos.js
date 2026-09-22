@@ -56,7 +56,6 @@ const SHAREHOLDER_FIELD_MAP = {
 // CSV column names (snake_case) → camelCase keys for the shareholding object
 const SHAREHOLDING_FIELD_MAP = {
   certificate_no:          'certificateNo',
-  folio_no:                'folioNo',
   folio_isin_incorp_date:  'folioIsinIncorpDate',
   distinctive_number_from: 'distinctiveNumberFrom',
   distinctive_number_to:   'distinctiveNumberTo',
@@ -170,6 +169,8 @@ export async function parsePhysicalBenpos(file) {
       const idx         = colIndex[csvCol];
       holding[camelKey] = idx !== undefined ? (cols[idx] ?? '') : '';
     }
+    // folioNo is the FK that references BenposPhysicalShareholder.folioIsinIncorpDate
+    holding.folioNo = holding.folioIsinIncorpDate;
     shareholdings.push(holding);
   }
 
