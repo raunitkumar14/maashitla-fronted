@@ -1,0 +1,42 @@
+/* ── Breadcrumb bar override: space-between so right side can float right ── */
+.co-breadcrumb-bar {
+  justify-content: space-between;
+}
+
+.co-breadcrumb-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.co-breadcrumb-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── "Coming soon" placeholder page ── */
+.co-coming-soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.co-coming-soon-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 10px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.co-coming-soon-text {
+  font-size: 15px;
+  color: #888;
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+}

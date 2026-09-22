@@ -10,6 +10,8 @@ import Roles from './Roles';
 import LoginHistoryList from './LoginHistoryList';
 import Profile from './Profile';
 import BenPos from './BenPos';
+import CompanyLayout, { CompanyComingSoon } from './CompanyLayout';
+import CompanyPhysical from './CompanyPhysical';
 
 /*
  * ── How React Router works ──────────────────────────────────────────────────
@@ -75,6 +77,20 @@ function App() {
       <Route path="/company" element={
         <ProtectedPage pageName="Company"><Company /></ProtectedPage>
       } />
+
+      {/* Company-scoped mini-dashboard — own sidebar, nested routes */}
+      <Route path="/company/:issuerCode" element={
+        <ProtectedRoute><CompanyLayout /></ProtectedRoute>
+      }>
+        <Route index element={<Navigate to="physical" replace />} />
+        <Route path="physical"         element={<CompanyPhysical />} />
+        <Route path="dashboard"        element={<CompanyComingSoon title="Dashboard" />} />
+        <Route path="nsdl"             element={<CompanyComingSoon title="NSDL" />} />
+        <Route path="cdsl"             element={<CompanyComingSoon title="CDSL" />} />
+        <Route path="transactions"     element={<CompanyComingSoon title="Transactions" />} />
+        <Route path="promoter"         element={<CompanyComingSoon title="Promoter" />} />
+        <Route path="category-convert" element={<CompanyComingSoon title="Category Convert" />} />
+      </Route>
 
       <Route path="/isin-master" element={
         <ProtectedPage pageName="ISIN Master"><IsinMaster /></ProtectedPage>

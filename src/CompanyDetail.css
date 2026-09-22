@@ -1,0 +1,121 @@
+/* ── Top row: heading on left, badges + company name on right ── */
+.cd-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.cd-top-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Count badge pills ── */
+.cd-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: Arial, Helvetica, sans-serif;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+.cd-badge--physical {
+  background-color: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
+}
+
+.cd-badge--nsdl {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+
+.cd-badge--cdsl {
+  background-color: #fff3e0;
+  color: #e65100;
+  border: 1px solid #ffcc80;
+}
+
+/* ── Company name chip (building icon + name text) ── */
+.cd-company-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a2e;
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+
+.cd-company-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* ── Search row inside each benpos section card ── */
+.cd-search-row {
+  padding: 10px 14px 0;
+}
+
+.cd-search-input {
+  width: 280px !important;
+}
+
+/* ── CompanyPhysical filter card body ── */
+.cp-filter-body {
+  padding: 20px 20px 24px;
+}
+
+.cp-filter-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Folio No input — same box style as .benpos-select but without the dropdown arrow */
+.cp-folio-field {
+  position: relative;
+  width: 300px;
+}
+
+.cp-folio-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #333;
+  background-color: #ffffff;
+  outline: none;
+  font-family: Arial, Helvetica, sans-serif;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.cp-folio-input:focus {
+  border-color: #1976d2;
+}
+
+/* SEARCH button — same height as the input so they align on the baseline */
+.cp-search-btn {
+  padding: 9px 22px !important;
+  font-size: 12px !important;
+  letter-spacing: 0.8px;
+  align-self: flex-end;
+}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from './api/axios';
 import './IsinMaster.css';
 import './Company.css';
@@ -61,6 +62,8 @@ function PaginationBar({ page, perPage, totalCount, totalPages, goto, setPage, s
 }
 
 function Company() {
+  const navigate = useNavigate();
+
   const [search,          setSearch]          = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page,            setPage]            = useState(1);
@@ -196,7 +199,13 @@ function Company() {
                     <td>{row.totalIsin}</td>
                     <td>{row.source}</td>
                     <td className="company-action-cell">
-                      <button className="company-icon-btn" title="View">→</button>
+                      <button
+                        className="company-icon-btn"
+                        title="View"
+                        onClick={() => navigate(`/company/${row.issuerCode}/physical`, { state: { row } })}
+                      >
+                        →
+                      </button>
                       <button className="company-icon-btn" title="Edit">✏</button>
                     </td>
                   </tr>
