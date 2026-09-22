@@ -133,10 +133,13 @@ function PaginationBar({ page, perPage, totalCount, totalPages, goto, setPage, s
 // ── Page component ────────────────────────────────────────────────────────────
 
 function IsinMaster() {
-  // Filter field state — will drive API calls later
+  // Filter field state — bound to the input boxes (draft values)
   const [isin,        setIsin]        = useState('');
   const [issuerCode,  setIssuerCode]  = useState('');
   const [companyName, setCompanyName] = useState('');
+
+  // Applied filters — only updated on SEARCH / RESET, drives the API call
+  const [appliedFilters, setAppliedFilters] = useState({ isin: '', issuerCode: '', companyName: '' });
 
   // Upload flow state
   const [showUploadModal,    setShowUploadModal]    = useState(false);
@@ -165,9 +168,11 @@ function IsinMaster() {
       setIsinLoading(true);
       setIsinFetchError('');
       try {
-        const res = await api.get('/admin/v1/isins', {
-          params: { page: isinPage, pageSize: isinPerPage },
-        });
+        const params = { page: isinPage, pageSize: isinPerPage };
+        if (appliedFilters.isin)        params.isin        = appliedFilters.isin;
+        if (appliedFilters.issuerCode)  params.issuerCode  = appliedFilters.issuerCode;
+        if (appliedFilters.companyName) params.companyName = appliedFilters.companyName;
+        const res = await api.get('/admin/v1/isins', { params });
         if (cancelled) return;
         const { items, totalCount, totalPages } = res.data.data;
         setIsinData(items);
@@ -183,7 +188,7 @@ function IsinMaster() {
       }
     })();
     return () => { cancelled = true; };
-  }, [isinPage, isinPerPage, isinRefetchKey]);
+  }, [isinPage, isinPerPage, isinRefetchKey, appliedFilters]);
 
   // ── Upload functions ─────────────────────────────────────────────────────────
 
@@ -328,14 +333,16 @@ function IsinMaster() {
 
   function handleSearch(e) {
     e.preventDefault();
-    // TODO: call the search API with { isin, issuerCode, companyName }
-    console.log('Search:', { isin, issuerCode, companyName });
+    setAppliedFilters({ isin, issuerCode, companyName });
+    setIsinPage(1);
   }
 
   function handleReset() {
     setIsin('');
     setIssuerCode('');
     setCompanyName('');
+    setAppliedFilters({ isin: '', issuerCode: '', companyName: '' });
+    setIsinPage(1);
   }
 
   // ── Render ───────────────────────────────────────────────────────────────────
