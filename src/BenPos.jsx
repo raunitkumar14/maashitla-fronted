@@ -521,7 +521,7 @@ function BenPos() {
 
   return (
     <div className="isin-master">
-      <h1 className="page-heading">Benpost</h1>
+      <h1 className="page-heading">BenPos</h1>
 
       {/* ── Filter card ── */}
       <div className="im-card">

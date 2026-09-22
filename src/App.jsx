@@ -118,7 +118,7 @@ function App() {
 
       {/* Reports sub-pages */}
       <Route path="/reports/benpos" element={
-        <ProtectedPage breadcrumbs={['Reports', 'Benpost']}><BenPos /></ProtectedPage>
+        <ProtectedPage breadcrumbs={['Reports', 'BenPos']}><BenPos /></ProtectedPage>
       } />
     </Routes>
   );
