@@ -24,6 +24,51 @@
   cursor: not-allowed;
 }
 
+/* CompanyIsins breadcrumb row */
+.ci-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+}
+
+.ci-back-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 13px;
+  color: #1565c0;
+  font-family: Arial, Helvetica, sans-serif;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+}
+
+.ci-back-btn:hover {
+  background-color: #e3f2fd;
+}
+
+.ci-breadcrumb-sep {
+  color: #aaa;
+}
+
+.ci-breadcrumb-current {
+  color: #555;
+  font-weight: 600;
+}
+
+/* Clickable ISIN rows in CompanyIsins table */
+.ci-isin-row {
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.ci-isin-row:hover {
+  background-color: #f0f4ff;
+}
+
 /* Action column in the issuer table */
 .company-action-cell {
   white-space: nowrap;

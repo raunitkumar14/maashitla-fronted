@@ -177,6 +177,7 @@ function Company() {
               <tr>
                 <th>Issuer ID</th>
                 <th>Issuer Code</th>
+                <th>Issuer Name</th>
                 <th>Total ISIN</th>
                 <th>Source</th>
                 <th>Action</th>
@@ -185,24 +186,25 @@ function Company() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td className="im-empty-state" colSpan={5}>Loading…</td>
+                  <td className="im-empty-state" colSpan={6}>Loading…</td>
                 </tr>
               ) : issuers.length === 0 ? (
                 <tr>
-                  <td className="im-empty-state" colSpan={5}>No data available.</td>
+                  <td className="im-empty-state" colSpan={6}>No data available.</td>
                 </tr>
               ) : (
                 issuers.map((row, idx) => (
                   <tr key={row.issuerCode || idx}>
                     <td>{row.issuerId ?? '—'}</td>
                     <td>{row.issuerCode}</td>
+                    <td>{row.issuerName || '—'}</td>
                     <td>{row.totalIsin}</td>
                     <td>{row.source}</td>
                     <td className="company-action-cell">
                       <button
                         className="company-icon-btn"
                         title="View"
-                        onClick={() => navigate(`/company/${row.issuerCode}/physical`, { state: { row } })}
+                        onClick={() => navigate(`/company/${row.issuerCode}/isins`, { state: { companyRow: row } })}
                       >
                         →
                       </button>

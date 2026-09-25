@@ -11,9 +11,10 @@
 // Fields selected for Table A — ISIN level, no dedup
 const ISIN_TABLE_FIELDS = [
   'isinAlphaCode',
+  'issuerName',               // needed by mergeIsinMaster for isinDescription
   'isinDescription',
   'securityTypeDescription',
-  'isinStatus',
+  'isinStatusDescription',    // human-readable status; mergeIsinMaster uses this for isinStatus
   'parValue',
   'paidupValue',
   'issueDate',

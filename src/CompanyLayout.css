@@ -16,6 +16,21 @@
   flex-wrap: wrap;
 }
 
+/* Clickable "← [Company] ISINs" breadcrumb segment in the mini-dashboard */
+.co-isins-link {
+  cursor: pointer;
+  color: #1565c0;
+  font-size: 13px;
+  font-family: Arial, Helvetica, sans-serif;
+  border-radius: 3px;
+  padding: 1px 3px;
+  transition: background-color 0.12s ease;
+}
+
+.co-isins-link:hover {
+  background-color: #e3f2fd;
+}
+
 /* ── "Coming soon" placeholder page ── */
 .co-coming-soon {
   display: flex;

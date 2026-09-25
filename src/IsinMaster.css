@@ -346,7 +346,250 @@
 .im-header-actions {
   display: flex;
   align-items: center;
+  gap: 8px;
+}
+
+/* ─── DATASET STATUS BADGES ──────────────────────────────────────────────── */
+
+/* Small indicators showing whether each depository file has been loaded */
+.im-dataset-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  background-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
+}
+
+.im-dataset-badge--ready {
+  background-color: rgba(76, 175, 80, 0.28);
+  color: #ffffff;
+  border-color: rgba(76, 175, 80, 0.55);
+}
+
+/* ─── RAW PREVIEW TABLE FILTER INPUT ─────────────────────────────────────── */
+
+/* Small ISIN search box that lives in the blue card header bar */
+.im-preview-filter {
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 11px;
+  width: 140px;
+  outline: none;
+  font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.im-preview-filter::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.im-preview-filter:focus {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.75);
+}
+
+/* ─── GENERATE MASTER BUTTON ─────────────────────────────────────────────── */
+
+.btn-generate {
+  background-color: #43a047;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 11px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: background-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-generate:hover:not(:disabled) {
+  background-color: #2e7d32;
+}
+
+.btn-generate:disabled {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.4);
+  cursor: not-allowed;
+}
+
+/* ─── MERGE STATS BAR ────────────────────────────────────────────────────── */
+
+/* Horizontal summary shown between the preview card header and the table */
+.im-merge-stats {
+  display: flex;
+  align-items: center;
   gap: 12px;
+  padding: 8px 14px;
+  background: #f8f9fb;
+  border-bottom: 1px solid #e8ecf0;
+  font-family: Arial, Helvetica, sans-serif;
+  flex-wrap: wrap;
+}
+
+.im-merge-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.im-merge-stat--nsdl {
+  background: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
+}
+
+.im-merge-stat--cdsl {
+  background: #fce4ec;
+  color: #880e4f;
+  border: 1px solid #f48fb1;
+}
+
+.im-merge-stat--both {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+
+/* ─── EXPORT MODAL ───────────────────────────────────────────────────────── */
+
+.im-export-modal {
+  width: 400px;
+  max-width: 95vw;
+  background: #ffffff;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+  display: flex;
+  flex-direction: column;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Two choice cards stacked vertically */
+.im-export-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+}
+
+.im-export-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  padding: 12px 14px;
+  background: #f8f9fb;
+  border: 1.5px solid #e0e4ea;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.im-export-option:hover {
+  background: #eef2ff;
+  border-color: #1976d2;
+}
+
+.im-export-option-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.im-export-option-desc {
+  font-size: 11px;
+  color: #777;
+}
+
+/* Progress section */
+.im-export-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 32px;
+}
+
+.im-export-progress-stage {
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+  text-align: center;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.im-export-progress-track {
+  width: 100%;
+  height: 8px;
+  background: #e8ecf0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.im-export-progress-fill {
+  height: 100%;
+  background: linear-gradient(to right, #1565c0, #1e88e5);
+  border-radius: 4px;
+  transition: width 0.2s ease;
+}
+
+.im-export-progress-count {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Error section */
+.im-export-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 24px 32px;
+}
+
+.im-export-error-text {
+  font-size: 13px;
+  color: #c62828;
+  margin: 0;
+  text-align: center;
+  line-height: 1.5;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.im-export-retry-btn {
+  background-color: #e91e8c;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.15s ease;
+}
+
+.im-export-retry-btn:hover {
+  background-color: #c2177a;
 }
 
 /* ─── VIEW PAYLOAD BUTTON ─────────────────────────────────────────────────── */

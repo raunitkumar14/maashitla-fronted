@@ -1,0 +1,49 @@
+/* ── Select Columns popover ────────────────────────────────────────────────── */
+
+.nsdl-col-picker {
+  position: relative;
+}
+
+.nsdl-col-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 200;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  padding: 6px 0;
+  min-width: 300px;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.nsdl-col-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  font-family: Arial, Helvetica, sans-serif;
+  user-select: none;
+}
+
+.nsdl-col-option:hover {
+  background-color: #f5f7fa;
+}
+
+.nsdl-col-option input[type='checkbox'] {
+  cursor: pointer;
+  accent-color: #1565c0;
+  flex-shrink: 0;
+}
+
+.nsdl-col-num {
+  color: #aaa;
+  font-size: 11px;
+  min-width: 22px;
+  flex-shrink: 0;
+}

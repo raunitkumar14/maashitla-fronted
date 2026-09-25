@@ -12,6 +12,9 @@ import Profile from './Profile';
 import BenPos from './BenPos';
 import CompanyLayout, { CompanyComingSoon } from './CompanyLayout';
 import CompanyPhysical from './CompanyPhysical';
+import CompanyNsdl from './CompanyNsdl';
+import CompanyCdsl from './CompanyCdsl';
+import CompanyIsins from './CompanyIsins';
 
 /*
  * ── How React Router works ──────────────────────────────────────────────────
@@ -78,6 +81,11 @@ function App() {
         <ProtectedPage pageName="Company"><Company /></ProtectedPage>
       } />
 
+      {/* ISIN list for a specific company — main layout, step before mini-dashboard */}
+      <Route path="/company/:issuerCode/isins" element={
+        <ProtectedPage breadcrumbs={['Company', 'ISINs']}><CompanyIsins /></ProtectedPage>
+      } />
+
       {/* Company-scoped mini-dashboard — own sidebar, nested routes */}
       <Route path="/company/:issuerCode" element={
         <ProtectedRoute><CompanyLayout /></ProtectedRoute>
@@ -85,8 +93,8 @@ function App() {
         <Route index element={<Navigate to="physical" replace />} />
         <Route path="physical"         element={<CompanyPhysical />} />
         <Route path="dashboard"        element={<CompanyComingSoon title="Dashboard" />} />
-        <Route path="nsdl"             element={<CompanyComingSoon title="NSDL" />} />
-        <Route path="cdsl"             element={<CompanyComingSoon title="CDSL" />} />
+        <Route path="nsdl"             element={<CompanyNsdl />} />
+        <Route path="cdsl"             element={<CompanyCdsl />} />
         <Route path="transactions"     element={<CompanyComingSoon title="Transactions" />} />
         <Route path="promoter"         element={<CompanyComingSoon title="Promoter" />} />
         <Route path="category-convert" element={<CompanyComingSoon title="Category Convert" />} />

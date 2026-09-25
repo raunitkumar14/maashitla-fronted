@@ -46,6 +46,12 @@
   border: 1px solid #ffcc80;
 }
 
+.cd-badge--isin {
+  background-color: #f3e5f5;
+  color: #6a1b9a;
+  border: 1px solid #ce93d8;
+}
+
 /* ── Company name chip (building icon + name text) ── */
 .cd-company-name {
   display: inline-flex;
@@ -76,6 +82,11 @@
   width: 280px !important;
 }
 
+.cd-search-input--wide {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 /* ── CompanyPhysical filter card body ── */
 .cp-filter-body {
   padding: 20px 20px 24px;
@@ -88,7 +99,13 @@
   flex-wrap: wrap;
 }
 
-/* Folio No input — same box style as .benpos-select but without the dropdown arrow */
+/* Each search field (Folio No / Holder Name / Holder PAN) shares available width */
+.cp-search-field {
+  flex: 1;
+  min-width: 160px;
+}
+
+/* Kept for any legacy references */
 .cp-folio-field {
   position: relative;
   width: 300px;

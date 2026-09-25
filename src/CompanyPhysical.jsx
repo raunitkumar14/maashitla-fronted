@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useParams, useLocation } from 'react-router-dom';
 import api from './api/axios';
 import './IsinMaster.css';
 import './BenPos.css';
@@ -91,11 +91,9 @@ function UploadProgressCard({ progress }) {
   );
 }
 
-// ── BenPos section card — data-fetching ───────────────────────────────────────
+// ── Column definitions ────────────────────────────────────────────────────────
 
 const SHAREHOLDER_COLS = [
-  { header: 'Folio ISIN Incorp. Date', field: 'folioIsinIncorpDate' },
-  { header: 'ISIN',                    field: 'isin' },
   { header: 'Folio No.',               field: 'folioNo' },
   { header: 'Date of Incorporation',   field: 'dateOfIncorporation' },
   { header: 'Holder 1 Name',           field: 'holder1Name' },
@@ -150,7 +148,6 @@ const SHAREHOLDER_COLS = [
 const SHAREHOLDING_COLS = [
   { header: 'Certificate No.',         field: 'certificateNo' },
   { header: 'Folio No.',               field: 'folioNo' },
-  { header: 'Folio ISIN Incorp. Date', field: 'folioIsinIncorpDate' },
   { header: 'Quantity',                field: 'quantity' },
   { header: 'Dist. No. From',          field: 'distinctiveNumberFrom' },
   { header: 'Dist. No. To',            field: 'distinctiveNumberTo' },
@@ -160,57 +157,22 @@ const SHAREHOLDING_COLS = [
   { header: 'Lock-in Reason',          field: 'lockInReason' },
 ];
 
-// Generic BenposSection that manages its own pagination / fetch state.
-// refetchKey — increment from parent to trigger a fresh load after upload.
-function BenposSection({ title, apiUrl, issuerCode, cols, refetchKey, externalSearch }) {
-  const [page,       setPage]       = useState(1);
-  const [perPage,    setPerPage]    = useState(25);
-  const [goto,       setGoto]       = useState('');
-  const [search,     setSearch]     = useState('');
-  const [debSearch,  setDebSearch]  = useState('');
-  const [data,       setData]       = useState([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [loading,    setLoading]    = useState(false);
-  const [fetchError, setFetchError] = useState('');
+// ── BenposSection — display-only, rows supplied by parent ────────────────────
+// rows = null  → initial loading state (auto-load in progress)
+// rows = []    → empty result; emptyMsg is shown
+// rows = [...]  → paginated table
+function BenposSection({ title, cols, rows, loading, emptyMsg }) {
+  const [page,    setPage]    = useState(1);
+  const [perPage, setPerPage] = useState(25);
+  const [goto,    setGoto]    = useState('');
 
-  // Accept externalSearch (top filter card) to drive the folio search
-  useEffect(() => {
-    if (externalSearch !== undefined) {
-      setSearch(externalSearch);
-      setPage(1);
-    }
-  }, [externalSearch]);
+  // Reset to page 1 whenever the result set changes.
+  useEffect(() => { setPage(1); }, [rows]);
 
-  // Debounce search input
-  useEffect(() => {
-    const t = setTimeout(() => { setDebSearch(search); setPage(1); }, 400);
-    return () => clearTimeout(t);
-  }, [search]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      setFetchError('');
-      try {
-        const params = { page, pageSize: perPage };
-        if (issuerCode) params.issuerCode = issuerCode;
-        if (debSearch)  params.folioNo    = debSearch;
-        const res = await api.get(apiUrl, { params });
-        if (cancelled) return;
-        const d = res.data?.data ?? {};
-        setData(d.items       ?? []);
-        setTotalCount(d.totalCount ?? 0);
-        setTotalPages(d.totalPages ?? 0);
-      } catch {
-        if (!cancelled) { setFetchError('Failed to load data.'); setData([]); }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [page, perPage, debSearch, issuerCode, refetchKey, apiUrl]);
+  const displayRows = rows ?? [];
+  const totalCount  = displayRows.length;
+  const totalPages  = Math.max(1, Math.ceil(totalCount / perPage));
+  const pageRows    = displayRows.slice((page - 1) * perPage, page * perPage);
 
   function handleGoto() {
     const t = parseInt(goto, 10);
@@ -237,21 +199,6 @@ function BenposSection({ title, apiUrl, issuerCode, cols, refetchKey, externalSe
         </label>
       </div>
 
-      <div className="cd-search-row">
-        <input
-          className="im-input cd-search-input"
-          placeholder="Search by Folio No…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
-
-      {fetchError && (
-        <div className="im-banner im-banner--error" style={{ margin: '8px 14px 0' }}>
-          {fetchError}
-        </div>
-      )}
-
       <div className="im-table-wrapper">
         <table className="im-table">
           <thead>
@@ -260,10 +207,10 @@ function BenposSection({ title, apiUrl, issuerCode, cols, refetchKey, externalSe
           <tbody>
             {loading ? (
               <tr><td className="im-empty-state" colSpan={cols.length}>Loading…</td></tr>
-            ) : data.length === 0 ? (
-              <tr><td className="im-empty-state" colSpan={cols.length}>No data available.</td></tr>
+            ) : pageRows.length === 0 ? (
+              <tr><td className="im-empty-state" colSpan={cols.length}>{emptyMsg ?? 'No records found.'}</td></tr>
             ) : (
-              data.map((row, idx) => (
+              pageRows.map((row, idx) => (
                 <tr key={`${row[cols[0].field] ?? ''}-${idx}`}>
                   {cols.map((col) => <td key={col.field}>{row[col.field] ?? '—'}</td>)}
                 </tr>
@@ -274,10 +221,10 @@ function BenposSection({ title, apiUrl, issuerCode, cols, refetchKey, externalSe
       </div>
 
       <PaginationBar
-        page={page}         perPage={perPage}
-        totalCount={totalCount} totalPages={totalPages}
-        goto={goto}         setPage={setPage}
-        setGoto={setGoto}   onGoto={handleGoto}
+        page={page}                               perPage={perPage}
+        totalCount={rows === null ? 0 : totalCount} totalPages={rows === null ? 0 : totalPages}
+        goto={goto}                               setPage={setPage}
+        setGoto={setGoto}                         onGoto={handleGoto}
       />
     </div>
   );
@@ -287,11 +234,25 @@ function BenposSection({ title, apiUrl, issuerCode, cols, refetchKey, externalSe
 
 function CompanyPhysical() {
   const { issuerCode } = useParams();
+  const location       = useLocation();
   const fileInputRef   = useRef(null);
 
-  // ── Filter state ────────────────────────────────────────────────────────────
-  const [folioSearch, setFolioSearch] = useState('');
-  const [appliedFolio, setAppliedFolio] = useState('');
+  // Mirror CompanyLayout.getIsinCode(): prefer navigation state (available on
+  // first render, before CompanyLayout's useEffect has written to sessionStorage),
+  // then fall back to sessionStorage for direct URL entry / page refresh.
+  const isinCode = location.state?.isinCode
+    ?? (() => { try { return sessionStorage.getItem(`co_isin_${issuerCode}`) ?? ''; } catch { return ''; } })();
+
+  // ── Combined search inputs ──────────────────────────────────────────────────
+  const [folioNoInput,    setFolioNoInput]    = useState('');
+  const [holderNameInput, setHolderNameInput] = useState('');
+  const [holderPanInput,  setHolderPanInput]  = useState('');
+  const [searchLoading,   setSearchLoading]   = useState(false);
+  const [searchError,     setSearchError]     = useState('');
+
+  // ── Search result rows ──────────────────────────────────────────────────────
+  const [shareholderRows,  setShareholderRows]  = useState(null);
+  const [shareholdingRows, setShareholdingRows] = useState(null);
 
   // ── Upload / parse state ────────────────────────────────────────────────────
   const [parseStatus,    setParseStatus]    = useState(null);
@@ -301,11 +262,75 @@ function CompanyPhysical() {
   const [uploadSummary,  setUploadSummary]  = useState(null);
   const [uploadError,    setUploadError]    = useState('');
 
-  // ── Refetch keys — increment to trigger table reload ────────────────────────
-  const [s1RefetchKey, setS1RefetchKey] = useState(0);
-  const [s2RefetchKey, setS2RefetchKey] = useState(0);
-
   const isBusy = parseStatus === 'parsing' || uploadStatus === 'uploading';
+
+  // ── Core fetch — shared by auto-load and the Search button ──────────────────
+  // extraFilters can add folioNo / holderName / holderPan on top of the base params.
+  const fetchData = useCallback(async (extraFilters = {}) => {
+    setSearchError('');
+    setSearchLoading(true);
+    setShareholderRows(null);
+    setShareholdingRows(null);
+
+    try {
+      const shParams = { pageSize: 500, page: 1 };
+      if (issuerCode) shParams.issuerCode = issuerCode;
+      if (isinCode)   shParams.isin       = isinCode;
+      Object.assign(shParams, extraFilters);
+
+      const shRes = await api.get('/admin/v1/benpos-physical-shareholder', { params: shParams });
+      const allShareholders = shRes.data?.data?.items ?? [];
+      // Temporary client-side ISIN filter: backend currently ignores the ?isin param.
+      // Keep only rows matching this page's ISIN; harmless once the backend filters properly.
+      const isinFiltered = isinCode
+        ? allShareholders.filter(r => r.isin === isinCode)
+        : allShareholders;
+      const holderNameQ = extraFilters.holderName?.toLowerCase();
+      const holderPanQ  = extraFilters.holderPan?.toLowerCase();
+      // Filter out placeholder rows; apply client-side name/PAN filters because
+      // the backend currently ignores those query params (same issue as ?isin).
+      const shareholders = isinFiltered.filter(r => {
+        if (!r.holder1Name?.trim()) return false;
+        if (holderNameQ && !r.holder1Name?.toLowerCase().includes(holderNameQ)) return false;
+        if (holderPanQ  && !r.holder1Pan?.toLowerCase().includes(holderPanQ))   return false;
+        return true;
+      });
+      setShareholderRows(shareholders);
+
+      // Fetch all shareholdings and filter client-side: the backend doesn't support
+      // multi-value folioNo params, and folioIsinIncorpDate is always "folio|isin|date",
+      // so matching on the ISIN substring is reliable and needs no backend change.
+      const shingRes = await api.get('/admin/v1/benpos-physical-shareholding', {
+        params: { pageSize: 500, page: 1 },
+      });
+      const allShareholdings = shingRes.data?.data?.items ?? [];
+      const shareholdings = isinCode
+        ? allShareholdings.filter(r => r.folioIsinIncorpDate?.includes(isinCode))
+        : allShareholdings;
+      setShareholdingRows(shareholdings);
+
+    } catch (err) {
+      setSearchError(err.response?.data?.error?.message ?? err.message ?? 'Search failed.');
+      setShareholderRows([]);
+      setShareholdingRows([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  }, [issuerCode, isinCode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Auto-load on page entry ─────────────────────────────────────────────────
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // ── Search button — re-fetches with any filter inputs the user has typed ────
+  function handleSearch() {
+    const extra = {};
+    if (folioNoInput.trim())    extra.folioNo    = folioNoInput.trim();
+    if (holderNameInput.trim()) extra.holderName = holderNameInput.trim();
+    if (holderPanInput.trim())  extra.holderPan  = holderPanInput.trim();
+    fetchData(extra);
+  }
 
   // ── File picker triggered by UPLOAD button ───────────────────────────────────
   function handleUploadClick() {
@@ -315,7 +340,7 @@ function CompanyPhysical() {
   async function handleFileChange(e) {
     const file = e.target.files[0];
     if (!file) return;
-    e.target.value = ''; // reset so the same file can be re-selected
+    e.target.value = '';
 
     setParseStatus('parsing');
     setParseMessage('Parsing Physical BenPos CSV file…');
@@ -344,9 +369,8 @@ function CompanyPhysical() {
       const summary = await uploadPhysicalBenpos(shareholders, shareholdings, setUploadProgress);
       setUploadSummary(summary);
       setUploadStatus('done');
-      // Trigger both tables to reload with the newly uploaded data
-      setS1RefetchKey((k) => k + 1);
-      setS2RefetchKey((k) => k + 1);
+      // Reload the table to reflect newly uploaded data
+      fetchData();
     } catch (err) {
       setUploadError(err.response?.data?.error?.message ?? err.message ?? 'Upload failed.');
       setUploadStatus('error');
@@ -354,10 +378,19 @@ function CompanyPhysical() {
     setUploadProgress(null);
   }
 
+  // ── Empty-state messages ────────────────────────────────────────────────────
+  const hasFilters = folioNoInput.trim() || holderNameInput.trim() || holderPanInput.trim();
+  const shEmptyMsg  = hasFilters
+    ? 'No shareholders match these filters.'
+    : 'No physical records found for this ISIN.';
+  const shingEmptyMsg = hasFilters
+    ? 'No shareholding records match these filters.'
+    : 'No physical shareholding records found for this ISIN.';
+
   return (
     <div className="isin-master">
 
-      {/* ── Filter card: Sample + Upload + Folio No search ── */}
+      {/* ── Combined search + upload card ── */}
       <div className="im-card">
         <div className="im-card-header">
           <span>Physical</span>
@@ -375,22 +408,46 @@ function CompanyPhysical() {
 
         <div className="cp-filter-body">
           <div className="cp-filter-row">
-            <div className="benpos-field cp-folio-field">
+            <div className="benpos-field cp-search-field">
               <label className="benpos-label">Folio No</label>
               <input
                 className="cp-folio-input"
-                value={folioSearch}
-                onChange={(e) => setFolioSearch(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && setAppliedFolio(folioSearch)}
+                value={folioNoInput}
+                onChange={(e) => setFolioNoInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              />
+            </div>
+            <div className="benpos-field cp-search-field">
+              <label className="benpos-label">Holder Name</label>
+              <input
+                className="cp-folio-input"
+                value={holderNameInput}
+                onChange={(e) => setHolderNameInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              />
+            </div>
+            <div className="benpos-field cp-search-field">
+              <label className="benpos-label">Holder PAN</label>
+              <input
+                className="cp-folio-input"
+                value={holderPanInput}
+                onChange={(e) => setHolderPanInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
             <button
               className="btn-action btn-action--pink cp-search-btn"
-              onClick={() => setAppliedFolio(folioSearch)}
+              onClick={handleSearch}
+              disabled={searchLoading}
             >
-              SEARCH
+              {searchLoading ? '⏳ Searching…' : 'SEARCH'}
             </button>
           </div>
+          {searchError && (
+            <div className="im-banner im-banner--error" style={{ marginTop: 10 }}>
+              {searchError}
+            </div>
+          )}
         </div>
       </div>
 
@@ -440,20 +497,19 @@ function CompanyPhysical() {
       {/* ── Benpos Physical Shareholder table ── */}
       <BenposSection
         title="Benpos Physical Shareholder"
-        apiUrl="/admin/v1/benpos-physical-shareholder"
-        issuerCode={issuerCode}
         cols={SHAREHOLDER_COLS}
-        refetchKey={s1RefetchKey}
-        externalSearch={appliedFolio}
+        rows={shareholderRows}
+        loading={searchLoading}
+        emptyMsg={shEmptyMsg}
       />
 
       {/* ── Benpos Physical Shareholding table ── */}
       <BenposSection
         title="Benpos Physical Shareholding"
-        apiUrl="/admin/v1/benpos-physical-shareholding"
-        issuerCode={issuerCode}
         cols={SHAREHOLDING_COLS}
-        refetchKey={s2RefetchKey}
+        rows={shareholdingRows}
+        loading={searchLoading}
+        emptyMsg={shingEmptyMsg}
       />
 
     </div>
