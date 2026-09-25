@@ -124,7 +124,13 @@ function loadSelectedFields() {
     const raw = sessionStorage.getItem(SS_COLS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return new Set(parsed);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const allFieldSet = new Set(ALL_FIELDS);
+        // Drop stale fields (removed from spec), then add any new ones (default checked).
+        const stored = new Set(parsed.filter(f => allFieldSet.has(f)));
+        for (const f of ALL_FIELDS) stored.add(f);
+        return stored;
+      }
     }
   } catch {}
   return new Set(ALL_FIELDS);
@@ -201,17 +207,38 @@ function PaginationBar({ page, perPage, totalCount, totalPages, goto, setPage, s
 // ── SelectColumnsPopover ──────────────────────────────────────────────────────
 
 function SelectColumnsPopover({ selectedFields, onChange }) {
-  const [open, setOpen] = useState(false);
-  const wrapRef         = useRef(null);
+  const [open,    setOpen]   = useState(false);
+  const [search,  setSearch] = useState('');
+  const btnRef  = useRef(null);
+  const dropRef = useRef(null);
+  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 880 });
 
   useEffect(() => {
     if (!open) return;
     function onDown(e) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+      if (btnRef.current?.contains(e.target) || dropRef.current?.contains(e.target)) return;
+      setOpen(false);
     }
+    function onKey(e) { if (e.key === 'Escape') setOpen(false); }
     document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
+    document.addEventListener('keydown',   onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown',   onKey);
+    };
   }, [open]);
+
+  function handleToggle() {
+    if (!open && btnRef.current) {
+      const rect     = btnRef.current.getBoundingClientRect();
+      const popWidth = Math.min(880, window.innerWidth - 32);
+      let left = rect.right - popWidth;
+      if (left < 16) left = 16;
+      setDropPos({ top: rect.bottom + 6, left, width: popWidth });
+    }
+    setOpen(o => !o);
+    if (open) setSearch('');
+  }
 
   function toggle(field) {
     const next = new Set(selectedFields);
@@ -219,30 +246,57 @@ function SelectColumnsPopover({ selectedFields, onChange }) {
     onChange(next);
   }
 
+  const q = search.trim().toLowerCase();
+  const filtered = q
+    ? ALL_COLS.filter(c =>
+        c.header.toLowerCase().includes(q) || c.field.toLowerCase().includes(q)
+      )
+    : ALL_COLS;
+
   return (
-    <div className="cdsl-col-picker" ref={wrapRef}>
-      <button
-        className="btn-action btn-action--white"
-        onClick={() => setOpen(o => !o)}
-      >
-        ⊞ Select Columns
+    <>
+      <button ref={btnRef} className="btn-action btn-action--white" onClick={handleToggle}>
+        ⊞ Select Columns ({selectedFields.size}/{ALL_COLS.length})
       </button>
       {open && (
-        <div className="cdsl-col-dropdown">
-          {ALL_COLS.map((col, idx) => (
-            <label key={`${col.field}-${idx}`} className="cdsl-col-option">
-              <input
-                type="checkbox"
-                checked={selectedFields.has(col.field)}
-                onChange={() => toggle(col.field)}
-              />
-              <span className="cdsl-col-num">{idx + 1}.</span>
-              {col.header}
-            </label>
-          ))}
+        <div
+          ref={dropRef}
+          className="cdsl-col-dropdown"
+          style={{ top: dropPos.top, left: dropPos.left, width: dropPos.width }}
+        >
+          <div className="cdsl-col-toolbar">
+            <input
+              className="cdsl-col-search"
+              placeholder="Filter columns…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              autoFocus
+            />
+            <button className="cdsl-col-action-btn" onClick={() => onChange(new Set(ALL_FIELDS))}>
+              Select All
+            </button>
+            <button className="cdsl-col-action-btn" onClick={() => onChange(new Set())}>
+              Clear All
+            </button>
+          </div>
+          <div className="cdsl-col-grid">
+            {filtered.map((col, idx) => (
+              <label key={`${col.field}-${idx}`} className="cdsl-col-option">
+                <input
+                  type="checkbox"
+                  checked={selectedFields.has(col.field)}
+                  onChange={() => toggle(col.field)}
+                />
+                <span className="cdsl-col-label">{col.header}</span>
+              </label>
+            ))}
+            {filtered.length === 0 && (
+              <div className="cdsl-col-empty">No columns match "{search}"</div>
+            )}
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
