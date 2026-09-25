@@ -79,10 +79,7 @@ function LoginPage() {
       <div className="login-wrapper">
 
         <div className="login-header">
-          <span className="kt-monogram">kt</span>
-          <span className="logo-text">
-            <strong>Krishna</strong>Technosoft
-          </span>
+          <span className="logo-rta">RTA</span>
         </div>
 
         <div className="login-card">

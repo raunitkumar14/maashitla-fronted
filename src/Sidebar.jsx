@@ -123,7 +123,6 @@ function Sidebar() {
 
       {/* ── Logo ── */}
       <div className="sidebar-logo">
-        <span className="logo-kt">kt</span>
         <span className="logo-rta">RTA</span>
       </div>
 
