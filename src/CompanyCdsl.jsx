@@ -5,6 +5,7 @@ import './IsinMaster.css';
 import './CompanyDetail.css';
 import './CompanyCdsl.css';
 import { CompanyCounts } from './CompanyLayout';
+import { deriveCategoryDescription } from './deriveCategoryDescription';
 
 // ── Official CDSL column order (105 columns) ──────────────────────────────────
 
@@ -23,6 +24,7 @@ const ALL_COLS = [
   { field: 'boCategory',                      header: 'BO Category'                                                   },
   { field: 'boProduct',                       header: 'BO Product'                                                    },
   { field: 'customerType',                    header: 'Customer Type'                                                 },
+  { field: 'categoryDescription',             header: 'Category Description'                                          },
   { field: 'boSubStatus',                     header: 'BO Sub Status'                                                 },
   { field: 'occupation',                      header: 'Occupation'                                                    },
   { field: 'panOfFirstHolder',                header: 'PAN of Sole/First holder'                                      },
@@ -374,6 +376,22 @@ function CompanyCdsl() {
   const colSpan     = activeCols.length || 1;
 
   function renderCell(col, row) {
+    if (col.field === 'categoryDescription') {
+      if (row === pageRows[0]) {
+        console.log('[CDSL debug] customerType:', row.customerType, typeof row.customerType);
+        console.log('[CDSL debug] boSubStatus:', row.boSubStatus, typeof row.boSubStatus);
+        console.log('[CDSL debug] result:', deriveCategoryDescription('CDSL', row.customerType, row.boSubStatus));
+      }
+      const result = deriveCategoryDescription('CDSL', row.customerType, row.boSubStatus);
+      if (result.resolved) return result.description ?? '—';
+      const raw = String(row.customerType ?? '').trim();
+      if (!raw) return '—';
+      return (
+        <span title="Category code has multiple possible descriptions - couldn't resolve exactly with available data">
+          {raw} ⚠
+        </span>
+      );
+    }
     const val = row[col.field];
     if (col.isDate)                                     return formatDate(val);
     if (val === undefined || val === null || val === '') return '—';

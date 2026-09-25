@@ -5,6 +5,7 @@ import './IsinMaster.css';
 import './CompanyDetail.css';
 import './CompanyNsdl.css';
 import { CompanyCounts } from './CompanyLayout';
+import { deriveCategoryDescription } from './deriveCategoryDescription';
 
 // ── Official NSDL column order (78 columns) ───────────────────────────────────
 // Matches the NSDL file layout spec exactly. All checked by default.
@@ -15,6 +16,7 @@ const ALL_COLS = [
   { field: 'dpId',                                            header: 'DP ID'                                                                   },
   { field: 'beneficiaryAccountNumber',                        header: 'Beneficiary Account Number'                                              },
   { field: 'beneficiaryType',                                 header: 'Beneficiary Type'                                                        },
+  { field: 'categoryDescription',                             header: 'Category Description'                                                    },
   { field: 'beneficiarySubType',                              header: 'Beneficiary sub type'                                                    },
   { field: 'beneficiaryAccountCategory',                      header: 'Beneficiary Account Category'                                            },
   { field: 'beneficiaryOccupation',                           header: 'Beneficiary Occupation'                                                  },
@@ -342,6 +344,22 @@ function CompanyNsdl() {
   const colSpan     = activeCols.length || 1;
 
   function renderCell(col, row) {
+    if (col.field === 'categoryDescription') {
+      if (row === pageRows[0]) {
+        console.log('[NSDL debug] beneficiaryType:', row.beneficiaryType, typeof row.beneficiaryType);
+        console.log('[NSDL debug] beneficiarySubType:', row.beneficiarySubType, typeof row.beneficiarySubType);
+        console.log('[NSDL debug] result:', deriveCategoryDescription('NSDL', row.beneficiaryType, row.beneficiarySubType));
+      }
+      const result = deriveCategoryDescription('NSDL', row.beneficiaryType, row.beneficiarySubType);
+      if (result.resolved) return result.description ?? '—';
+      const raw = String(row.beneficiaryType ?? '').trim();
+      if (!raw) return '—';
+      return (
+        <span title="Category code has multiple possible descriptions - couldn't resolve exactly with available data">
+          {raw} ⚠
+        </span>
+      );
+    }
     const val = row[col.field];
     if (col.isDate)                                    return formatDate(val);
     if (val === undefined || val === null || val === '') return '—';

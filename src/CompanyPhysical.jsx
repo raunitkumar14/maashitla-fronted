@@ -6,6 +6,7 @@ import './BenPos.css';
 import './CompanyDetail.css';
 import { parsePhysicalBenpos } from './parsePhysicalBenpos';
 import { uploadPhysicalBenpos } from './uploadPhysicalBenpos';
+import { deriveCategoryDescription } from './deriveCategoryDescription';
 
 // ── Pagination helpers ────────────────────────────────────────────────────────
 
@@ -142,6 +143,21 @@ const SHAREHOLDER_COLS = [
   { header: 'Nominee Pin Code',        field: 'nomineePinCode' },
   { header: 'Nominee Country',         field: 'nomineeCountry' },
   { header: 'Category',                field: 'category' },
+  {
+    header: 'Category Description',
+    field:  'categoryDescription',
+    renderFn: (row) => {
+      const result = deriveCategoryDescription('PHYSICAL', row.category, row.subCategory);
+      if (result.resolved) return result.description ?? '—';
+      const raw = String(row.category ?? '').trim();
+      if (!raw) return '—';
+      return (
+        <span title="Category code has multiple possible descriptions - couldn't resolve exactly with available data">
+          {raw} ⚠
+        </span>
+      );
+    },
+  },
   { header: 'Sub Category',            field: 'subCategory' },
 ];
 
@@ -212,7 +228,7 @@ function BenposSection({ title, cols, rows, loading, emptyMsg }) {
             ) : (
               pageRows.map((row, idx) => (
                 <tr key={`${row[cols[0].field] ?? ''}-${idx}`}>
-                  {cols.map((col) => <td key={col.field}>{row[col.field] ?? '—'}</td>)}
+                  {cols.map((col) => <td key={col.field}>{col.renderFn ? col.renderFn(row) : (row[col.field] ?? '—')}</td>)}
                 </tr>
               ))
             )}

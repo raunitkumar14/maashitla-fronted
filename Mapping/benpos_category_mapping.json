@@ -1,0 +1,1428 @@
+{
+  "exact": {
+    "CDSL|21|1": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual - Director"
+    },
+    "CDSL|21|2": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual - Directors Relative"
+    },
+    "CDSL|21|3": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual - Resident With Nomination"
+    },
+    "CDSL|21|40": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual - Promoters"
+    },
+    "CDSL|21|58": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Resident Individual - Minor"
+    },
+    "CDSL|21|65": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Resident Individual - Depository Receipt"
+    },
+    "CDSL|21|68": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Association of Persons [AOP]"
+    },
+    "CDSL|21|69": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual-Resident Negative Nomination"
+    },
+    "CDSL|21|73": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual Resident - PMS"
+    },
+    "CDSL|21|81": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Ind Resident-PMS Negative Nomination"
+    },
+    "CDSL|21|84": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual Promoters Negative Nomination"
+    },
+    "CDSL|21|87": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Ind Resident - Minor Negative Nomination"
+    },
+    "CDSL|21|88": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual Resident - Minor -Promoter"
+    },
+    "CDSL|21|106": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual CM/TM - Proprietary Account"
+    },
+    "CDSL|21|115": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual Director Negative Nomination"
+    },
+    "CDSL|21|131": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual TMClient Sec Margin Pledge"
+    },
+    "CDSL|21|135": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual CM Client Sec Margin Pledge"
+    },
+    "CDSL|21|138": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual  TM CMPA No Nominee"
+    },
+    "CDSL|21|139": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual  CM CMPA No Nominee"
+    },
+    "CDSL|21|140": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual  TM/CM CMPA"
+    },
+    "CDSL|21|141": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual  TM/CM CMPA No Nominee"
+    },
+    "CDSL|21|148": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Custodian Clnt  Ind Resi with Nomination"
+    },
+    "CDSL|21|149": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Custodian Clnt  Ind Resi No Nomination"
+    },
+    "CDSL|21|185": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Ind CM/TM Prop Acct Negative Nomination"
+    },
+    "CDSL|21|194": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Indiv-Directr Relative Negtive Nomnation [Individual - Directors Relative Negative Nomination]"
+    },
+    "CDSL|21|197": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Residnt Indivi -Depsitry Recipt Negtve Nomination [Resident Individual - Depository Receipt Negative Nomination]"
+    },
+    "CDSL|21|198": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Indiv Residnt-Minor Promt Negtive Nomination [Individual Resident - Minor -Promoter -Negative Nomination]"
+    },
+    "CDSL|21|200": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual TM CUSPA"
+    },
+    "CDSL|21|202": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual CM CUSPA"
+    },
+    "CDSL|21|208": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual TM CUSPA Negative Nomination"
+    },
+    "CDSL|21|209": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual CM CUSPA Negative Nomination"
+    },
+    "CDSL|21|210": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual TM/CM CUSPA"
+    },
+    "CDSL|21|214": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual TM/CM CUSPA Negative Nominatn"
+    },
+    "CDSL|21|215": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual TM Client Nodal MFOS"
+    },
+    "CDSL|21|217": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual CM Client Nodal MFOS"
+    },
+    "CDSL|21|223": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Ind TM Clnt Nodal MFOS Negative Nominatn"
+    },
+    "CDSL|21|224": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Ind CM Clnt Nodal MFOS Negative Nominatn"
+    },
+    "CDSL|21|225": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Individual TM/CM Client Nodal MFOS"
+    },
+    "CDSL|21|229": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Ind TM/CM Clnt Nodal MFOS Neg Nomination"
+    },
+    "CDSL|21|238": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Key Managerial Personnel"
+    },
+    "CDSL|21|239": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Indipendent  - Director"
+    },
+    "CDSL|21|240": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Indipendent - Director Relatives"
+    },
+    "CDSL|21|241": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Nominee - Director"
+    },
+    "CDSL|21|242": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Nominee - Director Relatives"
+    },
+    "CDSL|21|243": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Promoters - Other Relatives"
+    },
+    "CDSL|21|244": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Promoters - Inmmediate Relatives"
+    },
+    "CDSL|21|245": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Independent  - Director -Negative Nominee"
+    },
+    "CDSL|21|246": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Independent-Dir Relatives Negative Nominee"
+    },
+    "CDSL|21|247": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Nominee - Director Negative Nominee"
+    },
+    "CDSL|21|248": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Nominee - Director Relatives Negative Nominee"
+    },
+    "CDSL|21|249": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Promoters-Other than immediate Relatives No Nominee"
+    },
+    "CDSL|21|250": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Promoters - Inmmediate Relatives No Nominee"
+    },
+    "NSDL|1|1": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Ordinary"
+    },
+    "NSDL|1|4": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Stock Broker \u2013 Client (Margin Account)"
+    },
+    "NSDL|1|5": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Promoter"
+    },
+    "NSDL|1|7": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Ordinary-DR"
+    },
+    "NSDL|1|8": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Stock Broker - Proprietary"
+    },
+    "NSDL|1|9": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Stock Broker - Collateral"
+    },
+    "NSDL|1|10": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Client Margin Trading Securities account "
+    },
+    "NSDL|1|11": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Client collateral account "
+    },
+    "CDSL|22|5": {
+      "categoryTypeDescription": "Indian Financial Institution",
+      "categorySubTypeDescription": "FI-Govt Sponsored FI"
+    },
+    "CDSL|22|6": {
+      "categoryTypeDescription": "Indian Financial Institution",
+      "categorySubTypeDescription": "FI-SFC"
+    },
+    "CDSL|22|7": {
+      "categoryTypeDescription": "Indian Financial Institution",
+      "categorySubTypeDescription": "FI-Others"
+    },
+    "CDSL|22|120": {
+      "categoryTypeDescription": "Indian Financial Institution",
+      "categorySubTypeDescription": "Public Financial Institution"
+    },
+    "CDSL|22|172": {
+      "categoryTypeDescription": "Indian Financial Institution",
+      "categorySubTypeDescription": "Custodian FI-Govt Sponsored FI"
+    },
+    "CDSL|22|173": {
+      "categoryTypeDescription": "Indian Financial Institution",
+      "categorySubTypeDescription": "Custodian FI-Others"
+    },
+    "CDSL|22|188": {
+      "categoryTypeDescription": "Indian Financial Institution",
+      "categorySubTypeDescription": "Indian Financial Institutions - Promoter"
+    },
+    "NSDL|2|1": {
+      "categoryTypeDescription": "Indian Financial Institution",
+      "categorySubTypeDescription": "Govt. sponsored FI"
+    },
+    "NSDL|2|2": {
+      "categoryTypeDescription": "Indian Financial Institution",
+      "categorySubTypeDescription": "SFC"
+    },
+    "NSDL|2|4": {
+      "categoryTypeDescription": "Indian Financial Institution",
+      "categorySubTypeDescription": "Others"
+    },
+    "NSDL|2|5": {
+      "categoryTypeDescription": "Indian Financial Institution",
+      "categorySubTypeDescription": "Govt. sponsored FI - Promoter"
+    },
+    "NSDL|2|6": {
+      "categoryTypeDescription": "Indian Financial Institution",
+      "categorySubTypeDescription": "SFC-Promoter"
+    },
+    "NSDL|2|7": {
+      "categoryTypeDescription": "Indian Financial Institution",
+      "categorySubTypeDescription": "Others-Promoter"
+    },
+    "CDSL|23|8": {
+      "categoryTypeDescription": "Foreign Institutional Investor",
+      "categorySubTypeDescription": "FII - Mauritius-based"
+    },
+    "CDSL|23|9": {
+      "categoryTypeDescription": "Foreign Institutional Investor",
+      "categorySubTypeDescription": "FII-Others"
+    },
+    "CDSL|23|232": {
+      "categoryTypeDescription": "Foreign Institutional Investor",
+      "categorySubTypeDescription": "Foreign Direct Investment"
+    },
+    "CDSL|23|251": {
+      "categoryTypeDescription": "Foreign Institutional Investor",
+      "categorySubTypeDescription": "Foreign Institutions -Promoter"
+    },
+    "NSDL|3|1": {
+      "categoryTypeDescription": "Foreign Institutional Investor",
+      "categorySubTypeDescription": "Mauritius Based"
+    },
+    "NSDL|3|2": {
+      "categoryTypeDescription": "Foreign Institutional Investor",
+      "categorySubTypeDescription": "Others"
+    },
+    "CDSL|23|34": {
+      "categoryTypeDescription": "Foreign Institutional Investor",
+      "categorySubTypeDescription": "FII-Depositary Receipt"
+    },
+    "CDSL|23|166": {
+      "categoryTypeDescription": "Foreign Institutional Investor",
+      "categorySubTypeDescription": "Custodian FII Others"
+    },
+    "CDSL|23|167": {
+      "categoryTypeDescription": "Foreign Institutional Investor",
+      "categorySubTypeDescription": "Custodian FII Mauritius-based"
+    },
+    "CDSL|23|168": {
+      "categoryTypeDescription": "Foreign Institutional Investor",
+      "categorySubTypeDescription": "Custodian FII Depositary Receipt"
+    },
+    "NSDL|3|3": {
+      "categoryTypeDescription": "Foreign Institutional Investor",
+      "categorySubTypeDescription": "DR"
+    },
+    "CDSL|24|10": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI Repatriable With Nomination"
+    },
+    "CDSL|24|11": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI Non-Repatriable With Nomination"
+    },
+    "CDSL|24|48": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI Repatriable - Promoter"
+    },
+    "CDSL|24|49": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI Non-Repatriable - Promoter"
+    },
+    "CDSL|24|59": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI with Repatriation - Minor"
+    },
+    "CDSL|24|60": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI without Repatriation - Minor"
+    },
+    "CDSL|24|62": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI with Repatriation - HUF"
+    },
+    "CDSL|24|63": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI without Repatriation - HUF"
+    },
+    "CDSL|24|70": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI Repatriable Negative Nomination"
+    },
+    "CDSL|24|71": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI Non-Repatriable Negative Nomination"
+    },
+    "CDSL|24|74": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI Repatriable - PMS"
+    },
+    "CDSL|24|75": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI Non-Repatriable - PMS"
+    },
+    "CDSL|24|100": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI Repatriable - PMS Negative Nomination"
+    },
+    "CDSL|24|101": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI Non-Repatriable - PMS Negative Nomination"
+    },
+    "CDSL|24|114": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI Non - Repatriable Minor No Nomination"
+    },
+    "CDSL|24|121": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI - Repatriable Minor No Nomination"
+    },
+    "CDSL|24|128": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI-NonRepat-Promoter-NoNominee"
+    },
+    "CDSL|24|196": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI Repatr- Promoter  Negtive Nomination [NRI Repatriable - Promoter  Negative Nomination]"
+    },
+    "NSDL|4|1": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI - Repatriable"
+    },
+    "NSDL|4|2": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI NonRepatriable"
+    },
+    "NSDL|4|4": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI-Repatriable-Promoter"
+    },
+    "NSDL|4|5": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI NonRepatriable -Promoter"
+    },
+    "CDSL|24|35": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI-Depositary Receipt"
+    },
+    "CDSL|24|170": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "Custodian NRI Repatriable - PMS"
+    },
+    "CDSL|24|176": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "Custodian NRI Repat PMS No Nomination"
+    },
+    "CDSL|24|177": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "Custodian  NRI Non-Repatriable - PMS"
+    },
+    "CDSL|24|178": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "Custodian NRI Non Repat PMS No Nominatio"
+    },
+    "CDSL|24|195": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI-Depositary Recipt Negtive Nomination [NRI-Depositary Receipt Negative Nomination]"
+    },
+    "NSDL|4|3": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "DR"
+    },
+    "CDSL|25|13": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate Body - OCB"
+    },
+    "CDSL|25|22": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate Body - Foreign Body"
+    },
+    "CDSL|25|57": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate Body - OCB - Promoter"
+    },
+    "CDSL|25|83": {
+      "categoryTypeDescription": "Corporate Foreign",
+      "categorySubTypeDescription": "Corporate Body- Foreign Body-Promoter"
+    },
+    "CDSL|25|98": {
+      "categoryTypeDescription": "Corporate Foreign",
+      "categorySubTypeDescription": "Corporate Body - Foreign Venture Capital"
+    },
+    "CDSL|25|191": {
+      "categoryTypeDescription": "Foreign Portfolio Investor- Corporate",
+      "categorySubTypeDescription": "Foreign- FPI  -   Promoter"
+    },
+    "CDSL|25|233": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Sovereign Wealth Funds - Foreign"
+    },
+    "NSDL|5|2": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "OCB-Repatriable"
+    },
+    "NSDL|5|11": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Foreign Bodies"
+    },
+    "NSDL|5|13": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "OCB-NonRepatriable"
+    },
+    "NSDL|5|24": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Foreign Body-Promoter"
+    },
+    "NSDL|5|27": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Foreign Venture Capital"
+    },
+    "NSDL|5|31": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Limited Liability Partnership (Foreign)"
+    },
+    "NSDL|5|35": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Foreign Government"
+    },
+    "CDSL|25|12": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate Body - Domestic"
+    },
+    "CDSL|25|14": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate Body - Government Company"
+    },
+    "CDSL|25|15": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate Body - Central Government"
+    },
+    "CDSL|25|16": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate Body - State Government"
+    },
+    "CDSL|25|17": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate Body - Co-operative Bank"
+    },
+    "CDSL|25|18": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate Body - NBFC"
+    },
+    "CDSL|25|19": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate Body - Non-NBFC"
+    },
+    "CDSL|25|20": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate Body - Broker"
+    },
+    "CDSL|25|21": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate Body - Group Company"
+    },
+    "CDSL|25|23": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate Body - Others"
+    },
+    "CDSL|25|36": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate Body - OCB -Depositary Receipt"
+    },
+    "CDSL|25|38": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate Body - Depositary Receipt"
+    },
+    "CDSL|25|41": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate Body - Promoter"
+    },
+    "CDSL|25|43": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate - Margin Trading Account"
+    },
+    "CDSL|25|64": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Domestic Corporate - Unclaimed shares Account"
+    },
+    "CDSL|25|66": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Domestic Corporate - Depository Receipt"
+    },
+    "CDSL|25|67": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Limited Liability Partnership"
+    },
+    "CDSL|25|76": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate Body - Domestic - PMS"
+    },
+    "CDSL|25|91": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "LLP - PMS"
+    },
+    "CDSL|25|102": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Limited Liability Partnership Promoter"
+    },
+    "CDSL|25|104": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate CM/TM - Proprietary Account"
+    },
+    "CDSL|25|110": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Venture Capital Fund"
+    },
+    "CDSL|25|111": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Alternate Investment Fund"
+    },
+    "CDSL|25|112": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Insurance Company"
+    },
+    "CDSL|25|113": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Provident / Pension Fund"
+    },
+    "CDSL|25|117": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "LLP - CM/TM -\nProprietary Account"
+    },
+    "CDSL|25|130": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate TM Client Sec Margin Pledge"
+    },
+    "CDSL|25|133": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "LLP TM Client Securities Margin Pledge"
+    },
+    "CDSL|25|134": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate CM Client Sec Margin Pledge"
+    },
+    "CDSL|25|137": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "LLP CM Client Securities Margin Pledge"
+    },
+    "CDSL|25|142": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate  TM/CM CMPA"
+    },
+    "CDSL|25|144": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "LLP  TM/CM CMPA"
+    },
+    "CDSL|25|145": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Client securities Margin Funding Account"
+    },
+    "CDSL|25|146": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Overseas Depository Underlying DR"
+    },
+    "CDSL|25|147": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Foreign Bodies Depository Receipt"
+    },
+    "CDSL|25|150": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Custodian Client  Corporate"
+    },
+    "CDSL|25|154": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Escrow  Corporate"
+    },
+    "CDSL|25|156": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "PMS Service Provider  Corporate"
+    },
+    "CDSL|25|158": {
+      "categoryTypeDescription": "Foreign Portfolio Investor- Corporate",
+      "categorySubTypeDescription": "Custodian Client Foreign Body Corporate"
+    },
+    "CDSL|25|159": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Custodian Overseas Deposit Underlying DR"
+    },
+    "CDSL|25|160": {
+      "categoryTypeDescription": "Foreign Portfolio Investor- Corporate",
+      "categorySubTypeDescription": "Custodian FPI-Category I"
+    },
+    "CDSL|25|161": {
+      "categoryTypeDescription": "Foreign Portfolio Investor- Corporate",
+      "categorySubTypeDescription": "Custodian FPI-Category II"
+    },
+    "CDSL|25|162": {
+      "categoryTypeDescription": "Corporate Foreign",
+      "categorySubTypeDescription": "Custodian Corp Body Foreign Venture Cap"
+    },
+    "CDSL|25|163": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Custodian Corporate Body-Foreign Body"
+    },
+    "CDSL|25|179": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Custodian  Corporate Body Others"
+    },
+    "CDSL|25|180": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Custodian Corporate Body NBFC"
+    },
+    "CDSL|25|182": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Custodian Corporate Body Domestic"
+    },
+    "CDSL|25|190": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Foreign- Govt  - Promoter"
+    },
+    "CDSL|25|201": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate TM CUSPA"
+    },
+    "CDSL|25|203": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate CM CUSPA"
+    },
+    "CDSL|25|205": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "LLP TM CUSPA"
+    },
+    "CDSL|25|207": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "LLP CM CUSPA"
+    },
+    "CDSL|25|211": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate TM/CM CUSPA"
+    },
+    "CDSL|25|213": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "LLP TM/CM CUSPA"
+    },
+    "CDSL|25|216": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate TM Client Nodal MFOS"
+    },
+    "CDSL|25|218": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate CM Client Nodal MFOS"
+    },
+    "CDSL|25|220": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "LLP TM Client Nodal MFOS"
+    },
+    "CDSL|25|222": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "LLP CM Client Nodal MFOS"
+    },
+    "CDSL|25|226": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Corporate TM/CM Client Nodal MFOS"
+    },
+    "CDSL|25|228": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "LLP TM/CM Client Nodal MFOS"
+    },
+    "CDSL|25|230": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Asset Reconstruction Companies"
+    },
+    "CDSL|25|231": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Sovereign Wealth Funds - Domestic"
+    },
+    "CDSL|25|234": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Central Government / President of India"
+    },
+    "CDSL|25|235": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "State Government / Governor"
+    },
+    "CDSL|25|236": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Central / State Government -Promoter"
+    },
+    "CDSL|25|237": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Associate companies / Subsidiaries"
+    },
+    "CDSL|25|252": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Companies or Bodies Corporate - Central / State Government as Promoter [Cos/Bodies Corp-Centrl/Stat Gov Promter]"
+    },
+    "CDSL|25|254": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "NBFCs registered with RBI"
+    },
+    "NSDL|5|1": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Domestic"
+    },
+    "NSDL|5|3": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Govt.Companies"
+    },
+    "NSDL|5|4": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Central Government"
+    },
+    "NSDL|5|5": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "State Government"
+    },
+    "NSDL|5|6": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Co-operative Body"
+    },
+    "NSDL|5|7": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "NBFC"
+    },
+    "NSDL|5|8": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Non-NBFC"
+    },
+    "NSDL|5|9": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Broker"
+    },
+    "NSDL|5|10": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Group Company"
+    },
+    "NSDL|5|12": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Others"
+    },
+    "NSDL|5|14": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "OCB-DR"
+    },
+    "NSDL|5|15": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Foreign Bodies \u2013 DR"
+    },
+    "NSDL|5|16": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Stock Broker \u2013 Client"
+    },
+    "NSDL|5|17": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Domestic-Promoter"
+    },
+    "NSDL|5|18": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Govt.Companies - Promoter"
+    },
+    "NSDL|5|19": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Central Government - Promoter"
+    },
+    "NSDL|5|20": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "State Government - Promoter"
+    },
+    "NSDL|5|21": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "NBFC-Promoter"
+    },
+    "NSDL|5|22": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Non-NBFC-Promoter"
+    },
+    "NSDL|5|23": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Group Company - Promoter"
+    },
+    "NSDL|5|25": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Others-Promoter"
+    },
+    "NSDL|5|26": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Co-operative Body - Promoter"
+    },
+    "NSDL|5|28": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Domestic DR"
+    },
+    "NSDL|5|29": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Limited Liability Partnership"
+    },
+    "NSDL|5|30": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Limited Liability Partnership-DR"
+    },
+    "NSDL|5|32": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Limited Liability Partnership  (Foreign) -DR"
+    },
+    "NSDL|5|33": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Stock Broker \u2013 Proprietary"
+    },
+    "NSDL|5|34": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Stock Broker \u2013 Collateral"
+    },
+    "NSDL|5|36": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Overseas Depository \u2013 Underlying DR"
+    },
+    "NSDL|5|37": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Client Margin Trading Securities account "
+    },
+    "NSDL|5|38": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Client collateral account "
+    },
+    "CDSL|27|25": {
+      "categoryTypeDescription": "Foreign National",
+      "categorySubTypeDescription": "Foreign National With Nomination"
+    },
+    "CDSL|27|61": {
+      "categoryTypeDescription": "Foreign National",
+      "categorySubTypeDescription": "Foreign National - Minor"
+    },
+    "CDSL|27|72": {
+      "categoryTypeDescription": "Foreign National",
+      "categorySubTypeDescription": "Foreign National Negative Nomination"
+    },
+    "CDSL|27|90": {
+      "categoryTypeDescription": "Foreign National",
+      "categorySubTypeDescription": "Foreign National - Promoter"
+    },
+    "CDSL|27|199": {
+      "categoryTypeDescription": "Foreign National",
+      "categorySubTypeDescription": "Foreign National - Promter - Negtive Nomintion [Foreign National - Promoter - Negative Nomination]"
+    },
+    "NSDL|7|2": {
+      "categoryTypeDescription": "Foreign National",
+      "categorySubTypeDescription": "FN"
+    },
+    "NSDL|7|3": {
+      "categoryTypeDescription": "Foreign National",
+      "categorySubTypeDescription": "FN-Promoter"
+    },
+    "CDSL|27|37": {
+      "categoryTypeDescription": "Foreign National",
+      "categorySubTypeDescription": "Foreign National - Depositary Receipt"
+    },
+    "NSDL|7|1": {
+      "categoryTypeDescription": "Foreign National",
+      "categorySubTypeDescription": "DR"
+    },
+    "CDSL|28|26": {
+      "categoryTypeDescription": "Mutual Fund",
+      "categorySubTypeDescription": "Mutual Fund"
+    },
+    "CDSL|28|164": {
+      "categoryTypeDescription": "Mutual Fund",
+      "categorySubTypeDescription": "Custodian Mutual Fund"
+    },
+    "CDSL|28|183": {
+      "categoryTypeDescription": "Mutual Fund",
+      "categorySubTypeDescription": "Custodian Alternate Investment Fund"
+    },
+    "CDSL|28|253": {
+      "categoryTypeDescription": "Mutual Fund",
+      "categorySubTypeDescription": "Aggregate Escrow - AIF"
+    },
+    "NSDL|8|1": {
+      "categoryTypeDescription": "Mutual Fund",
+      "categorySubTypeDescription": "DR"
+    },
+    "NSDL|8|2": {
+      "categoryTypeDescription": "Mutual Fund",
+      "categorySubTypeDescription": "MF"
+    },
+    "CDSL|29|27": {
+      "categoryTypeDescription": "Trust",
+      "categorySubTypeDescription": "Trusts"
+    },
+    "CDSL|29|77": {
+      "categoryTypeDescription": "Trust",
+      "categorySubTypeDescription": "Trust - PMS"
+    },
+    "CDSL|29|89": {
+      "categoryTypeDescription": "Trust",
+      "categorySubTypeDescription": "Trust - Promoter"
+    },
+    "CDSL|29|169": {
+      "categoryTypeDescription": "Trust",
+      "categorySubTypeDescription": "Custodian Trusts"
+    },
+    "CDSL|29|184": {
+      "categoryTypeDescription": "Trust",
+      "categorySubTypeDescription": "Trusteeship Company"
+    },
+    "CDSL|29|186": {
+      "categoryTypeDescription": "Trust",
+      "categorySubTypeDescription": "Local Authority"
+    },
+    "CDSL|29|187": {
+      "categoryTypeDescription": "Trust",
+      "categorySubTypeDescription": "Debenture Trustee"
+    },
+    "CDSL|29|192": {
+      "categoryTypeDescription": "Trust",
+      "categorySubTypeDescription": "Employee Trusts"
+    },
+    "CDSL|29|193": {
+      "categoryTypeDescription": "Trust",
+      "categorySubTypeDescription": "Employee Benefit Trusts - Promoter"
+    },
+    "CDSL|29|255": {
+      "categoryTypeDescription": "Trust",
+      "categorySubTypeDescription": "Trusts  Promter & Promoter Grp-trustee"
+    },
+    "NSDL|9|1": {
+      "categoryTypeDescription": "Trust",
+      "categorySubTypeDescription": "Employee Stock Option"
+    },
+    "NSDL|9|2": {
+      "categoryTypeDescription": "Trust",
+      "categorySubTypeDescription": "Employee Stock Purchase"
+    },
+    "NSDL|9|3": {
+      "categoryTypeDescription": "Trust",
+      "categorySubTypeDescription": "Stock Appreciation Right"
+    },
+    "NSDL|9|4": {
+      "categoryTypeDescription": "Trust",
+      "categorySubTypeDescription": "General Employee Benefit Scheme"
+    },
+    "NSDL|9|5": {
+      "categoryTypeDescription": "Trust",
+      "categorySubTypeDescription": "Retirement Benefit Scheme"
+    },
+    "NSDL|9|6": {
+      "categoryTypeDescription": "Trust",
+      "categorySubTypeDescription": "Other - Employee Benefit Trust (Old Scheme)"
+    },
+    "NSDL|9|7": {
+      "categoryTypeDescription": "Trust",
+      "categorySubTypeDescription": "Other"
+    },
+    "CDSL|30|28": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "Bank - Foreign"
+    },
+    "NSDL|10|1": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "Foreign Bank"
+    },
+    "NSDL|10|7": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "Foreign Bank  - Promoter"
+    },
+    "NSDL|10|9": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "FOREIGN SCHEDULED COMERCIAL BANK"
+    },
+    "CDSL|30|29": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "Bank - Co-operative"
+    },
+    "CDSL|30|30": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "Bank - Nationalised"
+    },
+    "CDSL|30|31": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "Bank - Others"
+    },
+    "CDSL|30|39": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "Bank - Depositary Receipt"
+    },
+    "CDSL|30|119": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "Scheduled Commercial Banks"
+    },
+    "CDSL|30|151": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "Custodian Client  Bank"
+    },
+    "CDSL|30|155": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "Escrow  Bank"
+    },
+    "CDSL|30|157": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "PMS Service Provider  Bank"
+    },
+    "CDSL|30|171": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "Custodian Bank"
+    },
+    "CDSL|30|174": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "Custodian Bank Foreign"
+    },
+    "CDSL|30|175": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "Custodian Bank Others"
+    },
+    "CDSL|30|181": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "Custodian Scheduled Commercial Banks"
+    },
+    "CDSL|30|189": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "Banks - Promoter"
+    },
+    "NSDL|10|2": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "Co-operative Bank"
+    },
+    "NSDL|10|3": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "Nationalised Bank"
+    },
+    "NSDL|10|4": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "Others"
+    },
+    "NSDL|10|5": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "Others-Promoter"
+    },
+    "NSDL|10|6": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "Nationalised Bank  - Promoter"
+    },
+    "NSDL|10|8": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "Co-operative Bank  - Promoter"
+    },
+    "NSDL|10|10": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "CO-OPERATIVE SCHEDULED BANK"
+    },
+    "NSDL|10|11": {
+      "categoryTypeDescription": "Bank",
+      "categorySubTypeDescription": "OTHERS - SCHEDULED BANK"
+    },
+    "NSDL|11|1": {
+      "categoryTypeDescription": "Qualified Foreign Investor(Individual)",
+      "categorySubTypeDescription": "QFI  - Individual"
+    },
+    "CDSL|25|85": {
+      "categoryTypeDescription": "Foreign Corporate \u2013 QFI (MF)",
+      "categorySubTypeDescription": "Foreign Corporate \u2013 QFI (MF)"
+    },
+    "CDSL|27|86": {
+      "categoryTypeDescription": "Foreign Individual \u2013 QFI (MF)",
+      "categorySubTypeDescription": "Foreign Individual \u2013 QFI (MF)"
+    },
+    "NSDL|12|1": {
+      "categoryTypeDescription": "Qualified Foreign Investor(Corporate)",
+      "categorySubTypeDescription": "QFI  - Corporate"
+    },
+    "CDSL|27|92": {
+      "categoryTypeDescription": "Foreign Portfolio Investor- Individual",
+      "categorySubTypeDescription": "FPI Category I"
+    },
+    "CDSL|27|93": {
+      "categoryTypeDescription": "Foreign Portfolio Investor- Individual",
+      "categorySubTypeDescription": "FPI Category II"
+    },
+    "CDSL|27|94": {
+      "categoryTypeDescription": "Foreign Portfolio Investor- Individual",
+      "categorySubTypeDescription": "FPI Category III"
+    },
+    "NSDL|13|3": {
+      "categoryTypeDescription": "Foreign Portfolio Investor(Individual)",
+      "categorySubTypeDescription": "Category III"
+    },
+    "NSDL|13|4": {
+      "categoryTypeDescription": "Foreign Portfolio Investor(Individual)",
+      "categorySubTypeDescription": "Category III - DR"
+    },
+    "CDSL|25|95": {
+      "categoryTypeDescription": "Foreign Portfolio Investor- Corporate",
+      "categorySubTypeDescription": "FPI Category I"
+    },
+    "CDSL|25|96": {
+      "categoryTypeDescription": "Foreign Portfolio Investor- Corporate",
+      "categorySubTypeDescription": "FPI Category II"
+    },
+    "CDSL|25|97": {
+      "categoryTypeDescription": "Foreign Portfolio Investor- Corporate",
+      "categorySubTypeDescription": "FPI Category III"
+    },
+    "NSDL|14|1": {
+      "categoryTypeDescription": "Foreign Portfolio Investor(Corporate)",
+      "categorySubTypeDescription": "Category I"
+    },
+    "NSDL|14|2": {
+      "categoryTypeDescription": "Foreign Portfolio Investor(Corporate)",
+      "categorySubTypeDescription": "Category II"
+    },
+    "NSDL|14|3": {
+      "categoryTypeDescription": "Foreign Portfolio Investor(Corporate)",
+      "categorySubTypeDescription": "Category III"
+    },
+    "NSDL|14|4": {
+      "categoryTypeDescription": "Foreign Portfolio Investor(Corporate)",
+      "categorySubTypeDescription": "Category I -  DR"
+    },
+    "NSDL|14|5": {
+      "categoryTypeDescription": "Foreign Portfolio Investor(Corporate)",
+      "categorySubTypeDescription": "Category II - DR"
+    },
+    "NSDL|14|6": {
+      "categoryTypeDescription": "Foreign Portfolio Investor(Corporate)",
+      "categorySubTypeDescription": "Category III - DR"
+    },
+    "NSDL|15|1": {
+      "categoryTypeDescription": "Alternative Investment Fund (AIF)",
+      "categorySubTypeDescription": "Category I"
+    },
+    "NSDL|15|2": {
+      "categoryTypeDescription": "Alternative Investment Fund (AIF)",
+      "categorySubTypeDescription": "Category II"
+    },
+    "NSDL|15|3": {
+      "categoryTypeDescription": "Alternative Investment Fund (AIF)",
+      "categorySubTypeDescription": "Category III"
+    },
+    "CDSL|21|4": {
+      "categoryTypeDescription": "HUF",
+      "categorySubTypeDescription": "Individual - HUF"
+    },
+    "CDSL|21|50": {
+      "categoryTypeDescription": "HUF",
+      "categorySubTypeDescription": "HUF - Promoter"
+    },
+    "CDSL|21|82": {
+      "categoryTypeDescription": "HUF",
+      "categorySubTypeDescription": "HUF - PMS"
+    },
+    "CDSL|21|108": {
+      "categoryTypeDescription": "HUF",
+      "categorySubTypeDescription": "HUF CM/TM -\nProprietary Account"
+    },
+    "CDSL|21|132": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "HUF TM Client Securities Margin Pledge"
+    },
+    "CDSL|21|136": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "HUF CM Client Securities Margin Pledge"
+    },
+    "CDSL|21|143": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "HUF  TM/CM CMPA"
+    },
+    "CDSL|21|204": {
+      "categoryTypeDescription": "HUF",
+      "categorySubTypeDescription": "HUF TM CUSPA"
+    },
+    "CDSL|21|206": {
+      "categoryTypeDescription": "HUF",
+      "categorySubTypeDescription": "HUF CM CUSPA"
+    },
+    "CDSL|21|212": {
+      "categoryTypeDescription": "HUF",
+      "categorySubTypeDescription": "HUF TM/CM CUSPA"
+    },
+    "CDSL|21|219": {
+      "categoryTypeDescription": "HUF",
+      "categorySubTypeDescription": "HUF TM Client Nodal MFOS"
+    },
+    "CDSL|21|221": {
+      "categoryTypeDescription": "HUF",
+      "categorySubTypeDescription": "HUF CM Client Nodal MFOS"
+    },
+    "CDSL|21|227": {
+      "categoryTypeDescription": "HUF",
+      "categorySubTypeDescription": "HUF TM/CM Client Nodal MFOS"
+    },
+    "NSDL|16|1": {
+      "categoryTypeDescription": "HUF",
+      "categorySubTypeDescription": "HUF"
+    },
+    "NSDL|16|2": {
+      "categoryTypeDescription": "HUF",
+      "categorySubTypeDescription": "HUF-Promoter"
+    },
+    "CDSL|25|103": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "IEPF Suspense Account"
+    },
+    "NSDL|17|1": {
+      "categoryTypeDescription": "Investor Education and Protection Fund",
+      "categorySubTypeDescription": "IEPF"
+    },
+    "NSDL|18|1": {
+      "categoryTypeDescription": "Qualified Institutional Buyer",
+      "categorySubTypeDescription": "Public Financial Institution \u2013 Sec.2(72) of Companies Act 2013"
+    },
+    "NSDL|18|2": {
+      "categoryTypeDescription": "Venture Capital Fund",
+      "categorySubTypeDescription": "Venture Capital Fund Registered with SEBI"
+    },
+    "NSDL|18|3": {
+      "categoryTypeDescription": "Qualified Institutional Buyer",
+      "categorySubTypeDescription": "Multilateral Development Financial Institution"
+    },
+    "NSDL|18|4": {
+      "categoryTypeDescription": "Qualified Institutional Buyer",
+      "categorySubTypeDescription": "Bilateral Development Financial Institution"
+    },
+    "NSDL|18|5": {
+      "categoryTypeDescription": "Qualified Institutional Buyer",
+      "categorySubTypeDescription": "State Industrial Development Corporation"
+    },
+    "NSDL|18|6": {
+      "categoryTypeDescription": "Insurance Company",
+      "categorySubTypeDescription": "Insurance Company Registered with IRDA"
+    },
+    "NSDL|18|7": {
+      "categoryTypeDescription": "Qualified Institutional Buyer",
+      "categorySubTypeDescription": "Provident Fund - Corpus Rs. 25 crore & more"
+    },
+    "NSDL|18|8": {
+      "categoryTypeDescription": "Qualified Institutional Buyer",
+      "categorySubTypeDescription": "Pension Fund - Corpus Rs. 25 crore & more"
+    },
+    "NSDL|18|9": {
+      "categoryTypeDescription": "Qualified Institutional Buyer",
+      "categorySubTypeDescription": "National Investment Fund \u2013 Govt. of India"
+    },
+    "NSDL|18|10": {
+      "categoryTypeDescription": "Qualified Institutional Buyer",
+      "categorySubTypeDescription": "Insurance Funds \u2013 Armed Forces \u2013 Govt. of India"
+    },
+    "NSDL|18|11": {
+      "categoryTypeDescription": "Qualified Institutional Buyer",
+      "categorySubTypeDescription": "Insurance Funds \u2013 Department of Post India"
+    },
+    "CDSL|26|24": {
+      "categoryTypeDescription": "MCCIL CLEARING MEMBER ACCOUNT ICEX",
+      "categorySubTypeDescription": "Clearing Member"
+    },
+    "CDSL|26|126": {
+      "categoryTypeDescription": "MCCIL CLEARING MEMBER ACCOUNT ICEX",
+      "categorySubTypeDescription": "TM Pool"
+    },
+    "CDSL|26|165": {
+      "categoryTypeDescription": "MCCIL CLEARING MEMBER ACCOUNT ICEX",
+      "categorySubTypeDescription": "Custodian Clearing Member"
+    },
+    "NSDL|6|0": {
+      "categoryTypeDescription": "Clearing Member",
+      "categorySubTypeDescription": ""
+    },
+    "CDSL|31|32": {
+      "categoryTypeDescription": "CC / CH House Account",
+      "categorySubTypeDescription": "Clearing House"
+    },
+    "CDSL|32|33": {
+      "categoryTypeDescription": "Other Depository Account",
+      "categorySubTypeDescription": "Other Depository Account"
+    },
+    "NSDL|18|12": {
+      "categoryTypeDescription": "NBFC",
+      "categorySubTypeDescription": "Systemically important NBFCs"
+    },
+    "PHYSICAL|1|1": {
+      "categoryTypeDescription": "Individual",
+      "categorySubTypeDescription": "Ordinary"
+    },
+    "PHYSICAL|4|1": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI - Repatriable"
+    },
+    "PHYSICAL|4|2": {
+      "categoryTypeDescription": "Non Resident Individual",
+      "categorySubTypeDescription": "NRI NonRepatriable"
+    },
+    "PHYSICAL|5|1": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Domestic"
+    },
+    "PHYSICAL|5|2": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Foreign"
+    },
+    "PHYSICAL|16|1": {
+      "categoryTypeDescription": "HUF",
+      "categorySubTypeDescription": "HUF"
+    },
+    "PHYSICAL|9|1": {
+      "categoryTypeDescription": "Trust",
+      "categorySubTypeDescription": "Trust"
+    },
+    "NSDL|5|41": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Unclaimed or Suspense or Escrow Account"
+    },
+    "PHYSICAL|5|3": {
+      "categoryTypeDescription": "Corporate",
+      "categorySubTypeDescription": "Limited Liability Partnership"
+    }
+  },
+  "unambiguousByType": {
+    "NSDL|1": "Individual",
+    "CDSL|22": "Indian Financial Institution",
+    "NSDL|2": "Indian Financial Institution",
+    "CDSL|23": "Foreign Institutional Investor",
+    "NSDL|3": "Foreign Institutional Investor",
+    "CDSL|24": "Non Resident Individual",
+    "NSDL|4": "Non Resident Individual",
+    "NSDL|5": "Corporate",
+    "NSDL|7": "Foreign National",
+    "CDSL|28": "Mutual Fund",
+    "NSDL|8": "Mutual Fund",
+    "CDSL|29": "Trust",
+    "NSDL|9": "Trust",
+    "CDSL|30": "Bank",
+    "NSDL|10": "Bank",
+    "NSDL|11": "Qualified Foreign Investor(Individual)",
+    "NSDL|12": "Qualified Foreign Investor(Corporate)",
+    "NSDL|13": "Foreign Portfolio Investor(Individual)",
+    "NSDL|14": "Foreign Portfolio Investor(Corporate)",
+    "NSDL|15": "Alternative Investment Fund (AIF)",
+    "NSDL|16": "HUF",
+    "NSDL|17": "Investor Education and Protection Fund",
+    "NSDL|6": "Clearing Member",
+    "CDSL|31": "CC / CH House Account",
+    "CDSL|32": "Other Depository Account",
+    "PHYSICAL|1": "Individual",
+    "PHYSICAL|4": "Non Resident Individual",
+    "PHYSICAL|5": "Corporate",
+    "PHYSICAL|16": "HUF",
+    "PHYSICAL|9": "Trust"
+  }
+}
