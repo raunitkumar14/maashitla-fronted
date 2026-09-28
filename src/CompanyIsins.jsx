@@ -4,9 +4,7 @@ import api from './api/axios';
 import './IsinMaster.css';
 import './Company.css';
 
-const COLUMNS = [
-  { header: 'ISIN', field: 'isin' },
-];
+const NUM_COLS = 6;
 
 function cell(row, field) {
   const v = row[field];
@@ -191,7 +189,14 @@ function CompanyIsins() {
         <div className="im-table-wrapper">
           <table className="im-table">
             <thead>
-              <tr>{COLUMNS.map(col => <th key={col.field}>{col.header}</th>)}</tr>
+              <tr>
+                <th>Sr. No.</th>
+                <th>ISIN</th>
+                <th>ISIN Description</th>
+                <th>Name of Issuer</th>
+                <th>Security Type Description</th>
+                <th>ISIN Status</th>
+              </tr>
             </thead>
             <tbody>
               {(() => {
@@ -199,11 +204,11 @@ function CompanyIsins() {
                   ? isins.filter(r => (r.isin ?? '').toUpperCase().includes(isinFilter.trim().toUpperCase()))
                   : isins;
                 if (loading) return (
-                  <tr><td className="im-empty-state" colSpan={COLUMNS.length}>Loading…</td></tr>
+                  <tr><td className="im-empty-state" colSpan={NUM_COLS}>Loading…</td></tr>
                 );
                 if (visible.length === 0) return (
                   <tr>
-                    <td className="im-empty-state" colSpan={COLUMNS.length}>
+                    <td className="im-empty-state" colSpan={NUM_COLS}>
                       {isinFilter.trim() ? 'No ISINs match that filter.' : 'No ISINs found for this company.'}
                     </td>
                   </tr>
@@ -215,9 +220,12 @@ function CompanyIsins() {
                     onClick={() => handleIsinClick(row)}
                     title="Open mini-dashboard for this ISIN"
                   >
-                    {COLUMNS.map(col => (
-                      <td key={col.field}>{cell(row, col.field)}</td>
-                    ))}
+                    <td>{(page - 1) * perPage + idx + 1}</td>
+                    <td>{cell(row, 'isin')}</td>
+                    <td>{cell(row, 'isinDescription')}</td>
+                    <td>{row.issuer?.issuerName || companyName || '—'}</td>
+                    <td>{cell(row, 'securityType')}</td>
+                    <td>{cell(row, 'isinStatus')}</td>
                   </tr>
                 ));
               })()}

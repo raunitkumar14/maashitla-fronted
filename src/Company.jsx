@@ -64,27 +64,30 @@ function PaginationBar({ page, perPage, totalCount, totalPages, goto, setPage, s
 function Company() {
   const navigate = useNavigate();
 
-  const [search,          setSearch]          = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [page,            setPage]            = useState(1);
-  const [perPage,         setPerPage]         = useState(10);
-  const [goto,            setGoto]            = useState('');
+  // ── Search input state (not applied until SEARCH is clicked) ─────────────
+  const [issuerId,   setIssuerId]   = useState('');
+  const [issuerCode, setIssuerCode] = useState('');
+  const [issuerName, setIssuerName] = useState('');
+  const [source,     setSource]     = useState('');
 
+  // ── Committed filters — only updated on SEARCH / RESET ───────────────────
+  const [appliedFilters, setAppliedFilters] = useState({
+    issuerId: '', issuerCode: '', issuerName: '', source: '',
+  });
+
+  // ── Pagination ────────────────────────────────────────────────────────────
+  const [page,   setPage]   = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const [goto,    setGoto]   = useState('');
+
+  // ── Table data ────────────────────────────────────────────────────────────
   const [issuers,    setIssuers]    = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [loading,    setLoading]    = useState(false);
   const [fetchError, setFetchError] = useState('');
 
-  // Debounce: wait 400 ms after the user stops typing before sending a request.
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [search]);
-
+  // ── Fetch: runs when page, perPage, or committed filters change ───────────
   useEffect(() => {
     let cancelled = false;
 
@@ -93,7 +96,10 @@ function Company() {
       setFetchError('');
       try {
         const params = { page, pageSize: perPage };
-        if (debouncedSearch) params.issuerCode = debouncedSearch;
+        if (appliedFilters.issuerId)   params.issuerId   = appliedFilters.issuerId;
+        if (appliedFilters.issuerCode) params.issuerCode = appliedFilters.issuerCode;
+        if (appliedFilters.issuerName) params.issuerName = appliedFilters.issuerName;
+        if (appliedFilters.source)     params.source     = appliedFilters.source;
         const res = await api.get('/admin/v1/issuers', { params });
         if (cancelled) return;
         const { items, totalCount, totalPages } = res.data.data;
@@ -111,7 +117,9 @@ function Company() {
     })();
 
     return () => { cancelled = true; };
-  }, [page, perPage, debouncedSearch]);
+  }, [page, perPage, appliedFilters]);
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
 
   function handlePerPageChange(e) {
     setPerPage(Number(e.target.value));
@@ -123,6 +131,28 @@ function Company() {
     if (!isNaN(target) && target >= 1 && target <= totalPages) setPage(target);
     setGoto('');
   }
+
+  function handleSearch(e) {
+    e.preventDefault();
+    setAppliedFilters({
+      issuerId:   issuerId.trim(),
+      issuerCode: issuerCode.trim(),
+      issuerName: issuerName.trim(),
+      source:     source.trim(),
+    });
+    setPage(1);
+  }
+
+  function handleReset() {
+    setIssuerId('');
+    setIssuerCode('');
+    setIssuerName('');
+    setSource('');
+    setAppliedFilters({ issuerId: '', issuerCode: '', issuerName: '', source: '' });
+    setPage(1);
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="isin-master">
@@ -156,14 +186,34 @@ function Company() {
           </label>
         </div>
 
-        <div className="company-search-row">
+        <form className="im-filter-row" onSubmit={handleSearch}>
           <input
-            className="im-input"
-            placeholder="Search..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            className="im-input im-input--wide"
+            placeholder="Issuer ID"
+            value={issuerId}
+            onChange={(e) => setIssuerId(e.target.value)}
           />
-        </div>
+          <input
+            className="im-input im-input--wide"
+            placeholder="Issuer Code"
+            value={issuerCode}
+            onChange={(e) => setIssuerCode(e.target.value)}
+          />
+          <input
+            className="im-input im-input--wide"
+            placeholder="Issuer Name"
+            value={issuerName}
+            onChange={(e) => setIssuerName(e.target.value)}
+          />
+          <input
+            className="im-input im-input--wide"
+            placeholder="Source"
+            value={source}
+            onChange={(e) => setSource(e.target.value)}
+          />
+          <button type="submit"  className="btn-action btn-action--pink">&#128269; SEARCH</button>
+          <button type="button"  className="btn-action btn-action--white" onClick={handleReset}>RESET</button>
+        </form>
 
         {fetchError && (
           <div className="im-banner im-banner--error" style={{ margin: '8px 14px 0' }}>
@@ -180,7 +230,7 @@ function Company() {
                 <th>Issuer Name</th>
                 <th>Total ISIN</th>
                 <th>Source</th>
-                <th>Action</th>
+                <th>More Information</th>
               </tr>
             </thead>
             <tbody>
@@ -203,8 +253,8 @@ function Company() {
                     <td className="company-action-cell">
                       <button
                         className="company-icon-btn"
-                        title="View"
-                        onClick={() => navigate(`/company/${row.issuerCode}/isins`, { state: { companyRow: row } })}
+                        title="View Details"
+                        onClick={() => navigate(`/company/${row.issuerCode}/details`)}
                       >
                         →
                       </button>

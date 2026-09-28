@@ -20,54 +20,25 @@ function readAsText(file) {
 }
 
 // ── DropZone ──────────────────────────────────────────────────────────────────
-// Handles file selection and parses it inline.
-// Calls onReady(rows) on success, onReady(null) while parsing or on error.
+// Stores the selected file and calls onReady(file). No parsing here.
 
 function DropZone({ label, side, onReady, locked }) {
-  const [state,    setState]    = useState('idle'); // idle | parsing | ready | error
+  const [state,    setState]    = useState('idle'); // idle | selected
   const [filename, setFilename] = useState('');
-  const [rowCount, setRowCount] = useState(0);
-  const [errMsg,   setErrMsg]   = useState('');
   const inputRef = useRef(null);
 
-  async function processFile(file) {
+  function processFile(file) {
     if (!file || locked) return;
     setFilename(file.name);
-    setState('parsing');
-    setErrMsg('');
-    onReady(null); // clear any prior result while re-parsing
-
-    try {
-      let rows;
-      let issuerRows = null;
-      if (side === 'NSDL') {
-        const records = await parseNsdlZip(file);
-        rows       = deriveNsdlIsinTable(records);
-        issuerRows = deriveNsdlCompanyTable(records);
-      } else {
-        const text    = await readAsText(file);
-        const records = parseCdslFile(text);
-        const master  = deriveCdslMasterRecords(records);
-        rows          = deriveCdslIsinTable(master);
-        issuerRows    = deriveCdslIssuerSummary(records);
-      }
-      setRowCount(rows.length);
-      setState('ready');
-      onReady({ rows, issuerRows });
-    } catch (err) {
-      setState('error');
-      setErrMsg(err.message || 'Parse failed.');
-      onReady(null);
-    }
+    setState('selected');
+    onReady(file);
   }
 
-  const isParsing = state === 'parsing';
-  const isReady   = state === 'ready';
+  const isSelected = state === 'selected';
 
   const bodyClass = [
     'um-body',
-    isParsing ? 'um-body--parsing'    : '',
-    isReady   ? 'ium-zone-body--ready' : '',
+    isSelected ? 'ium-zone-body--ready' : '',
   ].filter(Boolean).join(' ');
 
   return (
@@ -75,16 +46,11 @@ function DropZone({ label, side, onReady, locked }) {
       <p className="ium-zone-label">{label}</p>
       <div
         className={bodyClass}
-        onClick={() => !isParsing && !locked && inputRef.current.click()}
+        onClick={() => !locked && inputRef.current.click()}
         onDragOver={e => e.preventDefault()}
         onDrop={e => { e.preventDefault(); processFile(e.dataTransfer.files[0]); }}
       >
-        {isParsing ? (
-          <div className="um-parsing">
-            <div className="um-spinner" />
-            <p className="um-parsing-text">Parsing {filename}&hellip;</p>
-          </div>
-        ) : isReady ? (
+        {isSelected ? (
           <>
             <svg className="ium-check-icon" viewBox="0 0 24 24" fill="none"
               stroke="#2e7d32" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -92,7 +58,7 @@ function DropZone({ label, side, onReady, locked }) {
               <polyline points="9 12 11 14 15 10" />
             </svg>
             <p className="um-filename">{filename}</p>
-            <p className="ium-row-count">{rowCount.toLocaleString()} rows parsed</p>
+            <p className="ium-row-count">Ready</p>
           </>
         ) : (
           <>
@@ -104,7 +70,6 @@ function DropZone({ label, side, onReady, locked }) {
             </svg>
             <p className="um-drop-text">Drag &amp; drop <strong>{side}</strong> file here</p>
             <p className="um-browse-text">or click to browse</p>
-            {state === 'error' && <p className="um-error">&#9888; {errMsg}</p>}
           </>
         )}
       </div>
@@ -119,33 +84,43 @@ function DropZone({ label, side, onReady, locked }) {
 }
 
 // ── IsinUploadModal ───────────────────────────────────────────────────────────
-// Single combined upload modal: select NSDL + CDSL files, then one click
-// runs parse → merge → chunked save.
+// Select NSDL + CDSL files, then one click: parse NSDL → parse CDSL → merge → save.
 //
 // Props:
 //   onClose    — called when X is clicked (disabled while uploading)
 //   onComplete — called with { nsdlRows, cdslRows, mergedRows, counts }
-//                after the upload finishes successfully
 
 export default function IsinUploadModal({ onClose, onComplete }) {
-  const [nsdlRows,       setNsdlRows]       = useState(null);
-  const [cdslRows,       setCdslRows]       = useState(null);
-  const [cdslIssuerRows, setCdslIssuerRows] = useState(null);
-  const [nsdlIssuerRows, setNsdlIssuerRows] = useState(null);
+  const [nsdlFile, setNsdlFile] = useState(null);
+  const [cdslFile, setCdslFile] = useState(null);
 
   const [phase,    setPhase]    = useState('selecting'); // selecting | working | error
   const [progress, setProgress] = useState({ stage: '', saved: 0, total: 0, batch: 0, batches: 0 });
   const [errorMsg, setErrorMsg] = useState('');
 
-  const canUpload = nsdlRows !== null && cdslRows !== null && phase === 'selecting';
+  const canUpload = nsdlFile !== null && cdslFile !== null && phase === 'selecting';
   const isWorking = phase === 'working';
 
   async function handleUpload() {
     setPhase('working');
-    setProgress({ stage: 'Merging data…', saved: 0, total: 0, batch: 0, batches: 0 });
-
     let savedSoFar = 0;
     try {
+      // ── Step 1: Parse NSDL
+      setProgress({ stage: 'Parsing NSDL file…', saved: 0, total: 0, batch: 0, batches: 0 });
+      const nsdlRecords    = await parseNsdlZip(nsdlFile);
+      const nsdlRows       = deriveNsdlIsinTable(nsdlRecords);
+      const nsdlIssuerRows = deriveNsdlCompanyTable(nsdlRecords);
+
+      // ── Step 2: Parse CDSL
+      setProgress({ stage: 'Parsing CDSL file…', saved: 0, total: 0, batch: 0, batches: 0 });
+      const cdslText       = await readAsText(cdslFile);
+      const cdslRecords    = parseCdslFile(cdslText);
+      const cdslMaster     = deriveCdslMasterRecords(cdslRecords);
+      const cdslRows       = deriveCdslIsinTable(cdslMaster);
+      const cdslIssuerRows = deriveCdslIssuerSummary(cdslRecords);
+
+      // ── Step 3: Merge & save ISINs
+      setProgress({ stage: 'Merging data…', saved: 0, total: 0, batch: 0, batches: 0 });
       const { merged, counts } = mergeIsinMaster(cdslRows, nsdlRows);
 
       setProgress(p => ({ ...p, stage: 'Saving ISINs… (1/2)', total: merged.length }));
@@ -173,7 +148,7 @@ export default function IsinUploadModal({ onClose, onComplete }) {
         return;
       }
 
-      // Stage 2: save merged issuer summary (NSDL + CDSL outer-join)
+      // ── Step 4: Save merged issuer summary (NSDL + CDSL outer-join)
       const mergedIssuers = mergeIssuerSummary(
         cdslIssuerRows ?? [],
         nsdlIssuerRows ?? [],
@@ -247,8 +222,8 @@ export default function IsinUploadModal({ onClose, onComplete }) {
         {/* ── Drop zones (selecting phase) */}
         {phase === 'selecting' && (
           <div className="ium-zones-wrapper">
-            <DropZone label="NSDL File" side="NSDL" onReady={data => { setNsdlRows(data ? data.rows : null); setNsdlIssuerRows(data ? data.issuerRows : null); }} locked={false} />
-            <DropZone label="CDSL File" side="CDSL" onReady={data => { setCdslRows(data ? data.rows : null); setCdslIssuerRows(data ? data.issuerRows : null); }} locked={false} />
+            <DropZone label="NSDL File" side="NSDL" onReady={file => setNsdlFile(file)} locked={false} />
+            <DropZone label="CDSL File" side="CDSL" onReady={file => setCdslFile(file)} locked={false} />
           </div>
         )}
 
@@ -256,30 +231,55 @@ export default function IsinUploadModal({ onClose, onComplete }) {
         {phase === 'working' && (
           <div className="ium-progress-wrapper">
             <div className="ium-file-summary">
-              {nsdlRows && (
+              {nsdlFile && (
                 <span className="ium-file-badge ium-file-badge--nsdl">
-                  NSDL &#10003; {nsdlRows.length.toLocaleString()}
+                  NSDL &#10003; {nsdlFile.name}
                 </span>
               )}
-              {cdslRows && (
+              {cdslFile && (
                 <span className="ium-file-badge ium-file-badge--cdsl">
-                  CDSL &#10003; {cdslRows.length.toLocaleString()}
+                  CDSL &#10003; {cdslFile.name}
                 </span>
               )}
             </div>
-            <p className="ium-progress-stage">{progress.stage}</p>
-            {progress.total > 0 ? (
-              <>
-                <div className="ium-progress-track">
-                  <div className="ium-progress-fill" style={{ width: `${pct}%` }} />
+            {(progress.stage === 'Parsing NSDL file…' || progress.stage === 'Parsing CDSL file…') ? (
+              <div className="ium-parse-steps">
+                <div className={`ium-parse-step${progress.stage === 'Parsing CDSL file…' ? ' ium-parse-step--done' : ''}`}>
+                  <span className="ium-parse-icon">
+                    {progress.stage === 'Parsing CDSL file…'
+                      ? <span className="ium-parse-check">&#10003;</span>
+                      : <div className="um-spinner ium-parse-spinner" />
+                    }
+                  </span>
+                  Parsing NSDL file&hellip;
                 </div>
-                <p className="ium-progress-count">
-                  {progress.saved.toLocaleString()} / {progress.total.toLocaleString()} records
-                  {progress.batches > 1 && ` — batch ${progress.batch} of ${progress.batches}`}
-                </p>
-              </>
+                <div className={`ium-parse-step${progress.stage === 'Parsing NSDL file…' ? ' ium-parse-step--pending' : ''}`}>
+                  <span className="ium-parse-icon">
+                    {progress.stage === 'Parsing CDSL file…'
+                      ? <div className="um-spinner ium-parse-spinner" />
+                      : <span className="ium-parse-dot">&#9679;</span>
+                    }
+                  </span>
+                  Parsing CDSL file&hellip;
+                </div>
+              </div>
             ) : (
-              <div className="um-spinner" />
+              <>
+                <p className="ium-progress-stage">{progress.stage}</p>
+                {progress.total > 0 ? (
+                  <>
+                    <div className="ium-progress-track">
+                      <div className="ium-progress-fill" style={{ width: `${pct}%` }} />
+                    </div>
+                    <p className="ium-progress-count">
+                      {progress.saved.toLocaleString()} / {progress.total.toLocaleString()} records
+                      {progress.batches > 1 && ` — batch ${progress.batch} of ${progress.batches}`}
+                    </p>
+                  </>
+                ) : (
+                  <div className="um-spinner" />
+                )}
+              </>
             )}
           </div>
         )}

@@ -136,6 +136,46 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* ── Parse step list (shown during NSDL / CDSL parsing stages) ──────────── */
+
+.ium-parse-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-self: stretch;
+}
+
+.ium-parse-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.ium-parse-step--done    { color: #2e7d32; }
+.ium-parse-step--pending { color: #bbb; }
+
+.ium-parse-icon {
+  width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ium-parse-check { font-size: 14px; font-weight: 700; color: #2e7d32; }
+.ium-parse-dot   { font-size: 7px;  color: #ccc; }
+
+/* Small spinner variant used inline in parse steps */
+.ium-parse-spinner {
+  width: 14px  !important;
+  height: 14px !important;
+  border-width: 2px !important;
+}
+
 /* ── Error section ───────────────────────────────────────────────────────── */
 
 .ium-error-wrapper {

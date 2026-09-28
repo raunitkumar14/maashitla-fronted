@@ -24,33 +24,6 @@ const ISIN_COLUMNS = [
   { header: 'Source',                       field: 'source',                 isDate: false },
 ];
 
-const NSDL_RAW_COLUMNS = [
-  { header: 'ISIN',                         field: 'isin',                   isDate: false },
-  { header: 'ISIN Description',             field: 'isinDescription',        isDate: false },
-  { header: 'Security Type',                field: 'securityType',           isDate: false },
-  { header: 'ISIN Status (NSDL)',           field: 'isinStatusNsdl',         isDate: false },
-  { header: 'Face Value',                   field: 'faceValue',              isDate: false },
-  { header: 'Issue Date (NSDL)',            field: 'issueDateNsdl',          isDate: true  },
-  { header: 'Maturity Date',                field: 'maturityDate',           isDate: true  },
-  { header: 'Convert Date (NSDL)',          field: 'convertDateNsdl',        isDate: true  },
-  { header: 'ISIN Activation Date (NSDL)', field: 'isinActivationDateNsdl', isDate: true  },
-  { header: 'Issuer Code',                  field: 'issuerCode',             isDate: false },
-  { header: 'Issuer Name',                  field: 'issuerName',             isDate: false },
-];
-
-const CDSL_RAW_COLUMNS = [
-  { header: 'ISIN',             field: 'isinAlphaCode',          isDate: false },
-  { header: 'Issuer Name',      field: 'issuerName',             isDate: false },
-  { header: 'ISIN Description', field: 'isinDescription',        isDate: false },
-  { header: 'Security Type',    field: 'securityTypeDescription', isDate: false },
-  { header: 'ISIN Status',      field: 'isinStatusDescription',  isDate: false },
-  { header: 'Face Value',       field: 'parValue',               isDate: false },
-  { header: 'Paidup Value',     field: 'paidupValue',            isDate: false },
-  { header: 'Issue Date',       field: 'issueDate',              isDate: true  },
-  { header: 'Convert Date',     field: 'conversionDate',         isDate: true  },
-  { header: 'Issuer Code',      field: 'issuerCode',             isDate: false },
-];
-
 // ── CSV export helpers ────────────────────────────────────────────────────────
 
 function generateCsvString(rows) {
@@ -80,15 +53,25 @@ function triggerCsvDownload(content, filename) {
   URL.revokeObjectURL(url);
 }
 
+// ── Client-side ISIN Description filter ──────────────────────────────────────
+// Pure helper — used in both ExportModal and IsinMaster render.
+
+function applyLocalDescFilter(rows, q) {
+  if (!q || !q.trim()) return rows;
+  const upper = q.trim().toUpperCase();
+  return rows.filter(r => String(r.isinDescription ?? '').toUpperCase().includes(upper));
+}
+
 // ── ExportModal ───────────────────────────────────────────────────────────────
 // Props:
-//   appliedFilters   { isin, issuerCode } — single-value server filter
-//   multiSearchRows  Row[] | null — if non-null, "search results" uses this data directly
+//   appliedFilters        { isin, issuerCode } — single-value server filter
+//   multiSearchRows       Row[] | null — if non-null, "search results" uses this data directly
+//   isinDescriptionSearch string — client-side description substring filter
 //   onClose
 
 const EXPORT_PAGE_SIZE = 500; // backend hard cap: pageSize must be ≤500
 
-function ExportModal({ appliedFilters, multiSearchRows, onClose }) {
+function ExportModal({ appliedFilters, multiSearchRows, isinDescriptionSearch, onClose }) {
   const [phase,    setPhase]    = useState('choose'); // choose | fetching | error
   const [progress, setProgress] = useState({ fetched: 0, total: 0 });
   const [errMsg,   setErrMsg]   = useState('');
@@ -97,18 +80,26 @@ function ExportModal({ appliedFilters, multiSearchRows, onClose }) {
 
   // Describe what "Export search results" will export
   const filterDesc = multiSearchRows !== null
-    ? `${multiSearchRows.length.toLocaleString()} rows from multi-value search (already in memory)`
+    ? (() => {
+        const filtered = applyLocalDescFilter(multiSearchRows, isinDescriptionSearch);
+        const base = `${filtered.length.toLocaleString()} rows from multi-value search (already in memory)`;
+        return isinDescriptionSearch.trim()
+          ? `${base}, filtered by description "${isinDescriptionSearch}"`
+          : base;
+      })()
     : (() => {
         const parts = [];
-        if (appliedFilters.isin)       parts.push(`ISIN = "${appliedFilters.isin}"`);
-        if (appliedFilters.issuerCode) parts.push(`Issuer Code = "${appliedFilters.issuerCode}"`);
+        if (appliedFilters.isin)        parts.push(`ISIN = "${appliedFilters.isin}"`);
+        if (appliedFilters.issuerCode)  parts.push(`Issuer Code = "${appliedFilters.issuerCode}"`);
+        if (isinDescriptionSearch.trim()) parts.push(`ISIN Description ⊇ "${isinDescriptionSearch}"`);
         return parts.length ? parts.join(', ') : 'No filter active';
       })();
 
   async function runExport(mode) {
-    // Multi-search results are already fully in memory — export without a fetch
+    // Multi-search results are already fully in memory — apply desc filter and export
     if (mode === 'search' && multiSearchRows !== null) {
-      triggerCsvDownload(generateCsvString(multiSearchRows), 'isin_master.csv');
+      const rows = applyLocalDescFilter(multiSearchRows, isinDescriptionSearch);
+      triggerCsvDownload(generateCsvString(rows), 'isin_master.csv');
       onClose();
       return;
     }
@@ -135,7 +126,12 @@ function ExportModal({ appliedFilters, multiSearchRows, onClose }) {
         setProgress({ fetched: allRows.length, total: totalCount });
       }
 
-      triggerCsvDownload(generateCsvString(allRows), 'isin_master.csv');
+      // Apply client-side description filter to search exports (not "all data")
+      const exportRows = (mode === 'search')
+        ? applyLocalDescFilter(allRows, isinDescriptionSearch)
+        : allRows;
+
+      triggerCsvDownload(generateCsvString(exportRows), 'isin_master.csv');
       onClose();
     } catch (err) {
       setPhase('error');
@@ -297,103 +293,15 @@ function PaginationBar({ page, perPage, totalCount, totalPages, goto, setPage, s
   );
 }
 
-// ── RawPreviewTable ───────────────────────────────────────────────────────────
-// Read-only paginated table for a single dataset.
-// Optional `stats` node is rendered between the header and the table.
-
-function RawPreviewTable({ title, rows, columns, isinField, stats }) {
-  const [filter,  setFilter]  = useState('');
-  const [page,    setPage]    = useState(1);
-  const [perPage, setPerPage] = useState(10);
-  const [goto,    setGoto]    = useState('');
-
-  const filtered = filter.trim()
-    ? rows.filter(r => String(r[isinField] ?? '').toUpperCase().includes(filter.trim().toUpperCase()))
-    : rows;
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
-  const start      = (page - 1) * perPage;
-  const pageRows   = filtered.slice(start, start + perPage);
-
-  function handleFilterChange(e) { setFilter(e.target.value); setPage(1); }
-  function handlePerPageChange(e) { setPerPage(Number(e.target.value)); setPage(1); }
-  function handleGoto() {
-    const target = parseInt(goto, 10);
-    if (!isNaN(target) && target >= 1 && target <= totalPages) setPage(target);
-    setGoto('');
-  }
-
-  return (
-    <div className="im-card">
-      <div className="im-card-header">
-        <span>{title} &mdash; {rows.length.toLocaleString()} rows</span>
-        <div className="im-header-actions">
-          <input
-            className="im-preview-filter"
-            placeholder="Filter by ISIN&hellip;"
-            value={filter}
-            onChange={handleFilterChange}
-          />
-          <label className="entries-label">
-            Per page
-            <select className="entries-select" value={perPage} onChange={handlePerPageChange}>
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-            </select>
-          </label>
-        </div>
-      </div>
-
-      {stats && <div className="im-merge-stats">{stats}</div>}
-
-      <div className="im-table-wrapper">
-        <table className="im-table">
-          <thead>
-            <tr>{columns.map(col => <th key={col.field}>{col.header}</th>)}</tr>
-          </thead>
-          <tbody>
-            {pageRows.length === 0 ? (
-              <tr>
-                <td className="im-empty-state" colSpan={columns.length}>
-                  {filter.trim() ? 'No rows match that ISIN.' : 'No data.'}
-                </td>
-              </tr>
-            ) : (
-              pageRows.map((row, idx) => (
-                <tr key={`${String(row[isinField] ?? '')}-${idx}`}>
-                  {columns.map(col => (
-                    <td key={col.field}>{renderCell(col, row)}</td>
-                  ))}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <PaginationBar
-        page={page}
-        perPage={perPage}
-        totalCount={filtered.length}
-        totalPages={totalPages}
-        goto={goto}
-        setPage={setPage}
-        setGoto={setGoto}
-        onGoto={handleGoto}
-      />
-    </div>
-  );
-}
-
 // ── Page component ────────────────────────────────────────────────────────────
 
 function IsinMaster() {
   // Filter fields
-  const [isin,       setIsin]       = useState('');
-  const [issuerCode, setIssuerCode] = useState('');
-  const [appliedFilters, setAppliedFilters] = useState({ isin: '', issuerCode: '' });
+  const [isin,                  setIsin]                  = useState('');
+  const [issuerCode,            setIssuerCode]            = useState('');
+  const [isinDescriptionSearch, setIsinDescriptionSearch] = useState('');
+  const [appliedDescFilter,     setAppliedDescFilter]     = useState('');
+  const [appliedFilters,        setAppliedFilters]        = useState({ isin: '', issuerCode: '' });
 
   // Modals
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -452,6 +360,14 @@ function IsinMaster() {
     return () => { cancelled = true; };
   }, [isinPage, isinPerPage, isinRefetchKey, appliedFilters, multiSearchRows]);
 
+  // ── Derived filtered rows (client-side description filter) ───────────────────
+
+  // Applied on top of whatever the server returned; never changes API params.
+  const filteredMultiRows = multiSearchRows !== null
+    ? applyLocalDescFilter(multiSearchRows, appliedDescFilter)
+    : null;
+  const filteredIsinData = applyLocalDescFilter(isinData, appliedDescFilter);
+
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
   function openUploadModal() {
@@ -467,8 +383,8 @@ function IsinMaster() {
 
   function handleIsinPerPageChange(e) { setIsinPerPage(Number(e.target.value)); setIsinPage(1); }
   function handleIsinGoto() {
-    const total = multiSearchRows !== null
-      ? Math.max(1, Math.ceil(multiSearchRows.length / isinPerPage))
+    const total = filteredMultiRows !== null
+      ? Math.max(1, Math.ceil(filteredMultiRows.length / isinPerPage))
       : isinTotalPages;
     const target = parseInt(isinGoto, 10);
     if (!isNaN(target) && target >= 1 && target <= total) setIsinPage(target);
@@ -513,6 +429,7 @@ function IsinMaster() {
         }
 
         setMultiSearchRows(merged);
+        setAppliedDescFilter(isinDescriptionSearch.trim());
         setIsinPage(1);
       } catch (err) {
         setMultiSearchError(
@@ -526,6 +443,7 @@ function IsinMaster() {
       setMultiSearchRows(null);
       setMultiSearchError('');
       setAppliedFilters({ isin: isinVals[0] ?? '', issuerCode: codeVals[0] ?? '' });
+      setAppliedDescFilter(isinDescriptionSearch.trim());
       setIsinPage(1);
     }
   }
@@ -533,6 +451,8 @@ function IsinMaster() {
   function handleReset() {
     setIsin('');
     setIssuerCode('');
+    setIsinDescriptionSearch('');
+    setAppliedDescFilter('');
     setAppliedFilters({ isin: '', issuerCode: '' });
     setIsinPage(1);
     setMultiSearchRows(null);
@@ -571,6 +491,12 @@ function IsinMaster() {
             value={issuerCode}
             onChange={e => setIssuerCode(e.target.value)}
           />
+          <input
+            className="im-input im-input--wide"
+            placeholder="ISIN Description"
+            value={isinDescriptionSearch}
+            onChange={e => setIsinDescriptionSearch(e.target.value)}
+          />
           <button type="submit"  className="btn-action btn-action--pink">&#128269; SEARCH</button>
           <button type="button"  className="btn-action btn-action--pink" onClick={() => setShowExportModal(true)}>&#8681; EXPORT</button>
           <button type="button"  className="btn-action btn-action--white" onClick={handleReset}>RESET</button>
@@ -582,41 +508,38 @@ function IsinMaster() {
         <div className="im-banner im-banner--error">{searchInputError}</div>
       )}
 
-      {/* ── Preview tables — shown after a successful upload */}
+      {/* ── Upload summary — shown after a successful upload */}
       {uploadResult && (
-        <>
-          <RawPreviewTable
-            title="NSDL Data"
-            rows={uploadResult.nsdlRows}
-            columns={NSDL_RAW_COLUMNS}
-            isinField="isin"
-          />
-          <RawPreviewTable
-            title="CDSL Data"
-            rows={uploadResult.cdslRows}
-            columns={CDSL_RAW_COLUMNS}
-            isinField="isinAlphaCode"
-          />
-          <RawPreviewTable
-            title="Merged ISIN Master Preview"
-            rows={uploadResult.mergedRows}
-            columns={ISIN_COLUMNS}
-            isinField="isin"
-            stats={
-              <>
-                <span className="im-merge-stat im-merge-stat--nsdl">
-                  NSDL only: <strong>{uploadResult.counts.nsdlOnly.toLocaleString()}</strong>
-                </span>
-                <span className="im-merge-stat im-merge-stat--cdsl">
-                  CDSL only: <strong>{uploadResult.counts.cdslOnly.toLocaleString()}</strong>
-                </span>
-                <span className="im-merge-stat im-merge-stat--both">
-                  Both: <strong>{uploadResult.counts.both.toLocaleString()}</strong>
-                </span>
-              </>
-            }
-          />
-        </>
+        <div className="im-card">
+          <div className="im-card-header">
+            <span>Upload Summary</span>
+          </div>
+          <div className="im-summary-counts">
+            <div className="im-summary-count-item">
+              <span className="im-summary-count-label">NSDL Data</span>
+              <span className="im-summary-count-value">{uploadResult.nsdlRows.length.toLocaleString()} rows</span>
+            </div>
+            <div className="im-summary-count-item">
+              <span className="im-summary-count-label">CDSL Data</span>
+              <span className="im-summary-count-value">{uploadResult.cdslRows.length.toLocaleString()} rows</span>
+            </div>
+            <div className="im-summary-count-item">
+              <span className="im-summary-count-label">Merged ISIN Master</span>
+              <span className="im-summary-count-value">{uploadResult.mergedRows.length.toLocaleString()} rows</span>
+            </div>
+          </div>
+          <div className="im-merge-stats">
+            <span className="im-merge-stat im-merge-stat--nsdl">
+              NSDL only: <strong>{uploadResult.counts.nsdlOnly.toLocaleString()}</strong>
+            </span>
+            <span className="im-merge-stat im-merge-stat--cdsl">
+              CDSL only: <strong>{uploadResult.counts.cdslOnly.toLocaleString()}</strong>
+            </span>
+            <span className="im-merge-stat im-merge-stat--both">
+              Both: <strong>{uploadResult.counts.both.toLocaleString()}</strong>
+            </span>
+          </div>
+        </div>
       )}
 
       {/* ── ISIN Master List (server-side) */}
@@ -657,15 +580,15 @@ function IsinMaster() {
                     Searching&hellip;
                   </td>
                 </tr>
-              ) : multiSearchRows !== null ? (
-                multiSearchRows.length === 0 ? (
+              ) : filteredMultiRows !== null ? (
+                filteredMultiRows.length === 0 ? (
                   <tr>
                     <td className="im-empty-state" colSpan={ISIN_COLUMNS.length}>
                       No matching ISINs found.
                     </td>
                   </tr>
                 ) : (
-                  multiSearchRows
+                  filteredMultiRows
                     .slice((isinPage - 1) * isinPerPage, isinPage * isinPerPage)
                     .map((row, idx) => (
                       <tr key={row.isin || idx}>
@@ -681,14 +604,16 @@ function IsinMaster() {
                     Loading&hellip;
                   </td>
                 </tr>
-              ) : isinData.length === 0 ? (
+              ) : filteredIsinData.length === 0 ? (
                 <tr>
                   <td className="im-empty-state" colSpan={ISIN_COLUMNS.length}>
-                    No data available. Click UPLOAD to import NSDL and CDSL files.
+                    {isinData.length > 0
+                      ? 'No ISINs match the description filter.'
+                      : 'No data available. Click UPLOAD to import NSDL and CDSL files.'}
                   </td>
                 </tr>
               ) : (
-                isinData.map((row, idx) => (
+                filteredIsinData.map((row, idx) => (
                   <tr key={row.isin || idx}>
                     {ISIN_COLUMNS.map(col => (
                       <td key={col.field}>{renderCell(col, row)}</td>
@@ -700,12 +625,12 @@ function IsinMaster() {
           </table>
         </div>
 
-        {multiSearchRows !== null ? (
+        {filteredMultiRows !== null ? (
           <PaginationBar
             page={isinPage}
             perPage={isinPerPage}
-            totalCount={multiSearchRows.length}
-            totalPages={Math.max(1, Math.ceil(multiSearchRows.length / isinPerPage))}
+            totalCount={filteredMultiRows.length}
+            totalPages={Math.max(1, Math.ceil(filteredMultiRows.length / isinPerPage))}
             goto={isinGoto}
             setPage={setIsinPage}
             setGoto={setIsinGoto}
@@ -738,6 +663,7 @@ function IsinMaster() {
         <ExportModal
           appliedFilters={appliedFilters}
           multiSearchRows={multiSearchRows}
+          isinDescriptionSearch={appliedDescFilter}
           onClose={() => setShowExportModal(false)}
         />
       )}

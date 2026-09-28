@@ -15,6 +15,7 @@ import CompanyPhysical from './CompanyPhysical';
 import CompanyNsdl from './CompanyNsdl';
 import CompanyCdsl from './CompanyCdsl';
 import CompanyIsins from './CompanyIsins';
+import CompanyDetails from './CompanyDetails';
 
 /*
  * ── How React Router works ──────────────────────────────────────────────────
@@ -79,6 +80,11 @@ function App() {
 
       <Route path="/company" element={
         <ProtectedPage pageName="Company"><Company /></ProtectedPage>
+      } />
+
+      {/* Detail page for a specific company */}
+      <Route path="/company/:issuerCode/details" element={
+        <ProtectedPage breadcrumbs={['Company', 'Details']}><CompanyDetails /></ProtectedPage>
       } />
 
       {/* ISIN list for a specific company — main layout, step before mini-dashboard */}

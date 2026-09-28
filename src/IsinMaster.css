@@ -371,29 +371,41 @@
   border-color: rgba(76, 175, 80, 0.55);
 }
 
-/* ─── RAW PREVIEW TABLE FILTER INPUT ─────────────────────────────────────── */
+/* ─── UPLOAD SUMMARY CARD ─────────────────────────────────────────────────── */
 
-/* Small ISIN search box that lives in the blue card header bar */
-.im-preview-filter {
-  padding: 3px 8px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
-  font-size: 11px;
-  width: 140px;
-  outline: none;
+/* Three equal-width count cells shown after a successful upload */
+.im-summary-counts {
+  display: flex;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e8ecf0;
+  gap: 0;
   font-family: Arial, Helvetica, sans-serif;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-.im-preview-filter::placeholder {
-  color: rgba(255, 255, 255, 0.55);
+.im-summary-count-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 8px;
+  border-right: 1px solid #e8ecf0;
 }
 
-.im-preview-filter:focus {
-  background: rgba(255, 255, 255, 0.25);
-  border-color: rgba(255, 255, 255, 0.75);
+.im-summary-count-item:first-child { padding-left: 0; }
+.im-summary-count-item:last-child  { padding-right: 0; border-right: none; }
+
+.im-summary-count-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #888;
+}
+
+.im-summary-count-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a1a2e;
 }
 
 /* ─── GENERATE MASTER BUTTON ─────────────────────────────────────────────── */
