@@ -1,1 +1,10 @@
-/* No additional styles needed — table uses im-table-wrapper / im-table from IsinMaster.css */
+.cd-edit-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Wrapper that gives the edit grid the same breathing room the old modal body had */
+.cd-edit-form {
+  padding: 24px 24px 28px;
+}

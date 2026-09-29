@@ -65,24 +65,31 @@ function applyLocalDescFilter(rows, q) {
 // ── ExportModal ───────────────────────────────────────────────────────────────
 // Props:
 //   appliedFilters        { isin, issuerCode } — single-value server filter
-//   multiSearchRows       Row[] | null — if non-null, "search results" uses this data directly
+//   multiSearchRows       Row[] | null — multi-value search result set (already in memory)
+//   descFilterRows        Row[] | null — full dataset fetched for description search (in memory)
 //   isinDescriptionSearch string — client-side description substring filter
 //   onClose
 
 const EXPORT_PAGE_SIZE = 500; // backend hard cap: pageSize must be ≤500
 
-function ExportModal({ appliedFilters, multiSearchRows, isinDescriptionSearch, onClose }) {
+function ExportModal({ appliedFilters, multiSearchRows, descFilterRows, isinDescriptionSearch, onClose }) {
   const [phase,    setPhase]    = useState('choose'); // choose | fetching | error
   const [progress, setProgress] = useState({ fetched: 0, total: 0 });
   const [errMsg,   setErrMsg]   = useState('');
 
   const isFetching = phase === 'fetching';
 
+  // Whichever in-memory dataset is active (multi-search or desc-filter full fetch)
+  const inMemoryRows = multiSearchRows ?? descFilterRows ?? null;
+
   // Describe what "Export search results" will export
-  const filterDesc = multiSearchRows !== null
+  const filterDesc = inMemoryRows !== null
     ? (() => {
-        const filtered = applyLocalDescFilter(multiSearchRows, isinDescriptionSearch);
-        const base = `${filtered.length.toLocaleString()} rows from multi-value search (already in memory)`;
+        const filtered = applyLocalDescFilter(inMemoryRows, isinDescriptionSearch);
+        const baseLabel = multiSearchRows !== null
+          ? 'rows from multi-value search (already in memory)'
+          : 'rows (full dataset loaded for description search)';
+        const base = `${filtered.length.toLocaleString()} ${baseLabel}`;
         return isinDescriptionSearch.trim()
           ? `${base}, filtered by description "${isinDescriptionSearch}"`
           : base;
@@ -96,9 +103,9 @@ function ExportModal({ appliedFilters, multiSearchRows, isinDescriptionSearch, o
       })();
 
   async function runExport(mode) {
-    // Multi-search results are already fully in memory — apply desc filter and export
-    if (mode === 'search' && multiSearchRows !== null) {
-      const rows = applyLocalDescFilter(multiSearchRows, isinDescriptionSearch);
+    // In-memory results (multi-search or desc-filter) — apply desc filter and export directly
+    if (mode === 'search' && inMemoryRows !== null) {
+      const rows = applyLocalDescFilter(inMemoryRows, isinDescriptionSearch);
       triggerCsvDownload(generateCsvString(rows), 'isin_master.csv');
       onClose();
       return;
@@ -313,6 +320,13 @@ function IsinMaster() {
   const [multiSearchError,   setMultiSearchError]   = useState('');
   const [searchInputError,   setSearchInputError]   = useState('');
 
+  // Description-filter mode: full dataset fetched without pagination, filtered client-side.
+  // descFilterMode=true suppresses the normal server-paginated useEffect fetch.
+  const [descFilterRows,    setDescFilterRows]    = useState(null);
+  const [descFilterLoading, setDescFilterLoading] = useState(false);
+  const [descFilterError,   setDescFilterError]   = useState('');
+  const [descFilterMode,    setDescFilterMode]    = useState(false);
+
   // Results from the last completed upload — drives the 3 preview tables.
   // Cleared when the user opens the modal again to start a fresh upload.
   const [uploadResult, setUploadResult] = useState(null);
@@ -331,8 +345,9 @@ function IsinMaster() {
   // ── Fetch ISIN table ──────────────────────────────────────────────────────────
 
   useEffect(() => {
-    // Skip server fetch while multi-search results are displayed
+    // Skip server fetch while multi-search or desc-filter results are displayed
     if (multiSearchRows !== null) return;
+    if (descFilterMode) return;
 
     let cancelled = false;
     (async () => {
@@ -358,14 +373,19 @@ function IsinMaster() {
       }
     })();
     return () => { cancelled = true; };
-  }, [isinPage, isinPerPage, isinRefetchKey, appliedFilters, multiSearchRows]);
+  }, [isinPage, isinPerPage, isinRefetchKey, appliedFilters, multiSearchRows, descFilterMode]);
 
   // ── Derived filtered rows (client-side description filter) ───────────────────
 
-  // Applied on top of whatever the server returned; never changes API params.
   const filteredMultiRows = multiSearchRows !== null
     ? applyLocalDescFilter(multiSearchRows, appliedDescFilter)
     : null;
+
+  // Full dataset (no pagination) fetched when description search is active.
+  const filteredDescRows = descFilterMode && descFilterRows !== null
+    ? applyLocalDescFilter(descFilterRows, appliedDescFilter)
+    : null;
+
   const filteredIsinData = applyLocalDescFilter(isinData, appliedDescFilter);
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
@@ -385,7 +405,9 @@ function IsinMaster() {
   function handleIsinGoto() {
     const total = filteredMultiRows !== null
       ? Math.max(1, Math.ceil(filteredMultiRows.length / isinPerPage))
-      : isinTotalPages;
+      : filteredDescRows !== null
+        ? Math.max(1, Math.ceil(filteredDescRows.length / isinPerPage))
+        : isinTotalPages;
     const target = parseInt(isinGoto, 10);
     if (!isNaN(target) && target >= 1 && target <= total) setIsinPage(target);
     setIsinGoto('');
@@ -412,6 +434,8 @@ function IsinMaster() {
       setMultiSearchLoading(true);
       setMultiSearchError('');
       setMultiSearchRows(null);
+      setDescFilterMode(false);
+      setDescFilterRows(null);
       try {
         const reqs = [
           ...isinVals.map(v  => api.get('/admin/v1/isins', { params: { isin:       v } })),
@@ -439,12 +463,43 @@ function IsinMaster() {
         setMultiSearchLoading(false);
       }
     } else {
-      // Single value (or empty) per field — use server-side pagination as normal
+      // Single value (or empty) per field
       setMultiSearchRows(null);
       setMultiSearchError('');
-      setAppliedFilters({ isin: isinVals[0] ?? '', issuerCode: codeVals[0] ?? '' });
-      setAppliedDescFilter(isinDescriptionSearch.trim());
+      const newFilters = { isin: isinVals[0] ?? '', issuerCode: codeVals[0] ?? '' };
+      const descQ = isinDescriptionSearch.trim();
+
+      setAppliedFilters(newFilters);
+      setAppliedDescFilter(descQ);
       setIsinPage(1);
+
+      if (descQ) {
+        // Description filter active: fetch the full matching dataset without pagination
+        // so the substring filter runs across all records, not just the current page.
+        setDescFilterMode(true);
+        setDescFilterLoading(true);
+        setDescFilterError('');
+        setDescFilterRows(null);
+        try {
+          const params = {};
+          if (newFilters.isin)       params.isin       = newFilters.isin;
+          if (newFilters.issuerCode) params.issuerCode = newFilters.issuerCode;
+          const res = await api.get('/admin/v1/isins', { params });
+          setDescFilterRows(res.data.data.items ?? []);
+        } catch (err) {
+          setDescFilterError(
+            err.response?.data?.error?.message ?? err.message ?? 'Fetch failed.'
+          );
+          setDescFilterMode(false); // fall back to server-side pagination
+        } finally {
+          setDescFilterLoading(false);
+        }
+      } else {
+        // No description filter — use normal server-side pagination
+        setDescFilterMode(false);
+        setDescFilterRows(null);
+        setDescFilterError('');
+      }
     }
   }
 
@@ -458,6 +513,10 @@ function IsinMaster() {
     setMultiSearchRows(null);
     setMultiSearchError('');
     setSearchInputError('');
+    setDescFilterRows(null);
+    setDescFilterLoading(false);
+    setDescFilterError('');
+    setDescFilterMode(false);
   }
 
   // ── Render ───────────────────────────────────────────────────────────────────
@@ -542,7 +601,7 @@ function IsinMaster() {
         </div>
       )}
 
-      {/* ── ISIN Master List (server-side) */}
+      {/* ── ISIN Master List */}
       <div className="im-card">
         <div className="im-card-header">
           <span>ISIN Master List</span>
@@ -567,6 +626,11 @@ function IsinMaster() {
             {multiSearchError}
           </div>
         )}
+        {descFilterError && (
+          <div className="im-banner im-banner--error" style={{ margin: '8px 14px 0' }}>
+            {descFilterError}
+          </div>
+        )}
 
         <div className="im-table-wrapper">
           <table className="im-table">
@@ -574,7 +638,7 @@ function IsinMaster() {
               <tr>{ISIN_COLUMNS.map(col => <th key={col.field}>{col.header}</th>)}</tr>
             </thead>
             <tbody>
-              {multiSearchLoading ? (
+              {multiSearchLoading || descFilterLoading ? (
                 <tr>
                   <td className="im-empty-state" colSpan={ISIN_COLUMNS.length}>
                     Searching&hellip;
@@ -589,6 +653,24 @@ function IsinMaster() {
                   </tr>
                 ) : (
                   filteredMultiRows
+                    .slice((isinPage - 1) * isinPerPage, isinPage * isinPerPage)
+                    .map((row, idx) => (
+                      <tr key={row.isin || idx}>
+                        {ISIN_COLUMNS.map(col => (
+                          <td key={col.field}>{renderCell(col, row)}</td>
+                        ))}
+                      </tr>
+                    ))
+                )
+              ) : filteredDescRows !== null ? (
+                filteredDescRows.length === 0 ? (
+                  <tr>
+                    <td className="im-empty-state" colSpan={ISIN_COLUMNS.length}>
+                      No ISINs match the description filter.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredDescRows
                     .slice((isinPage - 1) * isinPerPage, isinPage * isinPerPage)
                     .map((row, idx) => (
                       <tr key={row.isin || idx}>
@@ -636,6 +718,17 @@ function IsinMaster() {
             setGoto={setIsinGoto}
             onGoto={handleIsinGoto}
           />
+        ) : filteredDescRows !== null ? (
+          <PaginationBar
+            page={isinPage}
+            perPage={isinPerPage}
+            totalCount={filteredDescRows.length}
+            totalPages={Math.max(1, Math.ceil(filteredDescRows.length / isinPerPage))}
+            goto={isinGoto}
+            setPage={setIsinPage}
+            setGoto={setIsinGoto}
+            onGoto={handleIsinGoto}
+          />
         ) : (
           <PaginationBar
             page={isinPage}
@@ -663,6 +756,7 @@ function IsinMaster() {
         <ExportModal
           appliedFilters={appliedFilters}
           multiSearchRows={multiSearchRows}
+          descFilterRows={descFilterRows}
           isinDescriptionSearch={appliedDescFilter}
           onClose={() => setShowExportModal(false)}
         />

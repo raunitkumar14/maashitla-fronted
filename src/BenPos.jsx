@@ -6,6 +6,7 @@ import { parseCdslBenposZip } from './parseCdslBenposZip';
 import { uploadCdslBenpos } from './uploadCdslBenpos';
 import { parseNsdlBenpos } from './parseNsdlBenpos';
 import { uploadNsdlBenpos } from './uploadNsdlBenpos';
+import { exportBenpos } from './benposExport';
 
 // ── Progress card (shared between CDSL and NSDL upload) ───────────────────────
 
@@ -39,9 +40,12 @@ function UploadProgressCard({ progress }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 function BenPos() {
-  const [company,         setCompany]         = useState('all');
-  const [issuer,          setIssuer]          = useState('');
-  const [date,            setDate]            = useState('');
+  const [selectedIsins,   setSelectedIsins]   = useState([]);
+  const [isinInput,       setIsinInput]       = useState('');
+  const [exportDate,      setExportDate]      = useState('');
+  const [exportLoading,   setExportLoading]   = useState(false);
+  const [exportError,     setExportError]     = useState('');
+  const [exportCount,     setExportCount]     = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
 
   // ── CDSL upload/parse state ─────────────────────────────────────────────────
@@ -64,8 +68,36 @@ function BenPos() {
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
-  function handleDownload() {
-    // TODO: wire to API
+  function handleIsinKeyDown(e) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const val = isinInput.trim().replace(/,/g, '');
+      if (val && !selectedIsins.includes(val)) {
+        setSelectedIsins(s => [...s, val]);
+      }
+      setIsinInput('');
+    } else if (e.key === 'Backspace' && isinInput === '' && selectedIsins.length > 0) {
+      setSelectedIsins(s => s.slice(0, -1));
+    }
+  }
+
+  function removeIsin(isin) {
+    setSelectedIsins(s => s.filter(x => x !== isin));
+  }
+
+  async function handleDownload() {
+    if (selectedIsins.length === 0) return;
+    setExportLoading(true);
+    setExportError('');
+    setExportCount(null);
+    try {
+      const count = await exportBenpos(selectedIsins, exportDate);
+      setExportCount(count);
+    } catch (err) {
+      setExportError(err.response?.data?.error?.message ?? err.message ?? 'Export failed.');
+    } finally {
+      setExportLoading(false);
+    }
   }
 
   async function handleCdslParsed(file) {
@@ -163,46 +195,63 @@ function BenPos() {
 
         <div className="benpos-filter-body">
           <div className="benpos-filter-row">
-            <div className="benpos-field benpos-field--half">
-              <label className="benpos-label">Company</label>
-              <select
-                className="benpos-select"
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
+            <div className="benpos-field benpos-field--isin">
+              <label className="benpos-label">ISIN</label>
+              {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+              <div
+                className="benpos-isin-wrap"
+                onClick={() => document.getElementById('benpos-isin-input').focus()}
               >
-                <option value="all">All</option>
-              </select>
-            </div>
-            <div className="benpos-field benpos-field--half">
-              <label className="benpos-label">Issuer</label>
-              <select
-                className="benpos-select"
-                value={issuer}
-                onChange={(e) => setIssuer(e.target.value)}
-              >
-                <option value="">-- Select --</option>
-              </select>
+                {selectedIsins.map(isin => (
+                  <span key={isin} className="benpos-isin-tag">
+                    {isin}
+                    <button
+                      className="benpos-isin-tag-remove"
+                      type="button"
+                      onClick={() => removeIsin(isin)}
+                    >×</button>
+                  </span>
+                ))}
+                <input
+                  id="benpos-isin-input"
+                  className="benpos-isin-input"
+                  type="text"
+                  value={isinInput}
+                  placeholder={selectedIsins.length === 0 ? 'Type ISIN and press Enter or comma' : ''}
+                  onChange={e => setIsinInput(e.target.value.toUpperCase())}
+                  onKeyDown={handleIsinKeyDown}
+                />
+              </div>
             </div>
           </div>
 
           <div className="benpos-filter-row benpos-filter-row--actions">
             <div className="benpos-field benpos-field--date">
               <label className="benpos-label">Date</label>
-              <select
-                className="benpos-select"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              >
-                <option value="">-- Select --</option>
-              </select>
+              <input
+                type="date"
+                className="benpos-date-input"
+                value={exportDate}
+                onChange={e => setExportDate(e.target.value)}
+              />
             </div>
             <button
               className="btn-action btn-action--pink benpos-download-btn"
               onClick={handleDownload}
+              disabled={exportLoading || selectedIsins.length === 0}
             >
-              ↑ DOWNLOAD
+              {exportLoading ? '⏳ Exporting…' : '↓ DOWNLOAD'}
             </button>
           </div>
+
+          {exportError && (
+            <div className="im-banner im-banner--error">⚠ {exportError}</div>
+          )}
+          {exportCount != null && !exportError && (
+            <div className="im-banner im-banner--success">
+              ✓ Export complete — {exportCount.toLocaleString()} rows downloaded.
+            </div>
+          )}
         </div>
       </div>
 
