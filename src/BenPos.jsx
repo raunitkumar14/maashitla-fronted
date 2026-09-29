@@ -86,12 +86,20 @@ function BenPos() {
   }
 
   async function handleDownload() {
-    if (selectedIsins.length === 0) return;
+    // Flush any ISIN that was typed but not yet committed via Enter/comma.
+    const pending = isinInput.trim().replace(/,/g, '');
+    const effectiveIsins = pending && !selectedIsins.includes(pending)
+      ? [...selectedIsins, pending]
+      : selectedIsins;
+    if (pending) { setSelectedIsins(effectiveIsins); setIsinInput(''); }
+    if (effectiveIsins.length === 0) return;
+    if (!exportDate) { setExportError('Please select a Date.'); return; }
+
     setExportLoading(true);
     setExportError('');
     setExportCount(null);
     try {
-      const count = await exportBenpos(selectedIsins, exportDate);
+      const count = await exportBenpos(effectiveIsins, exportDate);
       setExportCount(count);
     } catch (err) {
       setExportError(err.response?.data?.error?.message ?? err.message ?? 'Export failed.');
@@ -238,7 +246,7 @@ function BenPos() {
             <button
               className="btn-action btn-action--pink benpos-download-btn"
               onClick={handleDownload}
-              disabled={exportLoading || selectedIsins.length === 0}
+              disabled={exportLoading || (selectedIsins.length === 0 && !isinInput.trim()) || !exportDate}
             >
               {exportLoading ? '⏳ Exporting…' : '↓ DOWNLOAD'}
             </button>

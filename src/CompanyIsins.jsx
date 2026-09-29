@@ -134,6 +134,7 @@ function CompanyIsins() {
   }
 
   function handleIsinClick(isinRow) {
+    if (window.getSelection().toString().length > 0) return;
     navigate(`/company/${issuerCode}/physical`, {
       state: { row: companyRow, isinCode: isinRow.isin, isinRow },
     });

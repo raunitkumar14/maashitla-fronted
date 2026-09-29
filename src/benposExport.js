@@ -77,7 +77,7 @@ function dateSlice(val) {
 }
 
 function matchesDate(fieldVal, selectedDate) {
-  if (!selectedDate) return true;
+  if (!selectedDate) return false;
   return dateSlice(fieldVal) === selectedDate;
 }
 

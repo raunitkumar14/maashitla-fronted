@@ -109,7 +109,7 @@ const FORM_LAYOUT = [
   { key: 'professionalEmail',       label: 'Email ID' },
 
   { section: 'Other' },
-  { key: 'source',                  label: 'Source' },
+  { key: 'source',                  label: 'Source',  type: 'select', options: ['NSDL/CDSL', 'CDSL', 'NSDL'] },
   { key: 'remarks',                 label: 'Remarks',                            cols: 2 },
 ];
 
@@ -337,14 +337,27 @@ function CompanyDetails() {
                     style={item.cols ? { gridColumn: `span ${item.cols}` } : undefined}
                   >
                     <label htmlFor={`cdf-${item.key}`}>{item.label}</label>
-                    <input
-                      id={`cdf-${item.key}`}
-                      type={item.type ?? 'text'}
-                      className="filter-input adduser-input"
-                      value={form[item.key] ?? ''}
-                      readOnly={item.readOnly}
-                      onChange={item.readOnly ? undefined : e => setField(item.key, e.target.value)}
-                    />
+                    {item.type === 'select' ? (
+                      <select
+                        id={`cdf-${item.key}`}
+                        className="filter-input adduser-input adduser-select"
+                        value={form[item.key] ?? ''}
+                        onChange={e => setField(item.key, e.target.value)}
+                      >
+                        {item.options.map(opt => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        id={`cdf-${item.key}`}
+                        type={item.type ?? 'text'}
+                        className="filter-input adduser-input"
+                        value={form[item.key] ?? ''}
+                        readOnly={item.readOnly}
+                        onChange={item.readOnly ? undefined : e => setField(item.key, e.target.value)}
+                      />
+                    )}
                   </div>
                 );
               })}
