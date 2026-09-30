@@ -145,7 +145,7 @@ export const EXPORT_COLUMNS = [
   'Phone Number', 'Email ID', 'Father_Husband_name', 'Nominee_Guardian_Name',
   'Address Line-1', 'Address Line-2', 'Address Line-3', 'Address Line-4', 'PIN Code',
   'Bank_Name_and_Branch', 'Bank_Account_Number', 'Bank_Account_Type', 'MICR_Code', 'IFSC',
-  'Category type description', 'Category sub type description', 'Regulation 31 Type - Public',
+  'Category type description', 'Category sub type description', 'Category',
   'Source',
 ];
 
@@ -195,7 +195,7 @@ function mapCdslRow(row) {
     'IFSC':                          row.dividendBankIfsc ?? null,
     'Category type description':     catTypeDesc ?? null,
     'Category sub type description': catSubDesc ?? null,
-    'Regulation 31 Type - Public':   cdslExtra?.regulation31TypePublic ?? row.customerType ?? null,
+    'Category':   cdslExtra?.regulation31TypePublic ?? row.customerType ?? null,
     'Source':                        'CDSL',
   };
 }
@@ -245,7 +245,7 @@ function mapNsdlRow(row) {
     'IFSC':                          row.ifsc ?? null,
     'Category type description':     catTypeDesc ?? null,
     'Category sub type description': catSubDesc ?? null,
-    'Regulation 31 Type - Public':   nsdlExtra?.regulation31TypePublic ?? row.beneficiaryType ?? null,
+    'Category':   nsdlExtra?.regulation31TypePublic ?? row.beneficiaryType ?? null,
     'Source':                        'NSDL',
   };
 }
@@ -291,7 +291,7 @@ function mapPhysicalRow(shareholder, lockInQty) {
     'IFSC':                          shareholder.ifscCode ?? null,
     'Category type description':     shareholder.category ?? null,
     'Category sub type description': shareholder.subCategory ?? null,
-    'Regulation 31 Type - Public':   physExtra?.regulation31TypePublic ?? shareholder.category ?? null,
+    'Category':   physExtra?.regulation31TypePublic ?? shareholder.category ?? null,
     'Source':                        'PHYSICAL',
   };
 }
