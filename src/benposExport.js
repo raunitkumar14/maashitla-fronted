@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import api from './api/axios';
 import { deriveCategoryDescription } from './deriveCategoryDescription';
+import categoryMap from './benpos_category_mapping.json';
 
 // ── Pagination helper ─────────────────────────────────────────────────────────
 // Fetches all pages from an endpoint that uses the standard { data: { items, totalCount } }
@@ -100,6 +101,24 @@ function sumFields(row, fields) {
   return fields.reduce((acc, f) => acc + (Number(row[f]) || 0), 0);
 }
 
+// ── Category extra lookup helpers ────────────────────────────────────────────
+// Returns the full mapped info object for a CDSL/NSDL exact key, or null.
+// No unambiguousByType fallback — fields like regulation31TypePublic vary by
+// subtype so a type-only fallback isn't safe.
+function getCategoryExtra(source, catType, catSubtype) {
+  if (catType == null || catSubtype == null) return null;
+  const key = `${source}|${catType}|${catSubtype}`;
+  return categoryMap.exact[key] || null;
+}
+
+// Returns the full mapped info object for Physical rows, keyed by the
+// already-human-readable category/subCategory text.
+function getPhysicalCategoryExtra(categoryTypeDesc, categorySubTypeDesc) {
+  if (!categoryTypeDesc || !categorySubTypeDesc) return null;
+  const key = `${categoryTypeDesc}|${categorySubTypeDesc}`;
+  return categoryMap.physicalByDescription?.[key] || null;
+}
+
 // ── Physical Lock-In aggregation ──────────────────────────────────────────────
 // Build a map from folioIsinIncorpDate → total locked quantity.
 
@@ -126,7 +145,7 @@ export const EXPORT_COLUMNS = [
   'Phone Number', 'Email ID', 'Father_Husband_name', 'Nominee_Guardian_Name',
   'Address Line-1', 'Address Line-2', 'Address Line-3', 'Address Line-4', 'PIN Code',
   'Bank_Name_and_Branch', 'Bank_Account_Number', 'Bank_Account_Type', 'MICR_Code', 'IFSC',
-  'Category type description', 'Category sub type description', 'Category',
+  'Category type description', 'Category sub type description', 'Regulation 31 Type - Public',
   'Source',
 ];
 
@@ -135,6 +154,8 @@ export const EXPORT_COLUMNS = [
 function mapCdslRow(row) {
   const { description: catTypeDesc, subDescription: catSubDesc } =
     deriveCategoryDescription('CDSL', row.customerType, row.boSubStatus);
+  const cdslExtra = getCategoryExtra('CDSL', row.customerType, row.boSubStatus);
+  if (!cdslExtra) console.warn('[benposExport] No category mapping for CDSL|', row.customerType, '|', row.boSubStatus);
   const acNo = String(row.beneficiaryOwnerAcNo ?? '');
   return {
     'Holding Rpt Date':              row.dateOfBenpos ?? null,
@@ -174,7 +195,7 @@ function mapCdslRow(row) {
     'IFSC':                          row.dividendBankIfsc ?? null,
     'Category type description':     catTypeDesc ?? null,
     'Category sub type description': catSubDesc ?? null,
-    'Category':                      row.customerType ?? null,
+    'Regulation 31 Type - Public':   cdslExtra?.regulation31TypePublic ?? row.customerType ?? null,
     'Source':                        'CDSL',
   };
 }
@@ -182,6 +203,8 @@ function mapCdslRow(row) {
 function mapNsdlRow(row) {
   const { description: catTypeDesc, subDescription: catSubDesc } =
     deriveCategoryDescription('NSDL', row.beneficiaryType, row.beneficiarySubType);
+  const nsdlExtra = getCategoryExtra('NSDL', row.beneficiaryType, row.beneficiarySubType);
+  if (!nsdlExtra) console.warn('[benposExport] No category mapping for NSDL|', row.beneficiaryType, '|', row.beneficiarySubType);
   // TODO (client/Sunil): Holding Rpt Date and ISIN should technically come from
   // record type "01" of the raw NSDL file, not parsed/stored currently — using
   // date and isin columns as best-available approximation.
@@ -222,7 +245,7 @@ function mapNsdlRow(row) {
     'IFSC':                          row.ifsc ?? null,
     'Category type description':     catTypeDesc ?? null,
     'Category sub type description': catSubDesc ?? null,
-    'Category':                      row.beneficiaryType ?? null,
+    'Regulation 31 Type - Public':   nsdlExtra?.regulation31TypePublic ?? row.beneficiaryType ?? null,
     'Source':                        'NSDL',
   };
 }
@@ -230,6 +253,8 @@ function mapNsdlRow(row) {
 function mapPhysicalRow(shareholder, lockInQty) {
   // Physical category fields are already human-readable text — not numeric codes.
   // Do not run them through deriveCategoryDescription.
+  const physExtra = getPhysicalCategoryExtra(shareholder.category, shareholder.subCategory);
+  if (!physExtra) console.warn('[benposExport] No category mapping for Physical|', shareholder.category, '|', shareholder.subCategory);
   return {
     'Holding Rpt Date':              shareholder.dateOfIncorporation ?? null,
     'ISIN':                          shareholder.isin ?? null,
@@ -266,7 +291,7 @@ function mapPhysicalRow(shareholder, lockInQty) {
     'IFSC':                          shareholder.ifscCode ?? null,
     'Category type description':     shareholder.category ?? null,
     'Category sub type description': shareholder.subCategory ?? null,
-    'Category':                      shareholder.category ?? null,
+    'Regulation 31 Type - Public':   physExtra?.regulation31TypePublic ?? shareholder.category ?? null,
     'Source':                        'PHYSICAL',
   };
 }
