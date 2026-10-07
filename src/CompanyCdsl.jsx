@@ -8,6 +8,7 @@ import { CompanyCounts } from './CompanyLayout';
 import { deriveCategoryDescription } from './deriveCategoryDescription';
 import { mapOccupation, mapGender } from './occupationGenderMapping';
 import { mapBankAccountType } from './bankAccountTypeMapping';
+import { loadCategoryMapping } from './categoryMappingCache';
 
 // ── Official CDSL column order (105 columns) ──────────────────────────────────
 
@@ -318,6 +319,7 @@ function CompanyCdsl() {
   const [rows,    setRows]    = useState(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');
+  const [categoryMappingReady, setCategoryMappingReady] = useState(false);
 
   const [page,    setPage]    = useState(1);
   const [perPage, setPerPage] = useState(25);
@@ -327,6 +329,11 @@ function CompanyCdsl() {
 
   useEffect(() => { saveSelectedFields(selectedFields); }, [selectedFields]);
   useEffect(() => { setPage(1); }, [rows]);
+  useEffect(() => {
+    loadCategoryMapping()
+      .then(() => setCategoryMappingReady(true))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -379,6 +386,7 @@ function CompanyCdsl() {
 
   function renderCell(col, row) {
     if (col.field === 'categoryDescription') {
+      if (!categoryMappingReady) return '…';
       if (row === pageRows[0]) {
         console.log('[CDSL debug] customerType:', row.customerType, typeof row.customerType);
         console.log('[CDSL debug] boSubStatus:', row.boSubStatus, typeof row.boSubStatus);

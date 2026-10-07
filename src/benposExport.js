@@ -1,4 +1,3 @@
-import * as XLSX from 'xlsx-js-style';
 import api from './api/axios';
 import { deriveCategoryDescription } from './deriveCategoryDescription';
 import { getCategoryMap, loadCategoryMapping, normCategoryDesc } from './categoryMappingCache';
@@ -81,20 +80,20 @@ async function fetchAllPagesFiltered(url, params, keepRow, onProgress) {
 
 // ── Data fetching ─────────────────────────────────────────────────────────────
 
-export async function fetchBenposExportData(isins) {
+export async function fetchBenposExportData(isins, dateStr) {
   const isinParam = isins.join(',');
 
   // CDSL + NSDL: single multi-ISIN request each
   const [cdslRows, nsdlRows] = await Promise.all([
-    fetchAllPages('/admin/v1/benpos-cdsl',  { isin: isinParam }),
-    fetchAllPages('/admin/v1/benpos-nsdl',  { isin: isinParam }),
+    fetchAllPages('/admin/v1/benpos-cdsl',  { isin: isinParam, date: dateStr }),
+    fetchAllPages('/admin/v1/benpos-nsdl',  { isin: isinParam, date: dateStr }),
   ]);
 
   // Physical Shareholder: one partial-match call per ISIN (backend only supports
   // folioIsinIncorpDate as a composite field, not a standalone isin param).
   const physShArrays = await Promise.all(
     isins.map(isin =>
-      fetchAllPages('/admin/v1/benpos-physical-shareholder', { folioIsinIncorpDate: isin })
+      fetchAllPages('/admin/v1/benpos-physical-shareholder', { folioIsinIncorpDate: isin, date: dateStr })
     )
   );
 
@@ -233,7 +232,6 @@ export const EXPORT_COLUMNS = [
   'Address Line-1', 'Address Line-2', 'Address Line-3', 'Address Line-4', 'PIN Code',
   'Bank_Name_and_Branch', 'Bank_Account_Number', 'Bank_Account_Type', 'MICR_Code', 'IFSC',
   'Category type description', 'Category sub type description', 'Category',
-  'Source',
 ];
 
 // ── Per-source row mappers ────────────────────────────────────────────────────
@@ -282,7 +280,6 @@ function mapCdslRow(row) {
     'Category type description':     catTypeDesc ?? null,
     'Category sub type description': catSubDesc ?? null,
     'Category':   cdslExtra?.regulation31TypePublic ?? row.customerType ?? null,
-    'Source':                        'CDSL',
   };
 }
 
@@ -332,17 +329,16 @@ function mapNsdlRow(row) {
     'Category type description':     catTypeDesc ?? null,
     'Category sub type description': catSubDesc ?? null,
     'Category':   nsdlExtra?.regulation31TypePublic ?? row.beneficiaryType ?? null,
-    'Source':                        'NSDL',
   };
 }
 
-function mapPhysicalRow(shareholder, lockInQty) {
+function mapPhysicalRow(shareholder, lockInQty, dateStr) {
   // Physical category fields are already human-readable text — not numeric codes.
   // Do not run them through deriveCategoryDescription.
   const physExtra = getPhysicalCategoryExtra(shareholder.category, shareholder.subCategory);
   if (!physExtra) _missingCategoryKeys.add(`Physical|${shareholder.category}|${shareholder.subCategory}`);
   return {
-    'Holding Rpt Date':              formatDateDDMMYYYY(shareholder.dateOfIncorporation),
+    'Holding Rpt Date':              formatDateDDMMYYYY(dateStr),
     'ISIN':                          shareholder.isin ?? null,
     'Beneficial Owner ID':           shareholder.folioNo ?? null,
     'DP ID':                         null,
@@ -378,7 +374,6 @@ function mapPhysicalRow(shareholder, lockInQty) {
     'Category type description':     shareholder.category ?? null,
     'Category sub type description': shareholder.subCategory ?? null,
     'Category':   physExtra?.regulation31TypePublic ?? shareholder.category ?? null,
-    'Source':                        'PHYSICAL',
   };
 }
 
@@ -400,8 +395,9 @@ export function buildExportRows(cdslRows, nsdlRows, physShareholders, physShareh
   for (const r of filteredNsdl) rows.push(mapNsdlRow(r));
   for (const sh of filteredPhys) {
     const lockIn = lockInMap.get(sh.folioIsinIncorpDate) ?? lockInMap.get(sh.folioNo) ?? 0;
-    rows.push(mapPhysicalRow(sh, lockIn));
+    rows.push(mapPhysicalRow(sh, lockIn, dateStr));
   }
+  const missingCategoryCount = _missingCategoryKeys.size;
   if (_missingCategoryKeys.size > 0) {
     console.warn(
       `[benposExport] ${_missingCategoryKeys.size} distinct category codes had no mapping (raw codes used as fallback):`,
@@ -436,37 +432,12 @@ export function buildExportRows(cdslRows, nsdlRows, physShareholders, physShareh
     g.sort((a, b) => (Number(b['Holding (Total Qty)']) || 0) - (Number(a['Holding (Total Qty)']) || 0));
     sorted.push(...g);
   }
-  return sorted;
+  return { rows: sorted, missingCategoryCount };
 }
 
 // ── Excel download ────────────────────────────────────────────────────────────
 
-export function triggerBenposExcelDownload(rows, dateStr, isins = []) {
-  const sheetData = [EXPORT_COLUMNS];
-  for (const row of rows) sheetData.push(EXPORT_COLUMNS.map(col => {
-    const v = row[col];
-    return (v == null || (typeof v === 'string' && !v.trim())) ? undefined : v;
-  }));
-
-  let t = Date.now();
-  console.log(`[benposExport] aoa_to_sheet start — ${rows.length} rows × ${EXPORT_COLUMNS.length} cols — ${new Date().toISOString()}`);
-  const ws = XLSX.utils.aoa_to_sheet(sheetData);
-  console.log(`[benposExport] aoa_to_sheet done in ${Date.now() - t}ms`);
-
-  const headerStyle = {
-    font: { bold: true },
-    fill: { fgColor: { rgb: 'ADD8E6' } },
-  };
-  for (let col = 0; col < EXPORT_COLUMNS.length; col++) {
-    const cellRef = XLSX.utils.encode_cell({ r: 0, c: col });
-    if (ws[cellRef]) ws[cellRef].s = headerStyle;
-  }
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'BenPos');
-  const isinPart = isins.length > 0 ? `${isins.join('_')}_` : '';
-  downloadWorkbookAsBlob(wb, `BENPOS_${isinPart}${fmtDateForFilename(dateStr)}.xlsx`);
-}
+const BLOB_URL_REVOKE_MS = 10_000;
 
 function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
@@ -474,23 +445,9 @@ function downloadBlob(blob, filename) {
   link.href = url;
   link.download = filename;
   document.body.appendChild(link);
-  const t = Date.now();
-  console.log(`[benposExport] Blob download start ${new Date().toISOString()}`);
   link.click();
-  console.log(`[benposExport] Blob download triggered in ${Date.now() - t}ms`);
   document.body.removeChild(link);
-  setTimeout(() => URL.revokeObjectURL(url), 10000);
-}
-
-function downloadWorkbookAsBlob(workbook, filename) {
-  let t = Date.now();
-  console.log(`[benposExport] XLSX.write start ${new Date().toISOString()}`);
-  const wbArray = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  console.log(`[benposExport] XLSX.write done in ${Date.now() - t}ms — ${wbArray.byteLength} bytes`);
-  const blob = new Blob([wbArray], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  });
-  downloadBlob(blob, filename);
+  setTimeout(() => URL.revokeObjectURL(url), BLOB_URL_REVOKE_MS);
 }
 
 // ── Orchestrators ─────────────────────────────────────────────────────────────
@@ -498,41 +455,38 @@ function downloadWorkbookAsBlob(workbook, filename) {
 export async function exportBenpos(isins, dateStr) {
   await loadCategoryMapping();
   const { cdslRows, nsdlRows, physShareholders, physShareholdings } =
-    await fetchBenposExportData(isins);
-  const rows = buildExportRows(cdslRows, nsdlRows, physShareholders, physShareholdings, dateStr);
-  triggerBenposExcelDownload(rows, dateStr, isins);
-  return rows.length;
+    await fetchBenposExportData(isins, dateStr);
+  const { rows, missingCategoryCount } = buildExportRows(cdslRows, nsdlRows, physShareholders, physShareholdings, dateStr);
+
+  const dataRows = [];
+  for (const row of rows) dataRows.push(EXPORT_COLUMNS.map(col => {
+    const v = row[col];
+    return (v == null || (typeof v === 'string' && !v.trim())) ? undefined : v;
+  }));
+  const isinPart = isins.length > 0 ? `${isins.join('_')}_` : '';
+  const blob = await buildXlsxBlob(EXPORT_COLUMNS, dataRows, {
+    sheetName: 'BenPos',
+    headerFill: 'ADD8E6',
+  });
+  downloadBlob(blob, `BENPOS_${isinPart}${fmtDateForFilename(dateStr)}.xlsx`);
+  return { count: rows.length, missingCategoryCount };
 }
 
 async function fetchAllBenposExportData(dateStr, onProgress) {
   // Server now accepts ?date=YYYY-MM-DD and filters before paginating — no
   // client-side predicate needed for these three sources.
-  let t;
-
-  t = Date.now();
-  console.log(`[benposExport] fetch CDSL start ${new Date().toISOString()}`);
   const cdslRows = await fetchAllPages(
     '/admin/v1/benpos-cdsl', { date: dateStr },
     (p, tp) => onProgress?.(`Fetching CDSL data (page ${p} of ${tp})`)
   );
-  console.log(`[benposExport] fetch CDSL done — ${cdslRows.length} rows in ${Date.now() - t}ms`);
-
-  t = Date.now();
-  console.log(`[benposExport] fetch NSDL start ${new Date().toISOString()}`);
   const nsdlRows = await fetchAllPages(
     '/admin/v1/benpos-nsdl', { date: dateStr },
     (p, tp) => onProgress?.(`Fetching NSDL data (page ${p} of ${tp})`)
   );
-  console.log(`[benposExport] fetch NSDL done — ${nsdlRows.length} rows in ${Date.now() - t}ms`);
-
-  t = Date.now();
-  console.log(`[benposExport] fetch Physical start ${new Date().toISOString()}`);
   const physShareholders = await fetchAllPages(
     '/admin/v1/benpos-physical-shareholder', { date: dateStr },
     (p, tp) => onProgress?.(`Fetching Physical Shareholder data (page ${p} of ${tp})`)
   );
-  console.log(`[benposExport] fetch Physical done — ${physShareholders.length} rows in ${Date.now() - t}ms`);
-
   // Physical Shareholding is tiny (~60 rows total) — fetch it all; lock-in
   // matching by folioNo happens downstream in buildExportRows as usual.
   const physShareholdings = await fetchAllPages(
@@ -547,10 +501,7 @@ export async function exportAllBenpos(dateStr, onProgress) {
   const { cdslRows, nsdlRows, physShareholders, physShareholdings } =
     await fetchAllBenposExportData(dateStr, onProgress);
 
-  let t = Date.now();
-  console.log(`[benposExport] buildExportRows start ${new Date().toISOString()}`);
-  const rows = buildExportRows(cdslRows, nsdlRows, physShareholders, physShareholdings, dateStr);
-  console.log(`[benposExport] buildExportRows done — ${rows.length} rows in ${Date.now() - t}ms`);
+  const { rows, missingCategoryCount } = buildExportRows(cdslRows, nsdlRows, physShareholders, physShareholdings, dateStr);
 
   // Build AOA data rows — same values and order as the SheetJS path used.
   const dataRows = [];
@@ -559,17 +510,14 @@ export async function exportAllBenpos(dateStr, onProgress) {
     return (v == null || (typeof v === 'string' && !v.trim())) ? undefined : v;
   }));
 
-  t = Date.now();
-  console.log(`[benposExport] buildXlsxBlob start — ${rows.length} rows × ${EXPORT_COLUMNS.length} cols — ${new Date().toISOString()}`);
   const blob = await buildXlsxBlob(EXPORT_COLUMNS, dataRows, {
     sheetName: 'BenPos',
     headerFill: 'ADD8E6',
     onProgress: (done, total) => onProgress?.(`Writing Excel… ${done.toLocaleString()} / ${total.toLocaleString()} rows`),
   });
-  console.log(`[benposExport] buildXlsxBlob done in ${Date.now() - t}ms`);
 
   downloadBlob(blob, `BENPOS_ALL_${fmtDateForFilename(dateStr)}.xlsx`);
-  return rows.length;
+  return { count: rows.length, missingCategoryCount };
 }
 
 // ── Issuer ZIP export ─────────────────────────────────────────────────────────
@@ -643,7 +591,7 @@ export async function exportIssuerBenposZip(issuer, dateStr, onProgress) {
 
   // 3. Map rows and group by ISIN
   onProgress?.('Building rows…');
-  const allRows = buildExportRows(cdslRows, nsdlRows, physShareholders, physShareholdings, dateStr);
+  const { rows: allRows, missingCategoryCount } = buildExportRows(cdslRows, nsdlRows, physShareholders, physShareholdings, dateStr);
 
   const byIsin = new Map();
   for (const row of allRows) {
@@ -699,5 +647,5 @@ export async function exportIssuerBenposZip(issuer, dateStr, onProgress) {
   const zipName = `BENPOS_${issuerPart}_${fmtDateForFilename(dateStr)}.zip`;
   downloadBlob(zipBlob, zipName);
 
-  return { downloadedCount: isinsWithData.length, skippedIsins };
+  return { downloadedCount: isinsWithData.length, skippedIsins, missingCategoryCount };
 }

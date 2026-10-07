@@ -1,4 +1,3 @@
-import fallback from './benpos_category_mapping.json';
 import api from './api/axios';
 
 // ── Key normalization ─────────────────────────────────────────────────────────
@@ -100,7 +99,7 @@ function buildCategoryMap(items) {
 // synchronous callers (Company detail pages) always have data, even before any
 // async fetch completes.
 
-let _map     = normalizePhysicalKeys(fallback);
+let _map     = { exact: {}, unambiguousByType: {}, physicalByDescription: {} };
 let _promise = null;
 
 export function getCategoryMap() {
@@ -109,20 +108,24 @@ export function getCategoryMap() {
 
 // loadCategoryMapping() is idempotent: the first call fetches and caches;
 // subsequent calls return the same resolved promise immediately.
+// Throws if the API call fails or returns an empty list — callers that want
+// graceful degradation (screens) should .catch(() => {}) on their own.
 export async function loadCategoryMapping() {
   if (_promise) return _promise;
   _promise = (async () => {
+    let items;
     try {
-      const res   = await api.get('/admin/v1/category-mapping');
-      const items = res.data?.data?.items ?? res.data?.items ?? [];
-      if (items.length > 0) _map = buildCategoryMap(items);
+      const res = await api.get('/admin/v1/category-mapping');
+      items = res.data?.data?.items ?? res.data?.items ?? [];
     } catch (err) {
-      console.warn(
-        '[categoryMapping] API call failed — using bundled JSON fallback:',
-        err.message
-      );
-      // _map already holds the normalised fallback; no action needed.
+      _promise = null; // allow retry on next call
+      throw new Error('Category mapping could not be loaded. Please try again.');
     }
+    if (items.length === 0) {
+      _promise = null;
+      throw new Error('Category mapping could not be loaded. Please try again.');
+    }
+    _map = buildCategoryMap(items);
   })();
   return _promise;
 }

@@ -190,8 +190,11 @@ function BenPos() {
       setExportMessage(null);
       setExportProgress('');
       try {
-        const count = await exportAllBenpos(exportDate, msg => setExportProgress(msg));
-        setExportMessage(`✓ Export complete — ${count.toLocaleString()} rows downloaded.`);
+        const { count, missingCategoryCount } = await exportAllBenpos(exportDate, msg => setExportProgress(msg));
+        let successMsg = `✓ Export complete — ${count.toLocaleString()} rows downloaded.`;
+        if (missingCategoryCount > 0)
+          successMsg += ` ${missingCategoryCount.toLocaleString()} row${missingCategoryCount !== 1 ? 's' : ''} had no category mapping.`;
+        setExportMessage(successMsg);
       } catch (err) {
         console.error('[benposExport] failed:', err.stack);
         setExportError(err.response?.data?.error?.message ?? err.message ?? 'Export failed.');
@@ -220,6 +223,8 @@ function BenPos() {
             const rest = result.skippedIsins.length - shown.length;
             msg += ` No data on this date for: ${shown.join(', ')}${rest > 0 ? ` (${rest} more)` : ''}.`;
           }
+          if (result.missingCategoryCount > 0)
+            msg += ` ${result.missingCategoryCount.toLocaleString()} row${result.missingCategoryCount !== 1 ? 's' : ''} had no category mapping.`;
           setExportMessage(msg);
         }
       } catch (err) {
@@ -244,8 +249,11 @@ function BenPos() {
     setExportError('');
     setExportMessage(null);
     try {
-      const count = await exportBenpos(effectiveIsins, exportDate);
-      setExportMessage(`✓ Export complete — ${count.toLocaleString()} rows downloaded.`);
+      const { count, missingCategoryCount } = await exportBenpos(effectiveIsins, exportDate);
+      let successMsg = `✓ Export complete — ${count.toLocaleString()} rows downloaded.`;
+      if (missingCategoryCount > 0)
+        successMsg += ` ${missingCategoryCount.toLocaleString()} row${missingCategoryCount !== 1 ? 's' : ''} had no category mapping.`;
+      setExportMessage(successMsg);
     } catch (err) {
       console.error('[benposExport] failed:', err.stack);
       setExportError(err.response?.data?.error?.message ?? err.message ?? 'Export failed.');

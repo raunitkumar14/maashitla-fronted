@@ -8,6 +8,7 @@ import { CompanyCounts } from './CompanyLayout';
 import { deriveCategoryDescription } from './deriveCategoryDescription';
 import { mapOccupation } from './occupationGenderMapping';
 import { mapBankAccountType } from './bankAccountTypeMapping';
+import { loadCategoryMapping } from './categoryMappingCache';
 
 // ── Official NSDL column order (78 columns) ───────────────────────────────────
 // Matches the NSDL file layout spec exactly. All checked by default.
@@ -293,6 +294,7 @@ function CompanyNsdl() {
   const [rows,    setRows]    = useState(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');
+  const [categoryMappingReady, setCategoryMappingReady] = useState(false);
 
   const [page,    setPage]    = useState(1);
   const [perPage, setPerPage] = useState(25);
@@ -302,6 +304,11 @@ function CompanyNsdl() {
 
   useEffect(() => { saveSelectedFields(selectedFields); }, [selectedFields]);
   useEffect(() => { setPage(1); }, [rows]);
+  useEffect(() => {
+    loadCategoryMapping()
+      .then(() => setCategoryMappingReady(true))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -347,6 +354,7 @@ function CompanyNsdl() {
 
   function renderCell(col, row) {
     if (col.field === 'categoryDescription') {
+      if (!categoryMappingReady) return '…';
       if (row === pageRows[0]) {
         console.log('[NSDL debug] beneficiaryType:', row.beneficiaryType, typeof row.beneficiaryType);
         console.log('[NSDL debug] beneficiarySubType:', row.beneficiarySubType, typeof row.beneficiarySubType);

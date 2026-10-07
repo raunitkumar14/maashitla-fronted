@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import api from './api/axios';
 import './IsinMaster.css';
@@ -9,6 +9,7 @@ import { uploadPhysicalBenpos } from './uploadPhysicalBenpos';
 import { deriveCategoryDescription } from './deriveCategoryDescription';
 import { mapGender } from './occupationGenderMapping';
 import { mapBankAccountType } from './bankAccountTypeMapping';
+import { loadCategoryMapping } from './categoryMappingCache';
 
 // ── Pagination helpers ────────────────────────────────────────────────────────
 
@@ -279,6 +280,7 @@ function CompanyPhysical() {
   const [uploadProgress, setUploadProgress] = useState(null);
   const [uploadSummary,  setUploadSummary]  = useState(null);
   const [uploadError,    setUploadError]    = useState('');
+  const [categoryMappingReady, setCategoryMappingReady] = useState(false);
 
   const isBusy = parseStatus === 'parsing' || uploadStatus === 'uploading';
 
@@ -340,6 +342,11 @@ function CompanyPhysical() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+  useEffect(() => {
+    loadCategoryMapping()
+      .then(() => setCategoryMappingReady(true))
+      .catch(() => {});
+  }, []);
 
   // ── Search button — re-fetches with any filter inputs the user has typed ────
   function handleSearch() {
@@ -395,6 +402,25 @@ function CompanyPhysical() {
     }
     setUploadProgress(null);
   }
+
+  const shareholderCols = useMemo(() => SHAREHOLDER_COLS.map(col => {
+    if (col.field !== 'categoryDescription') return col;
+    return {
+      ...col,
+      renderFn: (row) => {
+        if (!categoryMappingReady) return '…';
+        const result = deriveCategoryDescription('PHYSICAL', row.category, row.subCategory);
+        if (result.resolved) return result.description ?? '—';
+        const raw = String(row.category ?? '').trim();
+        if (!raw) return '—';
+        return (
+          <span title="Category code has multiple possible descriptions - couldn't resolve exactly with available data">
+            {raw} ⚠
+          </span>
+        );
+      },
+    };
+  }), [categoryMappingReady]);
 
   // ── Empty-state messages ────────────────────────────────────────────────────
   const hasFilters = folioNoInput.trim() || holderNameInput.trim() || holderPanInput.trim();
@@ -515,7 +541,7 @@ function CompanyPhysical() {
       {/* ── Benpos Physical Shareholder table ── */}
       <BenposSection
         title="Benpos Physical Shareholder"
-        cols={SHAREHOLDER_COLS}
+        cols={shareholderCols}
         rows={shareholderRows}
         loading={searchLoading}
         emptyMsg={shEmptyMsg}
