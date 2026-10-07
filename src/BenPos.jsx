@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './IsinMaster.css';
 import './BenPos.css';
+import api from './api/axios';
 import UploadModal from './UploadModal';
 import { parseCdslBenposZip } from './parseCdslBenposZip';
 import { uploadCdslBenpos } from './uploadCdslBenpos';
 import { parseNsdlBenpos } from './parseNsdlBenpos';
 import { uploadNsdlBenpos } from './uploadNsdlBenpos';
-import { exportBenpos } from './benposExport';
+import { exportBenpos, exportAllBenpos, exportIssuerBenposZip } from './benposExport';
 
 // ── Progress card (shared between CDSL and NSDL upload) ───────────────────────
 
@@ -37,16 +38,35 @@ function UploadProgressCard({ progress }) {
 }
 
 
+// ── Date display helper ───────────────────────────────────────────────────────
+
+function fmtDate(iso) {
+  // '2026-09-25' → '25-09-2026'
+  if (!iso || iso.length < 10) return iso;
+  return `${iso.slice(8, 10)}-${iso.slice(5, 7)}-${iso.slice(0, 4)}`;
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 function BenPos() {
   const [selectedIsins,   setSelectedIsins]   = useState([]);
   const [isinInput,       setIsinInput]       = useState('');
+  const [allIsin,         setAllIsin]         = useState(false);
   const [exportDate,      setExportDate]      = useState('');
-  const [exportLoading,   setExportLoading]   = useState(false);
-  const [exportError,     setExportError]     = useState('');
-  const [exportCount,     setExportCount]     = useState(null);
-  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [exportLoading,      setExportLoading]      = useState(false);
+  const [exportProgress,     setExportProgress]     = useState('');
+  const [exportError,        setExportError]        = useState('');
+  const [exportMessage,      setExportMessage]      = useState(null);
+  const [showUploadModal,    setShowUploadModal]    = useState(false);
+  const [selectedIssuer,     setSelectedIssuer]     = useState(null);
+  const [issuerQuery,        setIssuerQuery]        = useState('');
+  const [issuerSuggestions,  setIssuerSuggestions]  = useState([]);
+  const [issuerLoading,      setIssuerLoading]      = useState(false);
+  const [showIssuerDropdown, setShowIssuerDropdown] = useState(false);
+  const [availableDates,     setAvailableDates]     = useState([]);
+  const [datesLoading,       setDatesLoading]       = useState(false);
+  const [datesError,         setDatesError]         = useState('');
+  const [datesFallback,      setDatesFallback]      = useState(false);
 
   // ── CDSL upload/parse state ─────────────────────────────────────────────────
 
@@ -85,23 +105,149 @@ function BenPos() {
     setSelectedIsins(s => s.filter(x => x !== isin));
   }
 
+  // ── Issuer autocomplete suggestions ────────────────────────────────────────
+
+  useEffect(() => {
+    const q = issuerQuery.trim();
+    if (q.length < 2) { setIssuerSuggestions([]); setIssuerLoading(false); return; }
+    setIssuerLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const [byName, byCode] = await Promise.allSettled([
+          api.get('/admin/v1/issuers', { params: { issuerName: q, pageSize: 10 } }),
+          api.get('/admin/v1/issuers', { params: { issuerCode: q, pageSize: 10 } }),
+        ]);
+        const seen = new Map();
+        for (const res of [byName, byCode]) {
+          if (res.status === 'fulfilled') {
+            for (const item of (res.value.data?.data?.items ?? [])) {
+              if (!seen.has(item.issuerCode)) seen.set(item.issuerCode, item);
+            }
+          }
+        }
+        setIssuerSuggestions([...seen.values()].slice(0, 10));
+        setShowIssuerDropdown(true);
+      } catch {
+        setIssuerSuggestions([]);
+      } finally {
+        setIssuerLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [issuerQuery]);
+
+  // ── Available dates fetch ─────────────────────────────────────────────────
+  // Re-runs when the selection mode changes. Clears exportDate immediately so
+  // the export button stays disabled while new dates are loading.
+
+  useEffect(() => {
+    const modeActive = allIsin || !!selectedIssuer || selectedIsins.length > 0;
+    if (!modeActive) {
+      setAvailableDates([]);
+      setExportDate('');
+      setDatesLoading(false);
+      setDatesError('');
+      setDatesFallback(false);
+      return;
+    }
+
+    setDatesLoading(true);
+    setDatesError('');
+    setExportDate(''); // clear stale selection while fetching
+
+    const params = {};
+    if (!allIsin && selectedIssuer)         params.issuerCode = selectedIssuer.issuerCode;
+    else if (!allIsin && selectedIsins.length > 0) params.isin = selectedIsins.join(',');
+    // allIsin → no params
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await api.get('/admin/v1/benpos-dates', { params });
+        const dates = res.data?.data?.dates ?? res.data?.dates ?? [];
+        setAvailableDates(dates);
+        setDatesFallback(false);
+        setDatesError('');
+        setExportDate(dates.length === 1 ? dates[0] : '');
+      } catch {
+        setDatesError('Could not load available dates. Enter date manually.');
+        setDatesFallback(true);
+      } finally {
+        setDatesLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allIsin, selectedIssuer, selectedIsins]);
+
   async function handleDownload() {
-    // Flush any ISIN that was typed but not yet committed via Enter/comma.
+    if (!exportDate) { setExportError('Please select a Date.'); return; }
+
+    // ── All ISIN mode ────────────────────────────────────────────────────────
+    if (allIsin) {
+      setExportLoading(true);
+      setExportError('');
+      setExportMessage(null);
+      setExportProgress('');
+      try {
+        const count = await exportAllBenpos(exportDate, msg => setExportProgress(msg));
+        setExportMessage(`✓ Export complete — ${count.toLocaleString()} rows downloaded.`);
+      } catch (err) {
+        console.error('[benposExport] failed:', err.stack);
+        setExportError(err.response?.data?.error?.message ?? err.message ?? 'Export failed.');
+      } finally {
+        setExportLoading(false);
+      }
+      return;
+    }
+
+    // ── Issuer mode ──────────────────────────────────────────────────────────
+    if (selectedIssuer) {
+      setExportLoading(true);
+      setExportError('');
+      setExportMessage(null);
+      setExportProgress('');
+      try {
+        const result = await exportIssuerBenposZip(
+          selectedIssuer, exportDate, msg => setExportProgress(msg)
+        );
+        if (result.downloadedCount === 0) {
+          setExportError(`No BenPos data found for this issuer on ${exportDate}.`);
+        } else {
+          let msg = `✓ Downloaded ${result.downloadedCount} file${result.downloadedCount !== 1 ? 's' : ''}.`;
+          if (result.skippedIsins.length > 0) {
+            const shown = result.skippedIsins.slice(0, 3);
+            const rest = result.skippedIsins.length - shown.length;
+            msg += ` No data on this date for: ${shown.join(', ')}${rest > 0 ? ` (${rest} more)` : ''}.`;
+          }
+          setExportMessage(msg);
+        }
+      } catch (err) {
+        console.error('[benposExport] failed:', err.stack);
+        setExportError(err.response?.data?.error?.message ?? err.message ?? 'Export failed.');
+      } finally {
+        setExportLoading(false);
+      }
+      return;
+    }
+
+    // ── Per-ISIN mode ────────────────────────────────────────────────────────
+    // Flush any ISIN typed but not yet committed via Enter/comma.
     const pending = isinInput.trim().replace(/,/g, '');
     const effectiveIsins = pending && !selectedIsins.includes(pending)
       ? [...selectedIsins, pending]
       : selectedIsins;
     if (pending) { setSelectedIsins(effectiveIsins); setIsinInput(''); }
     if (effectiveIsins.length === 0) return;
-    if (!exportDate) { setExportError('Please select a Date.'); return; }
 
     setExportLoading(true);
     setExportError('');
-    setExportCount(null);
+    setExportMessage(null);
     try {
       const count = await exportBenpos(effectiveIsins, exportDate);
-      setExportCount(count);
+      setExportMessage(`✓ Export complete — ${count.toLocaleString()} rows downloaded.`);
     } catch (err) {
+      console.error('[benposExport] failed:', err.stack);
       setExportError(err.response?.data?.error?.message ?? err.message ?? 'Export failed.');
     } finally {
       setExportLoading(false);
@@ -182,6 +328,8 @@ function BenPos() {
     cdslParseStatus === 'parsing' || cdslUploadStatus === 'uploading' ||
     nsdlParseStatus === 'parsing' || nsdlUploadStatus === 'uploading';
 
+  const hasMode = allIsin || !!selectedIssuer || selectedIsins.length > 0;
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -203,12 +351,88 @@ function BenPos() {
 
         <div className="benpos-filter-body">
           <div className="benpos-filter-row">
+            {/* ── All ISIN ── */}
+            <div className="benpos-field">
+              <label className="benpos-label">All ISIN</label>
+              <label className="benpos-all-isin-box">
+                <input
+                  type="checkbox"
+                  checked={allIsin}
+                  onChange={e => {
+                    setAllIsin(e.target.checked);
+                    if (e.target.checked) {
+                      setSelectedIssuer(null);
+                      setIssuerQuery('');
+                      setIssuerSuggestions([]);
+                    }
+                  }}
+                />
+                Export all ISINs
+              </label>
+            </div>
+
+            {/* ── Issuer ── */}
+            <div className={`benpos-field benpos-issuer-field${allIsin ? ' benpos-issuer-field--disabled' : ''}`}>
+              <label className="benpos-label">Issuer</label>
+              {selectedIssuer ? (
+                <div className="benpos-issuer-selected">
+                  <span title={`${selectedIssuer.issuerName || ''} (${selectedIssuer.issuerCode})`}>
+                    {selectedIssuer.issuerName || selectedIssuer.issuerCode}
+                  </span>
+                  <button
+                    type="button"
+                    className="benpos-issuer-clear"
+                    onClick={() => { setSelectedIssuer(null); setIssuerQuery(''); }}
+                  >×</button>
+                </div>
+              ) : (
+                <div className="benpos-issuer-wrap">
+                  <input
+                    className="benpos-issuer-input"
+                    type="text"
+                    placeholder="Search issuer…"
+                    value={issuerQuery}
+                    disabled={allIsin}
+                    onChange={e => { setIssuerQuery(e.target.value); setShowIssuerDropdown(true); }}
+                    onFocus={() => issuerSuggestions.length > 0 && setShowIssuerDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowIssuerDropdown(false), 150)}
+                  />
+                  {issuerLoading && <span className="benpos-issuer-spinner">…</span>}
+                  {showIssuerDropdown && issuerSuggestions.length > 0 && (
+                    <ul className="benpos-issuer-dropdown">
+                      {issuerSuggestions.map(item => (
+                        <li
+                          key={item.issuerCode}
+                          className="benpos-issuer-option"
+                          onMouseDown={e => {
+                            e.preventDefault();
+                            setSelectedIssuer(item);
+                            setIssuerQuery('');
+                            setIssuerSuggestions([]);
+                            setShowIssuerDropdown(false);
+                            setAllIsin(false);
+                            setSelectedIsins([]);
+                            setIsinInput('');
+                          }}
+                        >
+                          <span className="benpos-issuer-option-name">{item.issuerName || '—'}</span>
+                          <span className="benpos-issuer-option-code">{item.issuerCode}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="benpos-filter-row">
             <div className="benpos-field benpos-field--isin">
               <label className="benpos-label">ISIN</label>
               {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
               <div
-                className="benpos-isin-wrap"
-                onClick={() => document.getElementById('benpos-isin-input').focus()}
+                className={`benpos-isin-wrap${(allIsin || !!selectedIssuer) ? ' benpos-isin-wrap--disabled' : ''}`}
+                onClick={() => !(allIsin || selectedIssuer) && document.getElementById('benpos-isin-input').focus()}
               >
                 {selectedIsins.map(isin => (
                   <span key={isin} className="benpos-isin-tag">
@@ -217,6 +441,7 @@ function BenPos() {
                       className="benpos-isin-tag-remove"
                       type="button"
                       onClick={() => removeIsin(isin)}
+                      disabled={allIsin || !!selectedIssuer}
                     >×</button>
                   </span>
                 ))}
@@ -228,6 +453,7 @@ function BenPos() {
                   placeholder={selectedIsins.length === 0 ? 'Type ISIN and press Enter or comma' : ''}
                   onChange={e => setIsinInput(e.target.value.toUpperCase())}
                   onKeyDown={handleIsinKeyDown}
+                  disabled={allIsin || !!selectedIssuer}
                 />
               </div>
             </div>
@@ -236,29 +462,62 @@ function BenPos() {
           <div className="benpos-filter-row benpos-filter-row--actions">
             <div className="benpos-field benpos-field--date">
               <label className="benpos-label">Date</label>
-              <input
-                type="date"
-                className="benpos-date-input"
-                value={exportDate}
-                onChange={e => setExportDate(e.target.value)}
-              />
+              {datesFallback ? (
+                <>
+                  <input
+                    type="date"
+                    className="benpos-date-input"
+                    value={exportDate}
+                    onChange={e => setExportDate(e.target.value)}
+                  />
+                  <span className="benpos-date-note benpos-date-note--error">{datesError}</span>
+                </>
+              ) : !hasMode ? (
+                <select className="benpos-select" disabled>
+                  <option>Select an ISIN or Issuer first</option>
+                </select>
+              ) : datesLoading ? (
+                <select className="benpos-select" disabled>
+                  <option>Loading…</option>
+                </select>
+              ) : availableDates.length === 0 ? (
+                <select className="benpos-select" disabled>
+                  <option>No BenPos data for this selection</option>
+                </select>
+              ) : (
+                <select
+                  className="benpos-select"
+                  value={exportDate}
+                  onChange={e => setExportDate(e.target.value)}
+                >
+                  <option value="">— Select date —</option>
+                  {availableDates.map(d => (
+                    <option key={d} value={d}>{fmtDate(d)}</option>
+                  ))}
+                </select>
+              )}
             </div>
             <button
               className="btn-action btn-action--pink benpos-download-btn"
               onClick={handleDownload}
-              disabled={exportLoading || (selectedIsins.length === 0 && !isinInput.trim()) || !exportDate}
+              disabled={exportLoading || datesLoading || (!allIsin && !selectedIssuer && selectedIsins.length === 0 && !isinInput.trim()) || !exportDate}
             >
-              {exportLoading ? '⏳ Exporting…' : '↓ DOWNLOAD'}
+              {exportLoading ? '⏳ Exporting…' : '↓ EXPORT'}
             </button>
           </div>
 
+          {exportLoading && (allIsin || !!selectedIssuer) && (
+            <div className="im-banner im-banner--info">
+              ⏳ {exportProgress || (allIsin
+                ? 'Exporting all ISINs — this may take a while…'
+                : `Exporting ${selectedIssuer.issuerName || 'issuer'} data — this may take a while…`)}
+            </div>
+          )}
           {exportError && (
             <div className="im-banner im-banner--error">⚠ {exportError}</div>
           )}
-          {exportCount != null && !exportError && (
-            <div className="im-banner im-banner--success">
-              ✓ Export complete — {exportCount.toLocaleString()} rows downloaded.
-            </div>
+          {exportMessage && !exportError && (
+            <div className="im-banner im-banner--success">{exportMessage}</div>
           )}
         </div>
       </div>

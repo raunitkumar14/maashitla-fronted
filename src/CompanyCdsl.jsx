@@ -6,6 +6,8 @@ import './CompanyDetail.css';
 import './CompanyCdsl.css';
 import { CompanyCounts } from './CompanyLayout';
 import { deriveCategoryDescription } from './deriveCategoryDescription';
+import { mapOccupation, mapGender } from './occupationGenderMapping';
+import { mapBankAccountType } from './bankAccountTypeMapping';
 
 // ── Official CDSL column order (105 columns) ──────────────────────────────────
 
@@ -392,6 +394,9 @@ function CompanyCdsl() {
         </span>
       );
     }
+    if (col.field === 'sexOfFirstHolder')       return mapGender(row.sexOfFirstHolder) ?? '—';
+    if (col.field === 'occupation')             return mapOccupation('CDSL', row.occupation) ?? '—';
+    if (col.field === 'dividendBankAccountType') return mapBankAccountType(row.dividendBankAccountType, 'CDSL') ?? '—';
     const val = row[col.field];
     if (col.isDate)                                     return formatDate(val);
     if (val === undefined || val === null || val === '') return '—';

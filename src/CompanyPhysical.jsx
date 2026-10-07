@@ -7,6 +7,8 @@ import './CompanyDetail.css';
 import { parsePhysicalBenpos } from './parsePhysicalBenpos';
 import { uploadPhysicalBenpos } from './uploadPhysicalBenpos';
 import { deriveCategoryDescription } from './deriveCategoryDescription';
+import { mapGender } from './occupationGenderMapping';
+import { mapBankAccountType } from './bankAccountTypeMapping';
 
 // ── Pagination helpers ────────────────────────────────────────────────────────
 
@@ -100,7 +102,7 @@ const SHAREHOLDER_COLS = [
   { header: 'Holder 1 Name',           field: 'holder1Name' },
   { header: 'Share Qty',               field: 'shareQty' },
   { header: 'Holder 1 PAN',            field: 'holder1Pan' },
-  { header: 'Holder 1 Gender',         field: 'holder1Gender' },
+  { header: 'Holder 1 Gender',         field: 'holder1Gender',     renderFn: (row) => mapGender(row.holder1Gender) ?? '—' },
   { header: 'Holder 1 Occupation',     field: 'holder1Occupation' },
   { header: 'Holder 1 Birth Date',     field: 'holder1BirthDate' },
   { header: 'Holder 1 Mobile',         field: 'holder1MobileNo' },
@@ -119,7 +121,7 @@ const SHAREHOLDER_COLS = [
   { header: 'Holder 3 PAN',            field: 'holder3Pan' },
   { header: 'Bank A/C No.',            field: 'bankAcNo' },
   { header: 'Bank Name',               field: 'bankName' },
-  { header: 'Account Type',            field: 'accountType' },
+  { header: 'Account Type',            field: 'accountType',  renderFn: (row) => mapBankAccountType(row.accountType, 'PHYSICAL') ?? '—' },
   { header: 'IFSC Code',               field: 'ifscCode' },
   { header: 'Bank MICR Code',          field: 'bankMicrCode' },
   { header: 'Bank Address 1',          field: 'bankAddress1' },
@@ -130,7 +132,7 @@ const SHAREHOLDER_COLS = [
   { header: 'Nominee Name',            field: 'nominationName' },
   { header: 'Relation w/ Holder',      field: 'relationWithHolder' },
   { header: 'Nominee PAN',             field: 'nominationPan' },
-  { header: 'Nominee Gender',          field: 'nominationGender' },
+  { header: 'Nominee Gender',          field: 'nominationGender',  renderFn: (row) => mapGender(row.nominationGender) ?? '—' },
   { header: 'Nominee Occupation',      field: 'nominationOccupation' },
   { header: 'Nominee Birth Date',      field: 'nominationBirthDate' },
   { header: 'Nominee Mobile',          field: 'nominationMobileNo' },

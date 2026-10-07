@@ -6,6 +6,8 @@ import './CompanyDetail.css';
 import './CompanyNsdl.css';
 import { CompanyCounts } from './CompanyLayout';
 import { deriveCategoryDescription } from './deriveCategoryDescription';
+import { mapOccupation } from './occupationGenderMapping';
+import { mapBankAccountType } from './bankAccountTypeMapping';
 
 // ── Official NSDL column order (78 columns) ───────────────────────────────────
 // Matches the NSDL file layout spec exactly. All checked by default.
@@ -360,6 +362,8 @@ function CompanyNsdl() {
         </span>
       );
     }
+    if (col.field === 'beneficiaryOccupation') return mapOccupation('NSDL', row.beneficiaryOccupation) ?? '—';
+    if (col.field === 'bankAccountType')       return mapBankAccountType(row.bankAccountType, 'NSDL') ?? '—';
     const val = row[col.field];
     if (col.isDate)                                    return formatDate(val);
     if (val === undefined || val === null || val === '') return '—';
