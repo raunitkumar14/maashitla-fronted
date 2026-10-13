@@ -7,6 +7,9 @@ import './CompanyDetails.css';
 import './Users.css';
 import './AddUser.css';
 import './EditUser.css';
+import { useColumnVisibility } from './hooks/useColumnVisibility';
+import { ColumnSelector } from './components/ColumnSelector';
+import { hasPermission } from './auth';
 
 const COLUMNS = [
   { header: 'Issuer ID',                       key: 'issuerId' },
@@ -54,7 +57,37 @@ const COLUMNS = [
   { header: 'Remarks',                         key: 'remarks' },
 ];
 
-const TOTAL_COLS = COLUMNS.length;
+// ── Column-visibility config (stable module-level reference) ─────────────────
+
+const COLUMN_GROUP_MAP = {
+  issuerId: 'Issuer', issuerCode: 'Issuer', issuerName: 'Issuer',
+  issuerAddress1: 'Issuer Address', issuerAddress2: 'Issuer Address',
+  issuerAddress3: 'Issuer Address', issuerCity: 'Issuer Address',
+  issuerState: 'Issuer Address', issuerCountry: 'Issuer Address',
+  issuerZipCode: 'Issuer Address',
+  issuerPhone1: 'Contact', issuerPhone2: 'Contact',
+  issuerEmail: 'Contact', issuerEmail2: 'Contact', issuerEmail3: 'Contact',
+  gstAddress1: 'GST', gstAddress2: 'GST', gstAddress3: 'GST',
+  gstCity: 'GST', gstState: 'GST', gstPin: 'GST', gstCountry: 'GST', gstin: 'GST',
+  pan: 'Tax & Signatory', tan: 'Tax & Signatory',
+  authorisedSignatory: 'Tax & Signatory', designationOfAuthSignatory: 'Tax & Signatory',
+  totalIsin: 'Company Info', cin: 'Company Info',
+  oldName: 'Company Info', dateOfIncorporation: 'Company Info',
+  rtaCodeNsdl: 'RTA & Listing', rtaCodeCdsl: 'RTA & Listing',
+  listingStatus: 'RTA & Listing', listingAt: 'RTA & Listing',
+  symbol: 'RTA & Listing', scripCode: 'RTA & Listing',
+  professionalOrAnyOther: 'Professional', professionalName: 'Professional',
+  professionalPhone1: 'Professional', professionalPhone2: 'Professional',
+  professionalEmail: 'Professional', remarks: 'Professional',
+};
+
+const VIS_COLUMNS = COLUMNS.map(col => ({
+  key:            col.key,
+  label:          col.header,
+  defaultVisible: true,
+  locked:         col.key === 'issuerCode',
+  group:          COLUMN_GROUP_MAP[col.key] ?? 'Other',
+}));
 
 // Mirrors the old EditCompanyModal layout exactly; read-only markers added for
 // issuerId / issuerCode so they appear in the grid but stay non-editable.
@@ -219,6 +252,13 @@ function CompanyDetails() {
     setFormState(prev => ({ ...prev, [key]: value }));
   }
 
+  // ── Column visibility ───────────────────────────────────────────────────────
+
+  const { visibleKeys, isVisible, toggle, setAll, setGroup, reset: resetColumns } =
+    useColumnVisibility('company-details', VIS_COLUMNS);
+
+  const visibleCols = COLUMNS.filter(col => isVisible(col.key));
+
   const companyLabel = issuer?.issuerName
     ? `${issuer.issuerName} (${issuerCode})`
     : issuerCode;
@@ -241,6 +281,14 @@ function CompanyDetails() {
           <span>Issuer Information</span>
           {!editMode ? (
             <div className="cd-edit-actions">
+              <ColumnSelector
+                columns={VIS_COLUMNS}
+                visibleKeys={visibleKeys}
+                onToggle={toggle}
+                onSetAll={setAll}
+                onSetGroup={setGroup}
+                onReset={resetColumns}
+              />
               <button
                 className="btn-upload"
                 onClick={() => navigate(`/company/${issuerCode}/isins`)}
@@ -248,6 +296,15 @@ function CompanyDetails() {
               >
                 View ISIN
               </button>
+              {hasPermission('promoter_master:view') && (
+                <button
+                  className="btn-upload"
+                  onClick={() => navigate(`/company/${issuerCode}/promoter`)}
+                  disabled={loading || !issuer}
+                >
+                  Promoter
+                </button>
+              )}
               <button
                 className="btn-upload"
                 onClick={handleEdit}
@@ -288,7 +345,7 @@ function CompanyDetails() {
             <table className="im-table">
               <thead>
                 <tr>
-                  {COLUMNS.map(col => (
+                  {visibleCols.map(col => (
                     <th key={col.key}>{col.header}</th>
                   ))}
                 </tr>
@@ -296,15 +353,15 @@ function CompanyDetails() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td className="im-empty-state" colSpan={TOTAL_COLS}>Loading…</td>
+                    <td className="im-empty-state" colSpan={visibleCols.length}>Loading…</td>
                   </tr>
                 ) : !issuer ? (
                   <tr>
-                    <td className="im-empty-state" colSpan={TOTAL_COLS}>No data available.</td>
+                    <td className="im-empty-state" colSpan={visibleCols.length}>No data available.</td>
                   </tr>
                 ) : (
                   <tr>
-                    {COLUMNS.map(col => (
+                    {visibleCols.map(col => (
                       <td key={col.key}>{fmtCell(col.key, issuer[col.key])}</td>
                     ))}
                   </tr>

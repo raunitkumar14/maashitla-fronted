@@ -10,6 +10,8 @@ import { deriveCategoryDescription } from './deriveCategoryDescription';
 import { mapGender } from './occupationGenderMapping';
 import { mapBankAccountType } from './bankAccountTypeMapping';
 import { loadCategoryMapping } from './categoryMappingCache';
+import { useColumnVisibility } from './hooks/useColumnVisibility';
+import { ColumnSelector } from './components/ColumnSelector';
 
 // ── Pagination helpers ────────────────────────────────────────────────────────
 
@@ -95,17 +97,30 @@ function UploadProgressCard({ progress }) {
   );
 }
 
+// ── Date display helper ───────────────────────────────────────────────────────
+// Slices the first 10 chars (YYYY-MM-DD) and returns DD-MM-YYYY.
+// No Date() / timezone involved. Returns null for blank/null; returns the
+// original trimmed string if the value doesn't match the expected pattern.
+function formatDateText(val) {
+  if (val == null) return null;
+  const s = String(val).trim();
+  if (!s) return null;
+  const prefix = s.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(prefix)) return s;
+  return `${prefix.slice(8, 10)}-${prefix.slice(5, 7)}-${prefix.slice(0, 4)}`;
+}
+
 // ── Column definitions ────────────────────────────────────────────────────────
 
 const SHAREHOLDER_COLS = [
   { header: 'Folio No.',               field: 'folioNo' },
-  { header: 'Date of Incorporation',   field: 'dateOfIncorporation' },
+  { header: 'Date of Incorporation',   field: 'dateOfIncorporation',  renderFn: (row) => formatDateText(row.dateOfIncorporation) ?? '—' },
   { header: 'Holder 1 Name',           field: 'holder1Name' },
   { header: 'Share Qty',               field: 'shareQty' },
   { header: 'Holder 1 PAN',            field: 'holder1Pan' },
   { header: 'Holder 1 Gender',         field: 'holder1Gender',     renderFn: (row) => mapGender(row.holder1Gender) ?? '—' },
   { header: 'Holder 1 Occupation',     field: 'holder1Occupation' },
-  { header: 'Holder 1 Birth Date',     field: 'holder1BirthDate' },
+  { header: 'Holder 1 Birth Date',     field: 'holder1BirthDate',     renderFn: (row) => formatDateText(row.holder1BirthDate) ?? '—' },
   { header: 'Holder 1 Mobile',         field: 'holder1MobileNo' },
   { header: 'Holder 1 Email',          field: 'holder1EmailId' },
   { header: 'Father/Husband Name',     field: 'fatherHusbandName' },
@@ -170,20 +185,64 @@ const SHAREHOLDING_COLS = [
   { header: 'Quantity',                field: 'quantity' },
   { header: 'Dist. No. From',          field: 'distinctiveNumberFrom' },
   { header: 'Dist. No. To',            field: 'distinctiveNumberTo' },
-  { header: 'Date of Issuance',        field: 'dateOfIssuance' },
+  { header: 'Date of Issuance',        field: 'dateOfIssuance',       renderFn: (row) => formatDateText(row.dateOfIssuance) ?? '—' },
   { header: 'Lock-in Status',          field: 'lockInStatus' },
-  { header: 'Lock-in Release Date',    field: 'lockInReleaseDate' },
+  { header: 'Lock-in Release Date',    field: 'lockInReleaseDate',    renderFn: (row) => formatDateText(row.lockInReleaseDate) ?? '—' },
   { header: 'Lock-in Reason',          field: 'lockInReason' },
 ];
+
+// ── Column-visibility configs (stable module-level references) ────────────────
+
+const SHAREHOLDER_GROUP_MAP = {
+  folioNo: 'Holder 1', dateOfIncorporation: 'Holder 1', holder1Name: 'Holder 1',
+  shareQty: 'Holder 1', holder1Pan: 'Holder 1', holder1Gender: 'Holder 1',
+  holder1Occupation: 'Holder 1', holder1BirthDate: 'Holder 1',
+  holder1MobileNo: 'Holder 1', holder1EmailId: 'Holder 1',
+  fatherHusbandName: 'Address', address1: 'Address', address2: 'Address',
+  address3: 'Address', city: 'Address', state: 'Address',
+  pinCode: 'Address', country: 'Address',
+  holder2Name: 'Other Holders', holder2Pan: 'Other Holders',
+  holder3Name: 'Other Holders', holder3Pan: 'Other Holders',
+  bankAcNo: 'Bank', bankName: 'Bank', accountType: 'Bank',
+  ifscCode: 'Bank', bankMicrCode: 'Bank',
+  bankAddress1: 'Bank', bankAddress2: 'Bank', bankAddress3: 'Bank',
+  bankAddress4: 'Bank', bankAddressPinCode: 'Bank',
+  nominationName: 'Nominee', relationWithHolder: 'Nominee',
+  nominationPan: 'Nominee', nominationGender: 'Nominee',
+  nominationOccupation: 'Nominee', nominationBirthDate: 'Nominee',
+  nominationMobileNo: 'Nominee', nominationEmailId: 'Nominee',
+  nomineeAddress1: 'Nominee', nomineeAddress2: 'Nominee',
+  nomineeAddress3: 'Nominee', nomineeCity: 'Nominee',
+  nomineeState: 'Nominee', nomineePinCode: 'Nominee', nomineeCountry: 'Nominee',
+  category: 'Category', categoryDescription: 'Category', subCategory: 'Category',
+};
+
+const SHAREHOLDER_VIS_COLS = SHAREHOLDER_COLS.map(col => ({
+  key:            col.field,
+  label:          col.header,
+  defaultVisible: true,
+  locked:         col.field === 'folioNo',
+  group:          SHAREHOLDER_GROUP_MAP[col.field] ?? 'Other',
+}));
+
+const SHAREHOLDING_VIS_COLS = SHAREHOLDING_COLS.map(col => ({
+  key:            col.field,
+  label:          col.header,
+  defaultVisible: true,
+  locked:         col.field === 'certificateNo',
+}));
 
 // ── BenposSection — display-only, rows supplied by parent ────────────────────
 // rows = null  → initial loading state (auto-load in progress)
 // rows = []    → empty result; emptyMsg is shown
 // rows = [...]  → paginated table
-function BenposSection({ title, cols, rows, loading, emptyMsg }) {
+function BenposSection({ title, cols, rows, loading, emptyMsg, tableKey, visibilityColumns }) {
   const [page,    setPage]    = useState(1);
   const [perPage, setPerPage] = useState(25);
   const [goto,    setGoto]    = useState('');
+
+  const colVis     = useColumnVisibility(tableKey, visibilityColumns);
+  const visibleCols = cols.filter(col => colVis.isVisible(col.field));
 
   // Reset to page 1 whenever the result set changes.
   useEffect(() => { setPage(1); }, [rows]);
@@ -203,35 +262,47 @@ function BenposSection({ title, cols, rows, loading, emptyMsg }) {
     <div className="im-card">
       <div className="im-card-header">
         <span>{title}</span>
-        <label className="entries-label">
-          Entries per page
-          <select
-            className="entries-select"
-            value={perPage}
-            onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }}
-          >
-            <option value={10}>10</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </select>
-        </label>
+        <div className="im-header-actions">
+          <ColumnSelector
+            columns={visibilityColumns}
+            visibleKeys={colVis.visibleKeys}
+            onToggle={colVis.toggle}
+            onSetAll={colVis.setAll}
+            onSetGroup={colVis.setGroup}
+            onReset={colVis.reset}
+          />
+          <label className="entries-label">
+            Entries per page
+            <select
+              className="entries-select"
+              value={perPage}
+              onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }}
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </label>
+        </div>
       </div>
 
       <div className="im-table-wrapper">
         <table className="im-table">
           <thead>
-            <tr>{cols.map((col) => <th key={col.field}>{col.header}</th>)}</tr>
+            <tr>{visibleCols.map(col => <th key={col.field}>{col.header}</th>)}</tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td className="im-empty-state" colSpan={cols.length}>Loading…</td></tr>
+              <tr><td className="im-empty-state" colSpan={visibleCols.length}>Loading…</td></tr>
             ) : pageRows.length === 0 ? (
-              <tr><td className="im-empty-state" colSpan={cols.length}>{emptyMsg ?? 'No records found.'}</td></tr>
+              <tr><td className="im-empty-state" colSpan={visibleCols.length}>{emptyMsg ?? 'No records found.'}</td></tr>
             ) : (
               pageRows.map((row, idx) => (
                 <tr key={`${row[cols[0].field] ?? ''}-${idx}`}>
-                  {cols.map((col) => <td key={col.field}>{col.renderFn ? col.renderFn(row) : (row[col.field] ?? '—')}</td>)}
+                  {visibleCols.map(col => (
+                    <td key={col.field}>{col.renderFn ? col.renderFn(row) : (row[col.field] ?? '—')}</td>
+                  ))}
                 </tr>
               ))
             )}
@@ -240,10 +311,10 @@ function BenposSection({ title, cols, rows, loading, emptyMsg }) {
       </div>
 
       <PaginationBar
-        page={page}                               perPage={perPage}
+        page={page}                                 perPage={perPage}
         totalCount={rows === null ? 0 : totalCount} totalPages={rows === null ? 0 : totalPages}
-        goto={goto}                               setPage={setPage}
-        setGoto={setGoto}                         onGoto={handleGoto}
+        goto={goto}                                 setPage={setPage}
+        setGoto={setGoto}                           onGoto={handleGoto}
       />
     </div>
   );
@@ -317,6 +388,13 @@ function CompanyPhysical() {
       });
       setShareholderRows(shareholders);
 
+      // When a search filter is active, restrict shareholdings to folios that
+      // matched the shareholder search. With no filters, show everything (ISIN-only).
+      const searchActive = !!(extraFilters.folioNo || extraFilters.holderName || extraFilters.holderPan);
+      const matchedFolios = searchActive
+        ? new Set(shareholders.map(r => r.folioNo).filter(Boolean))
+        : null;
+
       // Fetch all shareholdings and filter client-side: the backend doesn't support
       // multi-value folioNo params, and folioIsinIncorpDate is always "folio|isin|date",
       // so matching on the ISIN substring is reliable and needs no backend change.
@@ -324,9 +402,12 @@ function CompanyPhysical() {
         params: { pageSize: 500, page: 1 },
       });
       const allShareholdings = shingRes.data?.data?.items ?? [];
-      const shareholdings = isinCode
+      const isinFilteredShing = isinCode
         ? allShareholdings.filter(r => r.folioIsinIncorpDate?.includes(isinCode))
         : allShareholdings;
+      const shareholdings = matchedFolios
+        ? isinFilteredShing.filter(r => matchedFolios.has(r.folioNo))
+        : isinFilteredShing;
       setShareholdingRows(shareholdings);
 
     } catch (err) {
@@ -545,6 +626,8 @@ function CompanyPhysical() {
         rows={shareholderRows}
         loading={searchLoading}
         emptyMsg={shEmptyMsg}
+        tableKey="physical-shareholder"
+        visibilityColumns={SHAREHOLDER_VIS_COLS}
       />
 
       {/* ── Benpos Physical Shareholding table ── */}
@@ -554,6 +637,8 @@ function CompanyPhysical() {
         rows={shareholdingRows}
         loading={searchLoading}
         emptyMsg={shingEmptyMsg}
+        tableKey="physical-shareholding"
+        visibilityColumns={SHAREHOLDING_VIS_COLS}
       />
 
     </div>

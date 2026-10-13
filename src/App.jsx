@@ -16,6 +16,7 @@ import CompanyNsdl from './CompanyNsdl';
 import CompanyCdsl from './CompanyCdsl';
 import CompanyIsins from './CompanyIsins';
 import CompanyDetails from './CompanyDetails';
+import CompanyPromoter from './CompanyPromoter';
 
 /*
  * ── How React Router works ──────────────────────────────────────────────────
@@ -102,7 +103,7 @@ function App() {
         <Route path="nsdl"             element={<CompanyNsdl />} />
         <Route path="cdsl"             element={<CompanyCdsl />} />
         <Route path="transactions"     element={<CompanyComingSoon title="Transactions" />} />
-        <Route path="promoter"         element={<CompanyComingSoon title="Promoter" />} />
+        <Route path="promoter"         element={<CompanyPromoter />} />
         <Route path="category-convert" element={<CompanyComingSoon title="Category Convert" />} />
       </Route>
 

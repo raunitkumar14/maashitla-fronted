@@ -3,6 +3,8 @@ import './IsinMaster.css';
 import './UploadModal.css';
 import IsinUploadModal from './IsinUploadModal';
 import api from './api/axios';
+import { useColumnVisibility } from './hooks/useColumnVisibility';
+import { ColumnSelector } from './components/ColumnSelector';
 
 // ── Column definitions ────────────────────────────────────────────────────────
 
@@ -24,18 +26,27 @@ const ISIN_COLUMNS = [
   { header: 'Source',                       field: 'source',                 isDate: false },
 ];
 
+// Stable column config for useColumnVisibility — defined at module level so the
+// reference never changes across renders (the hook's useState initializer runs once).
+const VISIBILITY_COLUMNS = ISIN_COLUMNS.map(col => ({
+  key:            col.field,
+  label:          col.header,
+  defaultVisible: true,
+  locked:         col.field === 'isin',
+}));
+
 // ── CSV export helpers ────────────────────────────────────────────────────────
 
-function generateCsvString(rows) {
+function generateCsvString(rows, cols) {
   const esc = val => {
     const s = val == null ? '' : String(val);
     return (s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r'))
       ? `"${s.replace(/"/g, '""')}"`
       : s;
   };
-  const lines = [ISIN_COLUMNS.map(c => esc(c.header)).join(',')];
+  const lines = [cols.map(c => esc(c.header)).join(',')];
   for (const row of rows) {
-    lines.push(ISIN_COLUMNS.map(col => esc(renderCell(col, row))).join(','));
+    lines.push(cols.map(col => esc(renderCell(col, row))).join(','));
   }
   return lines.join('\r\n');
 }
@@ -72,12 +83,14 @@ function applyLocalDescFilter(rows, q) {
 
 const EXPORT_PAGE_SIZE = 500; // backend hard cap: pageSize must be ≤500
 
-function ExportModal({ appliedFilters, multiSearchRows, descFilterRows, isinDescriptionSearch, onClose }) {
+function ExportModal({ appliedFilters, multiSearchRows, descFilterRows, isinDescriptionSearch, visibleCols, onClose }) {
   const [phase,    setPhase]    = useState('choose'); // choose | fetching | error
   const [progress, setProgress] = useState({ fetched: 0, total: 0 });
   const [errMsg,   setErrMsg]   = useState('');
 
   const isFetching = phase === 'fetching';
+
+  const colCountLabel = `${visibleCols.length} of ${ISIN_COLUMNS.length} columns`;
 
   // Whichever in-memory dataset is active (multi-search or desc-filter full fetch)
   const inMemoryRows = multiSearchRows ?? descFilterRows ?? null;
@@ -106,7 +119,7 @@ function ExportModal({ appliedFilters, multiSearchRows, descFilterRows, isinDesc
     // In-memory results (multi-search or desc-filter) — apply desc filter and export directly
     if (mode === 'search' && inMemoryRows !== null) {
       const rows = applyLocalDescFilter(inMemoryRows, isinDescriptionSearch);
-      triggerCsvDownload(generateCsvString(rows), 'isin_master.csv');
+      triggerCsvDownload(generateCsvString(rows, visibleCols), 'isin_master.csv');
       onClose();
       return;
     }
@@ -138,7 +151,10 @@ function ExportModal({ appliedFilters, multiSearchRows, descFilterRows, isinDesc
         ? applyLocalDescFilter(allRows, isinDescriptionSearch)
         : allRows;
 
-      triggerCsvDownload(generateCsvString(exportRows), 'isin_master.csv');
+      triggerCsvDownload(
+        generateCsvString(exportRows, mode === 'all' ? ISIN_COLUMNS : visibleCols),
+        'isin_master.csv'
+      );
       onClose();
     } catch (err) {
       setPhase('error');
@@ -172,11 +188,11 @@ function ExportModal({ appliedFilters, multiSearchRows, descFilterRows, isinDesc
           <div className="im-export-body">
             <button className="im-export-option" onClick={() => runExport('search')}>
               <span className="im-export-option-title">&#8595; Export search results</span>
-              <span className="im-export-option-desc">{filterDesc}</span>
+              <span className="im-export-option-desc">{filterDesc} · {colCountLabel}</span>
             </button>
             <button className="im-export-option" onClick={() => runExport('all')}>
               <span className="im-export-option-title">&#8595; Export all data</span>
-              <span className="im-export-option-desc">Full ISIN Master dataset &mdash; current filter ignored</span>
+              <span className="im-export-option-desc">Full ISIN Master dataset &mdash; current filter ignored · all 15 columns</span>
             </button>
           </div>
         )}
@@ -341,6 +357,13 @@ function IsinMaster() {
   const [isinLoading,    setIsinLoading]   = useState(false);
   const [isinFetchError, setIsinFetchError] = useState('');
   const [isinRefetchKey, setIsinRefetchKey] = useState(0);
+
+  // ── Column visibility ─────────────────────────────────────────────────────────
+
+  const { visibleKeys, isVisible, toggle, setAll, reset: resetColumns } =
+    useColumnVisibility('isin-master', VISIBILITY_COLUMNS);
+
+  const visibleCols = ISIN_COLUMNS.filter(col => isVisible(col.field));
 
   // ── Fetch ISIN table ──────────────────────────────────────────────────────────
 
@@ -605,15 +628,24 @@ function IsinMaster() {
       <div className="im-card">
         <div className="im-card-header">
           <span>ISIN Master List</span>
-          <label className="entries-label">
-            Entries per page
-            <select className="entries-select" value={isinPerPage} onChange={handleIsinPerPageChange}>
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-            </select>
-          </label>
+          <div className="im-header-actions">
+            <ColumnSelector
+              columns={VISIBILITY_COLUMNS}
+              visibleKeys={visibleKeys}
+              onToggle={toggle}
+              onSetAll={setAll}
+              onReset={resetColumns}
+            />
+            <label className="entries-label">
+              Entries per page
+              <select className="entries-select" value={isinPerPage} onChange={handleIsinPerPageChange}>
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+            </label>
+          </div>
         </div>
 
         {isinFetchError && (
@@ -635,19 +667,19 @@ function IsinMaster() {
         <div className="im-table-wrapper">
           <table className="im-table">
             <thead>
-              <tr>{ISIN_COLUMNS.map(col => <th key={col.field}>{col.header}</th>)}</tr>
+              <tr>{visibleCols.map(col => <th key={col.field}>{col.header}</th>)}</tr>
             </thead>
             <tbody>
               {multiSearchLoading || descFilterLoading ? (
                 <tr>
-                  <td className="im-empty-state" colSpan={ISIN_COLUMNS.length}>
+                  <td className="im-empty-state" colSpan={visibleCols.length}>
                     Searching&hellip;
                   </td>
                 </tr>
               ) : filteredMultiRows !== null ? (
                 filteredMultiRows.length === 0 ? (
                   <tr>
-                    <td className="im-empty-state" colSpan={ISIN_COLUMNS.length}>
+                    <td className="im-empty-state" colSpan={visibleCols.length}>
                       No matching ISINs found.
                     </td>
                   </tr>
@@ -656,7 +688,7 @@ function IsinMaster() {
                     .slice((isinPage - 1) * isinPerPage, isinPage * isinPerPage)
                     .map((row, idx) => (
                       <tr key={row.isin || idx}>
-                        {ISIN_COLUMNS.map(col => (
+                        {visibleCols.map(col => (
                           <td key={col.field}>{renderCell(col, row)}</td>
                         ))}
                       </tr>
@@ -665,7 +697,7 @@ function IsinMaster() {
               ) : filteredDescRows !== null ? (
                 filteredDescRows.length === 0 ? (
                   <tr>
-                    <td className="im-empty-state" colSpan={ISIN_COLUMNS.length}>
+                    <td className="im-empty-state" colSpan={visibleCols.length}>
                       No ISINs match the description filter.
                     </td>
                   </tr>
@@ -674,7 +706,7 @@ function IsinMaster() {
                     .slice((isinPage - 1) * isinPerPage, isinPage * isinPerPage)
                     .map((row, idx) => (
                       <tr key={row.isin || idx}>
-                        {ISIN_COLUMNS.map(col => (
+                        {visibleCols.map(col => (
                           <td key={col.field}>{renderCell(col, row)}</td>
                         ))}
                       </tr>
@@ -682,13 +714,13 @@ function IsinMaster() {
                 )
               ) : isinLoading ? (
                 <tr>
-                  <td className="im-empty-state" colSpan={ISIN_COLUMNS.length}>
+                  <td className="im-empty-state" colSpan={visibleCols.length}>
                     Loading&hellip;
                   </td>
                 </tr>
               ) : filteredIsinData.length === 0 ? (
                 <tr>
-                  <td className="im-empty-state" colSpan={ISIN_COLUMNS.length}>
+                  <td className="im-empty-state" colSpan={visibleCols.length}>
                     {isinData.length > 0
                       ? 'No ISINs match the description filter.'
                       : 'No data available. Click UPLOAD to import NSDL and CDSL files.'}
@@ -697,7 +729,7 @@ function IsinMaster() {
               ) : (
                 filteredIsinData.map((row, idx) => (
                   <tr key={row.isin || idx}>
-                    {ISIN_COLUMNS.map(col => (
+                    {visibleCols.map(col => (
                       <td key={col.field}>{renderCell(col, row)}</td>
                     ))}
                   </tr>
@@ -758,6 +790,7 @@ function IsinMaster() {
           multiSearchRows={multiSearchRows}
           descFilterRows={descFilterRows}
           isinDescriptionSearch={appliedDescFilter}
+          visibleCols={visibleCols}
           onClose={() => setShowExportModal(false)}
         />
       )}

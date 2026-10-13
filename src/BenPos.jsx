@@ -57,6 +57,7 @@ function BenPos() {
   const [exportProgress,     setExportProgress]     = useState('');
   const [exportError,        setExportError]        = useState('');
   const [exportMessage,      setExportMessage]      = useState(null);
+  const [promoterWarning,    setPromoterWarning]    = useState(null);
   const [showUploadModal,    setShowUploadModal]    = useState(false);
   const [selectedIssuer,     setSelectedIssuer]     = useState(null);
   const [issuerQuery,        setIssuerQuery]        = useState('');
@@ -189,12 +190,14 @@ function BenPos() {
       setExportError('');
       setExportMessage(null);
       setExportProgress('');
+      setPromoterWarning(null);
       try {
-        const { count, missingCategoryCount } = await exportAllBenpos(exportDate, msg => setExportProgress(msg));
+        const { count, missingCategoryCount, promoterWarning: pw } = await exportAllBenpos(exportDate, msg => setExportProgress(msg));
         let successMsg = `✓ Export complete — ${count.toLocaleString()} rows downloaded.`;
         if (missingCategoryCount > 0)
           successMsg += ` ${missingCategoryCount.toLocaleString()} row${missingCategoryCount !== 1 ? 's' : ''} had no category mapping.`;
         setExportMessage(successMsg);
+        setPromoterWarning(pw ?? null);
       } catch (err) {
         console.error('[benposExport] failed:', err.stack);
         setExportError(err.response?.data?.error?.message ?? err.message ?? 'Export failed.');
@@ -210,6 +213,7 @@ function BenPos() {
       setExportError('');
       setExportMessage(null);
       setExportProgress('');
+      setPromoterWarning(null);
       try {
         const result = await exportIssuerBenposZip(
           selectedIssuer, exportDate, msg => setExportProgress(msg)
@@ -226,6 +230,7 @@ function BenPos() {
           if (result.missingCategoryCount > 0)
             msg += ` ${result.missingCategoryCount.toLocaleString()} row${result.missingCategoryCount !== 1 ? 's' : ''} had no category mapping.`;
           setExportMessage(msg);
+          setPromoterWarning(result.promoterWarning ?? null);
         }
       } catch (err) {
         console.error('[benposExport] failed:', err.stack);
@@ -248,12 +253,14 @@ function BenPos() {
     setExportLoading(true);
     setExportError('');
     setExportMessage(null);
+    setPromoterWarning(null);
     try {
-      const { count, missingCategoryCount } = await exportBenpos(effectiveIsins, exportDate);
+      const { count, missingCategoryCount, promoterWarning: pw } = await exportBenpos(effectiveIsins, exportDate);
       let successMsg = `✓ Export complete — ${count.toLocaleString()} rows downloaded.`;
       if (missingCategoryCount > 0)
         successMsg += ` ${missingCategoryCount.toLocaleString()} row${missingCategoryCount !== 1 ? 's' : ''} had no category mapping.`;
       setExportMessage(successMsg);
+      setPromoterWarning(pw ?? null);
     } catch (err) {
       console.error('[benposExport] failed:', err.stack);
       setExportError(err.response?.data?.error?.message ?? err.message ?? 'Export failed.');
@@ -526,6 +533,9 @@ function BenPos() {
           )}
           {exportMessage && !exportError && (
             <div className="im-banner im-banner--success">{exportMessage}</div>
+          )}
+          {promoterWarning && !exportError && (
+            <div className="im-banner im-banner--info">⚠ {promoterWarning}</div>
           )}
         </div>
       </div>

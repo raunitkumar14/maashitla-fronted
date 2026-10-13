@@ -3,6 +3,26 @@ import { useNavigate } from 'react-router-dom';
 import api from './api/axios';
 import './IsinMaster.css';
 import './Company.css';
+import { useColumnVisibility } from './hooks/useColumnVisibility';
+import { ColumnSelector } from './components/ColumnSelector';
+
+// ── Column definitions ────────────────────────────────────────────────────────
+
+const COMPANY_COLUMNS = [
+  { field: 'issuerId',   header: 'Issuer ID',   render: row => row.issuerId   ?? '—' },
+  { field: 'issuerCode', header: 'Issuer Code',  render: row => row.issuerCode         },
+  { field: 'issuerName', header: 'Issuer Name',  render: row => row.issuerName || '—' },
+  { field: 'totalIsin',  header: 'Total ISIN',   render: row => row.totalIsin          },
+  { field: 'source',     header: 'Source',       render: row => row.source             },
+];
+
+// Stable reference — never recreated across renders.
+const VISIBILITY_COLUMNS = COMPANY_COLUMNS.map(col => ({
+  key:            col.field,
+  label:          col.header,
+  defaultVisible: true,
+  locked:         col.field === 'issuerCode',
+}));
 
 function getPageRange(currentPage, totalPages) {
   if (totalPages <= 0) return [];
@@ -86,6 +106,13 @@ function Company() {
   const [totalPages, setTotalPages] = useState(0);
   const [loading,    setLoading]    = useState(false);
   const [fetchError, setFetchError] = useState('');
+
+  // ── Column visibility ─────────────────────────────────────────────────────
+
+  const { visibleKeys, isVisible, toggle, setAll, reset: resetColumns } =
+    useColumnVisibility('company', VISIBILITY_COLUMNS);
+
+  const visibleCols = COMPANY_COLUMNS.filter(col => isVisible(col.field));
 
   // ── Fetch: runs when page, perPage, or committed filters change ───────────
   useEffect(() => {
@@ -175,29 +202,38 @@ function Company() {
       <div className="im-card">
         <div className="im-card-header">
           <span>Company List</span>
-          <label className="entries-label">
-            Entries per page
-            <select className="entries-select" value={perPage} onChange={handlePerPageChange}>
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-            </select>
-          </label>
+          <div className="im-header-actions">
+            <ColumnSelector
+              columns={VISIBILITY_COLUMNS}
+              visibleKeys={visibleKeys}
+              onToggle={toggle}
+              onSetAll={setAll}
+              onReset={resetColumns}
+            />
+            <label className="entries-label">
+              Entries per page
+              <select className="entries-select" value={perPage} onChange={handlePerPageChange}>
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+            </label>
+          </div>
         </div>
 
         <form className="im-filter-row" onSubmit={handleSearch}>
           <input
             className="im-input im-input--wide"
-            placeholder="Issuer ID"
-            value={issuerId}
-            onChange={(e) => setIssuerId(e.target.value)}
-          />
-          <input
-            className="im-input im-input--wide"
             placeholder="Issuer Code"
             value={issuerCode}
             onChange={(e) => setIssuerCode(e.target.value)}
+          />
+          <input
+            className="im-input im-input--wide"
+            placeholder="Issuer ID"
+            value={issuerId}
+            onChange={(e) => setIssuerId(e.target.value)}
           />
           <input
             className="im-input im-input--wide"
@@ -225,11 +261,7 @@ function Company() {
           <table className="im-table">
             <thead>
               <tr>
-                <th>Issuer ID</th>
-                <th>Issuer Code</th>
-                <th>Issuer Name</th>
-                <th>Total ISIN</th>
-                <th>Source</th>
+                {visibleCols.map(col => <th key={col.field}>{col.header}</th>)}
                 <th>View ISIN</th>
                 <th>View Company Details</th>
               </tr>
@@ -237,20 +269,18 @@ function Company() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td className="im-empty-state" colSpan={7}>Loading…</td>
+                  <td className="im-empty-state" colSpan={visibleCols.length + 2}>Loading…</td>
                 </tr>
               ) : issuers.length === 0 ? (
                 <tr>
-                  <td className="im-empty-state" colSpan={7}>No data available.</td>
+                  <td className="im-empty-state" colSpan={visibleCols.length + 2}>No data available.</td>
                 </tr>
               ) : (
                 issuers.map((row, idx) => (
                   <tr key={row.issuerCode || idx}>
-                    <td>{row.issuerId ?? '—'}</td>
-                    <td>{row.issuerCode}</td>
-                    <td>{row.issuerName || '—'}</td>
-                    <td>{row.totalIsin}</td>
-                    <td>{row.source}</td>
+                    {visibleCols.map(col => (
+                      <td key={col.field}>{col.render(row)}</td>
+                    ))}
                     <td className="company-action-cell">
                       <button
                         className="company-icon-btn"

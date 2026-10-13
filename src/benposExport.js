@@ -6,6 +6,7 @@ import { mapBankAccountType, flushUnmappedBankAccountTypes } from './bankAccount
 import { mapPanType, flushUnmappedPanTypes } from './panTypeMapping';
 import { buildXlsxBlob } from './xlsxStream';
 import { Zip, ZipPassThrough } from 'fflate';
+import { resetPromoterCache, loadPromoters, getPromoterType } from './promoterMasterCache';
 
 // ── Pagination helper ─────────────────────────────────────────────────────────
 // Fetches all pages from an endpoint that uses the standard { data: { items, totalCount } }
@@ -277,7 +278,7 @@ function mapCdslRow(row) {
     'Bank_Account_Type':             mapBankAccountType(row.dividendBankAccountType, 'CDSL') ?? null,
     'MICR_Code':                     row.dividendMicrNo ?? null,
     'IFSC':                          row.dividendBankIfsc ?? null,
-    'Category type description':     catTypeDesc ?? null,
+    'Category type description':     getPromoterType(row.isin, row.panOfFirstHolder) ?? catTypeDesc ?? null,
     'Category sub type description': catSubDesc ?? null,
     'Category':   cdslExtra?.regulation31TypePublic ?? row.customerType ?? null,
   };
@@ -326,7 +327,7 @@ function mapNsdlRow(row) {
     'Bank_Account_Type':             mapBankAccountType(row.bankAccountType, 'NSDL') ?? null,
     'MICR_Code':                     row.micrCode ?? null,
     'IFSC':                          row.ifsc ?? null,
-    'Category type description':     catTypeDesc ?? null,
+    'Category type description':     getPromoterType(row.isin, row.firstHolderPan) ?? catTypeDesc ?? null,
     'Category sub type description': catSubDesc ?? null,
     'Category':   nsdlExtra?.regulation31TypePublic ?? row.beneficiaryType ?? null,
   };
@@ -371,7 +372,7 @@ function mapPhysicalRow(shareholder, lockInQty, dateStr) {
     'Bank_Account_Type':             mapBankAccountType(shareholder.accountType, 'PHYSICAL') ?? null,
     'MICR_Code':                     shareholder.bankMicrCode ?? null,
     'IFSC':                          shareholder.ifscCode ?? null,
-    'Category type description':     shareholder.category ?? null,
+    'Category type description':     getPromoterType(shareholder.isin, shareholder.holder1Pan) ?? shareholder.category ?? null,
     'Category sub type description': shareholder.subCategory ?? null,
     'Category':   physExtra?.regulation31TypePublic ?? shareholder.category ?? null,
   };
@@ -456,6 +457,20 @@ export async function exportBenpos(isins, dateStr) {
   await loadCategoryMapping();
   const { cdslRows, nsdlRows, physShareholders, physShareholdings } =
     await fetchBenposExportData(isins, dateStr);
+
+  resetPromoterCache();
+  let promoterWarning = null;
+  try {
+    const issuerCodes = [...new Set(
+      [...cdslRows, ...nsdlRows, ...physShareholders]
+        .map(r => String(r.isin ?? '').slice(3, 7))
+        .filter(Boolean)
+    )];
+    await loadPromoters(issuerCodes);
+  } catch {
+    promoterWarning = 'Promoter lookup failed — "Category type description" may be incomplete.';
+  }
+
   const { rows, missingCategoryCount } = buildExportRows(cdslRows, nsdlRows, physShareholders, physShareholdings, dateStr);
 
   const dataRows = [];
@@ -469,7 +484,7 @@ export async function exportBenpos(isins, dateStr) {
     headerFill: 'ADD8E6',
   });
   downloadBlob(blob, `BENPOS_${isinPart}${fmtDateForFilename(dateStr)}.xlsx`);
-  return { count: rows.length, missingCategoryCount };
+  return { count: rows.length, missingCategoryCount, promoterWarning };
 }
 
 async function fetchAllBenposExportData(dateStr, onProgress) {
@@ -501,6 +516,23 @@ export async function exportAllBenpos(dateStr, onProgress) {
   const { cdslRows, nsdlRows, physShareholders, physShareholdings } =
     await fetchAllBenposExportData(dateStr, onProgress);
 
+  resetPromoterCache();
+  let promoterWarning = null;
+  try {
+    const summaryRes = await api.get('/admin/v1/promoter-master/summary');
+    const promoterIssuers = new Set(
+      (summaryRes.data?.data?.issuers ?? []).map(i => i.issuerCode)
+    );
+    const dataIssuers = [...new Set(
+      [...cdslRows, ...nsdlRows, ...physShareholders]
+        .map(r => String(r.isin ?? '').slice(3, 7))
+        .filter(Boolean)
+    )];
+    await loadPromoters(dataIssuers.filter(ic => promoterIssuers.has(ic)));
+  } catch {
+    promoterWarning = 'Promoter lookup failed — "Category type description" may be incomplete.';
+  }
+
   const { rows, missingCategoryCount } = buildExportRows(cdslRows, nsdlRows, physShareholders, physShareholdings, dateStr);
 
   // Build AOA data rows — same values and order as the SheetJS path used.
@@ -517,7 +549,7 @@ export async function exportAllBenpos(dateStr, onProgress) {
   });
 
   downloadBlob(blob, `BENPOS_ALL_${fmtDateForFilename(dateStr)}.xlsx`);
-  return { count: rows.length, missingCategoryCount };
+  return { count: rows.length, missingCategoryCount, promoterWarning };
 }
 
 // ── Issuer ZIP export ─────────────────────────────────────────────────────────
@@ -589,6 +621,19 @@ export async function exportIssuerBenposZip(issuer, dateStr, onProgress) {
   const { cdslRows, nsdlRows, physShareholders, physShareholdings } =
     await fetchBenposForIssuer(isinCodes, dateStr, onProgress);
 
+  resetPromoterCache();
+  let promoterWarning = null;
+  try {
+    const issuerCodes = [...new Set(
+      [...cdslRows, ...nsdlRows, ...physShareholders]
+        .map(r => String(r.isin ?? '').slice(3, 7))
+        .filter(Boolean)
+    )];
+    await loadPromoters(issuerCodes);
+  } catch {
+    promoterWarning = 'Promoter lookup failed — "Category type description" may be incomplete.';
+  }
+
   // 3. Map rows and group by ISIN
   onProgress?.('Building rows…');
   const { rows: allRows, missingCategoryCount } = buildExportRows(cdslRows, nsdlRows, physShareholders, physShareholdings, dateStr);
@@ -647,5 +692,5 @@ export async function exportIssuerBenposZip(issuer, dateStr, onProgress) {
   const zipName = `BENPOS_${issuerPart}_${fmtDateForFilename(dateStr)}.zip`;
   downloadBlob(zipBlob, zipName);
 
-  return { downloadedCount: isinsWithData.length, skippedIsins, missingCategoryCount };
+  return { downloadedCount: isinsWithData.length, skippedIsins, missingCategoryCount, promoterWarning };
 }

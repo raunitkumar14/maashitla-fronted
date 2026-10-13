@@ -1,0 +1,170 @@
+/* ── Trigger button (lives in the blue card header) ──────────────────────── */
+.col-sel-btn {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  transition: background-color 0.15s ease;
+}
+
+.col-sel-btn:hover {
+  background-color: rgba(255, 255, 255, 0.28);
+}
+
+/* ── Popover panel (portal-rendered, position: fixed) ────────────────────── */
+.col-sel-popover {
+  position: fixed;
+  z-index: 1100;
+  background: #ffffff;
+  border: 1px solid #e0e4ea;
+  border-radius: 6px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.16);
+  min-width: 210px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ── Top action row ──────────────────────────────────────────────────────── */
+.col-sel-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 7px 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.col-sel-act {
+  background: none;
+  border: none;
+  color: #1565c0;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 3px;
+  transition: background-color 0.12s ease;
+}
+
+.col-sel-act:hover {
+  background-color: #e3f2fd;
+}
+
+.col-sel-sep {
+  color: #ccc;
+  font-size: 13px;
+  padding: 0 1px;
+  user-select: none;
+}
+
+/* ── Search input ────────────────────────────────────────────────────────── */
+.col-sel-search {
+  padding: 7px 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.col-sel-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: Arial, Helvetica, sans-serif;
+  outline: none;
+}
+
+.col-sel-search-input:focus {
+  border-color: #1565c0;
+}
+
+/* ── Scrollable checkbox list ────────────────────────────────────────────── */
+.col-sel-list {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+/* ── Group headings ──────────────────────────────────────────────────────── */
+.col-sel-group + .col-sel-group {
+  border-top: 1px solid #f0f0f0;
+}
+
+.col-sel-group-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px 2px;
+}
+
+.col-sel-group-name {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #999;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.col-sel-group-acts {
+  display: flex;
+  gap: 2px;
+}
+
+.col-sel-group-act {
+  background: none;
+  border: none;
+  color: #1565c0;
+  font-size: 11px;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  padding: 1px 5px;
+  border-radius: 3px;
+  transition: background-color 0.12s ease;
+}
+
+.col-sel-group-act:hover {
+  background-color: #e3f2fd;
+}
+
+.col-sel-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  user-select: none;
+  line-height: 1.3;
+}
+
+.col-sel-item:hover {
+  background-color: #f5f7fa;
+}
+
+.col-sel-item--disabled {
+  color: #aaa;
+  cursor: default;
+}
+
+.col-sel-item--disabled:hover {
+  background-color: transparent;
+}
+
+.col-sel-item input[type='checkbox'] {
+  cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: #1565c0;
+}
+
+.col-sel-item--disabled input[type='checkbox'] {
+  cursor: not-allowed;
+}

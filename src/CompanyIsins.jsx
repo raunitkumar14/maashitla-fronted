@@ -3,13 +3,32 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import api from './api/axios';
 import './IsinMaster.css';
 import './Company.css';
-
-const NUM_COLS = 6;
+import { useColumnVisibility } from './hooks/useColumnVisibility';
+import { ColumnSelector } from './components/ColumnSelector';
 
 function cell(row, field) {
   const v = row[field];
   return (v == null || v === '') ? '—' : v;
 }
+
+// ── Column definitions ────────────────────────────────────────────────────────
+// render(row, ctx) — ctx = { page, perPage, idx, companyName }
+
+const ISINS_COLUMNS = [
+  { field: 'srNo',         header: 'Sr. No.',                   render: (row, { page, perPage, idx }) => (page - 1) * perPage + idx + 1 },
+  { field: 'isin',         header: 'ISIN',                      render: row => cell(row, 'isin') },
+  { field: 'isinDesc',     header: 'ISIN Description',          render: row => cell(row, 'isinDescription') },
+  { field: 'nameOfIssuer', header: 'Name of Issuer',            render: (row, { companyName }) => row.issuer?.issuerName || companyName || '—' },
+  { field: 'secType',      header: 'Security Type Description', render: row => cell(row, 'securityType') },
+  { field: 'isinStatus',   header: 'ISIN Status',               render: row => cell(row, 'isinStatus') },
+];
+
+const VISIBILITY_COLUMNS = ISINS_COLUMNS.map(col => ({
+  key:            col.field,
+  label:          col.header,
+  defaultVisible: true,
+  locked:         col.field === 'isin',
+}));
 
 function getPageRange(currentPage, totalPages) {
   if (totalPages <= 0) return [];
@@ -101,6 +120,15 @@ function CompanyIsins() {
   const [goto,       setGoto]       = useState('');
   const [isinFilter, setIsinFilter] = useState('');
 
+  // ── Column visibility ─────────────────────────────────────────────────────
+
+  const { visibleKeys, isVisible, toggle, setAll, reset: resetColumns } =
+    useColumnVisibility('company-isins', VISIBILITY_COLUMNS);
+
+  const visibleCols = ISINS_COLUMNS.filter(col => isVisible(col.field));
+
+  // ── Fetch ──────────────────────────────────────────────────────────────────
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -157,19 +185,28 @@ function CompanyIsins() {
       <div className="im-card">
         <div className="im-card-header">
           <span>ISIN List</span>
-          <label className="entries-label">
-            Entries per page
-            <select
-              className="entries-select"
-              value={perPage}
-              onChange={e => { setPerPage(Number(e.target.value)); setPage(1); }}
-            >
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-          </label>
+          <div className="im-header-actions">
+            <ColumnSelector
+              columns={VISIBILITY_COLUMNS}
+              visibleKeys={visibleKeys}
+              onToggle={toggle}
+              onSetAll={setAll}
+              onReset={resetColumns}
+            />
+            <label className="entries-label">
+              Entries per page
+              <select
+                className="entries-select"
+                value={perPage}
+                onChange={e => { setPerPage(Number(e.target.value)); setPage(1); }}
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </label>
+          </div>
         </div>
 
         {fetchError && (
@@ -191,42 +228,34 @@ function CompanyIsins() {
           <table className="im-table">
             <thead>
               <tr>
-                <th>Sr. No.</th>
-                <th>ISIN</th>
-                <th>ISIN Description</th>
-                <th>Name of Issuer</th>
-                <th>Security Type Description</th>
-                <th>ISIN Status</th>
+                {visibleCols.map(col => <th key={col.field}>{col.header}</th>)}
               </tr>
             </thead>
             <tbody>
               {(() => {
-                const visible = isinFilter.trim()
+                const filtered = isinFilter.trim()
                   ? isins.filter(r => (r.isin ?? '').toUpperCase().includes(isinFilter.trim().toUpperCase()))
                   : isins;
                 if (loading) return (
-                  <tr><td className="im-empty-state" colSpan={NUM_COLS}>Loading…</td></tr>
+                  <tr><td className="im-empty-state" colSpan={visibleCols.length}>Loading…</td></tr>
                 );
-                if (visible.length === 0) return (
+                if (filtered.length === 0) return (
                   <tr>
-                    <td className="im-empty-state" colSpan={NUM_COLS}>
+                    <td className="im-empty-state" colSpan={visibleCols.length}>
                       {isinFilter.trim() ? 'No ISINs match that filter.' : 'No ISINs found for this company.'}
                     </td>
                   </tr>
                 );
-                return visible.map((row, idx) => (
+                return filtered.map((row, idx) => (
                   <tr
                     key={row.isin || idx}
                     className="ci-isin-row"
                     onClick={() => handleIsinClick(row)}
                     title="Open mini-dashboard for this ISIN"
                   >
-                    <td>{(page - 1) * perPage + idx + 1}</td>
-                    <td>{cell(row, 'isin')}</td>
-                    <td>{cell(row, 'isinDescription')}</td>
-                    <td>{row.issuer?.issuerName || companyName || '—'}</td>
-                    <td>{cell(row, 'securityType')}</td>
-                    <td>{cell(row, 'isinStatus')}</td>
+                    {visibleCols.map(col => (
+                      <td key={col.field}>{col.render(row, { page, perPage, idx, companyName })}</td>
+                    ))}
                   </tr>
                 ));
               })()}

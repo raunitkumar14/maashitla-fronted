@@ -478,7 +478,7 @@
 /* ─── EXPORT MODAL ───────────────────────────────────────────────────────── */
 
 .im-export-modal {
-  width: 400px;
+  width: 580px;
   max-width: 95vw;
   background: #ffffff;
   border-radius: 6px;
@@ -489,12 +489,18 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Two choice cards stacked vertically */
+/* Two choice cards side by side; stack on small screens */
 .im-export-body {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 10px;
   padding: 16px;
+}
+
+@media (max-width: 600px) {
+  .im-export-body {
+    flex-direction: column;
+  }
 }
 
 .im-export-option {
@@ -502,7 +508,8 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: 12px 14px;
   background: #f8f9fb;
   border: 1.5px solid #e0e4ea;
