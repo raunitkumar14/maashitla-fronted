@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import api from './api/axios';
 import './IsinMaster.css';
 import './Company.css';
+import './UploadModal.css';
 import { useColumnVisibility } from './hooks/useColumnVisibility';
 import { ColumnSelector } from './components/ColumnSelector';
+import { buildXlsxBlob } from './xlsxStream';
 
 // ── Column definitions ────────────────────────────────────────────────────────
 
@@ -23,6 +25,125 @@ const VISIBILITY_COLUMNS = COMPANY_COLUMNS.map(col => ({
   defaultVisible: true,
   locked:         col.field === 'issuerCode',
 }));
+
+// ── Export helpers ────────────────────────────────────────────────────────────
+
+function fmtExportDate() {
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+function renderExportCell(col, row) {
+  const val = row[col.field];
+  return val == null ? '' : String(val);
+}
+
+// ── ExportModal ───────────────────────────────────────────────────────────────
+
+function ExportModal({ appliedFilters, visibleCols, onClose }) {
+  const [phase,  setPhase]  = useState('choose'); // choose | fetching | error
+  const [errMsg, setErrMsg] = useState('');
+
+  const isFetching = phase === 'fetching';
+
+  const colCountLabel = `${visibleCols.length} of ${COMPANY_COLUMNS.length} columns`;
+
+  const filterDesc = (() => {
+    const parts = [];
+    if (appliedFilters.issuerCode) parts.push(`Issuer Code = "${appliedFilters.issuerCode}"`);
+    if (appliedFilters.issuerId)   parts.push(`Issuer ID = "${appliedFilters.issuerId}"`);
+    if (appliedFilters.issuerName) parts.push(`Issuer Name ⊇ "${appliedFilters.issuerName}"`);
+    if (appliedFilters.source)     parts.push(`Source = "${appliedFilters.source}"`);
+    return parts.length ? parts.join(', ') : 'No filter active';
+  })();
+
+  async function runExport(mode) {
+    setPhase('fetching');
+    setErrMsg('');
+    try {
+      const params = {};
+      if (mode === 'search') {
+        if (appliedFilters.issuerId)   params.issuerId   = appliedFilters.issuerId;
+        if (appliedFilters.issuerCode) params.issuerCode = appliedFilters.issuerCode;
+        if (appliedFilters.issuerName) params.issuerName = appliedFilters.issuerName;
+        if (appliedFilters.source)     params.source     = appliedFilters.source;
+      }
+      const res = await api.get('/admin/v1/issuers', { params });
+      const rows = res.data.data.items ?? [];
+
+      const headers  = visibleCols.map(c => c.header);
+      const dataRows = rows.map(row => visibleCols.map(col => renderExportCell(col, row)));
+
+      const blob     = await buildXlsxBlob(headers, dataRows, { sheetName: 'Company List' });
+      const filename = mode === 'all'
+        ? `Company_All_${fmtExportDate()}.xlsx`
+        : `Company_List_${fmtExportDate()}.xlsx`;
+      downloadBlob(blob, filename);
+      onClose();
+    } catch (err) {
+      setPhase('error');
+      setErrMsg(err.response?.data?.error?.message ?? err.message ?? 'Export failed.');
+    }
+  }
+
+  return (
+    <div className="upload-overlay" onClick={!isFetching ? onClose : undefined}>
+      <div className="im-export-modal" onClick={e => e.stopPropagation()}>
+
+        <div className="um-header">
+          <span className="um-header-badge">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 2v8M5 7l3 3 3-3M3 12h10" />
+            </svg>
+          </span>
+          <span className="um-header-title">Export Company</span>
+          <button className="um-close-btn" onClick={onClose} disabled={isFetching} aria-label="Close">
+            &times;
+          </button>
+        </div>
+
+        {phase === 'choose' && (
+          <div className="im-export-body">
+            <button className="im-export-option" onClick={() => runExport('search')}>
+              <span className="im-export-option-title">&#8595; Export search results</span>
+              <span className="im-export-option-desc">{filterDesc} · {colCountLabel}</span>
+            </button>
+            <button className="im-export-option" onClick={() => runExport('all')}>
+              <span className="im-export-option-title">&#8595; Export all data</span>
+              <span className="im-export-option-desc">Full company list &mdash; current filter ignored · {colCountLabel}</span>
+            </button>
+          </div>
+        )}
+
+        {phase === 'fetching' && (
+          <div className="im-export-progress">
+            <p className="im-export-progress-stage">Fetching records&hellip;</p>
+            <div className="um-spinner" />
+          </div>
+        )}
+
+        {phase === 'error' && (
+          <div className="im-export-error">
+            <p className="im-export-error-text">&#9888; {errMsg}</p>
+            <button className="im-export-retry-btn" onClick={onClose}>Close</button>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
 
 function getPageRange(currentPage, totalPages) {
   if (totalPages <= 0) return [];
@@ -83,6 +204,8 @@ function PaginationBar({ page, perPage, totalCount, totalPages, goto, setPage, s
 
 function Company() {
   const navigate = useNavigate();
+
+  const [showExportModal, setShowExportModal] = useState(false);
 
   // ── Search input state (not applied until SEARCH is clicked) ─────────────
   const [issuerId,   setIssuerId]   = useState('');
@@ -248,6 +371,7 @@ function Company() {
             onChange={(e) => setSource(e.target.value)}
           />
           <button type="submit"  className="btn-action btn-action--pink">&#128269; SEARCH</button>
+          <button type="button"  className="btn-action btn-action--pink" onClick={() => setShowExportModal(true)}>&#8681; EXPORT</button>
           <button type="button"  className="btn-action btn-action--white" onClick={handleReset}>RESET</button>
         </form>
 
@@ -317,6 +441,13 @@ function Company() {
           onGoto={handleGoto}
         />
       </div>
+      {showExportModal && (
+        <ExportModal
+          appliedFilters={appliedFilters}
+          visibleCols={visibleCols}
+          onClose={() => setShowExportModal(false)}
+        />
+      )}
     </div>
   );
 }
