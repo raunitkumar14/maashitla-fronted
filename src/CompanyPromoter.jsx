@@ -307,7 +307,8 @@ function CompanyPromoter() {
           <p className="cp-upload-hint">
             Upload an Excel file (.xlsx / .xls) with columns:{' '}
             <strong>ISIN</strong>, <strong>PAN NO</strong>, <strong>NAME</strong>, <strong>PROMOTER TYPE</strong>.
-            {' '}Uploading replaces all existing records for this company.
+            {' '}Uploading adds new rows and updates existing ones (matched by PAN); other rows are kept.
+            Use Delete / Delete All to remove rows.
           </p>
         </div>
       </div>
@@ -326,12 +327,12 @@ function CompanyPromoter() {
         <div className="im-banner im-banner--error">⚠ {parseError}</div>
       )}
       {uploadStatus === 'done' && uploadResult && (() => {
-        const merged = parsedRowCount - uploadResult.inserted;
+        const added   = uploadResult.inserted ?? 0;
+        const updated = uploadResult.updated ?? 0;
+        const dupes   = uploadResult.duplicatesMerged ?? 0;
         return (
           <div className="im-banner im-banner--success">
-            ✓ Upload complete — {uploadResult.inserted} row{uploadResult.inserted !== 1 ? 's' : ''} inserted
-            {merged > 0 ? `, ${merged} duplicate${merged !== 1 ? 's' : ''} merged` : ''}
-            {uploadResult.deleted > 0 ? ` (replaced ${uploadResult.deleted} existing)` : ''}.
+            ✓ Upload complete — {added} added, {updated} updated, {dupes} duplicate{dupes !== 1 ? 's' : ''} merged.
           </div>
         );
       })()}

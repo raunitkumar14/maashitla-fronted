@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import api from './api/axios';
 import './IsinMaster.css';
+import './BenPos.css';
 import './CompanyDetail.css';
 import './CompanyNsdl.css';
 import { CompanyCounts } from './CompanyLayout';
@@ -280,6 +281,22 @@ function SelectColumnsPopover({ selectedFields, onChange }) {
   );
 }
 
+// ── Filter helpers ────────────────────────────────────────────────────────────
+
+function splitFilterTokens(val, allowSpaceSplit) {
+  const sep = allowSpaceSplit ? /[,;\n\t ]+/ : /[,;\n\t]+/;
+  return val.split(sep).map(s => s.trim().toLowerCase()).filter(Boolean);
+}
+
+function onPasteTokenize(setter) {
+  return (e) => {
+    const text = e.clipboardData?.getData('text') ?? '';
+    if (!/[\n\t]/.test(text)) return;
+    e.preventDefault();
+    setter(text.split(/[\n\t]+/).map(s => s.trim()).filter(Boolean).join(', '));
+  };
+}
+
 // ── Main page component ───────────────────────────────────────────────────────
 
 function CompanyNsdl() {
@@ -301,6 +318,11 @@ function CompanyNsdl() {
   const [goto,    setGoto]    = useState('');
 
   const [selectedFields, setSelectedFields] = useState(() => loadSelectedFields());
+  const [dpIdInput, setDpIdInput] = useState('');
+  const [acNoInput, setAcNoInput] = useState('');
+  const [nameInput, setNameInput] = useState('');
+  const [panInput,  setPanInput]  = useState('');
+  const [applied,   setApplied]   = useState(null);
 
   useEffect(() => { saveSelectedFields(selectedFields); }, [selectedFields]);
   useEffect(() => { setPage(1); }, [rows]);
@@ -343,10 +365,36 @@ function CompanyNsdl() {
     setGoto('');
   }
 
-  const displayRows = rows ?? [];
-  const totalCount  = displayRows.length;
+  const displayRows  = rows ?? [];
+  const filteredRows = applied
+    ? displayRows.filter(row => {
+        if (applied.dpId.length && !applied.dpId.some(t => String(row.dpId ?? '').toLowerCase().trim() === t)) return false;
+        if (applied.acNo.length && !applied.acNo.some(t => String(row.beneficiaryAccountNumber ?? '').toLowerCase().trim() === t)) return false;
+        if (applied.name.length && ![row.firstHolderName, row.secondHolderName, row.thirdHolderName]
+            .some(n => applied.name.some(t => String(n ?? '').toLowerCase().includes(t)))) return false;
+        if (applied.pan.length  && ![row.firstHolderPan, row.secondHolderPan, row.thirdHolderPan]
+            .some(p => applied.pan.some(t => String(p ?? '').toLowerCase().trim() === t))) return false;
+        return true;
+      })
+    : displayRows;
+  const totalCount  = filteredRows.length;
   const totalPages  = Math.max(1, Math.ceil(totalCount / perPage));
-  const pageRows    = displayRows.slice((page - 1) * perPage, page * perPage);
+  const pageRows    = filteredRows.slice((page - 1) * perPage, page * perPage);
+
+  function handleSearch() {
+    setApplied({
+      dpId: splitFilterTokens(dpIdInput, true),
+      acNo: splitFilterTokens(acNoInput, true),
+      name: splitFilterTokens(nameInput, false),
+      pan:  splitFilterTokens(panInput,  true),
+    });
+    setPage(1);
+  }
+  function handleReset() {
+    setDpIdInput(''); setAcNoInput(''); setNameInput(''); setPanInput('');
+    setApplied(null);
+    setPage(1);
+  }
 
   // Preserve the spec-defined column order; only include checked fields.
   const activeCols  = ALL_COLS.filter(c => selectedFields.has(c.field));
@@ -407,6 +455,57 @@ function CompanyNsdl() {
             {error}
           </div>
         )}
+
+        <div className="cp-filter-body">
+          <div className="cp-filter-row" style={{ flexWrap: 'wrap' }}>
+            <div className="benpos-field cp-search-field">
+              <label className="benpos-label">DP ID</label>
+              <input
+                className="cp-folio-input"
+                placeholder="e.g. IN300001"
+                value={dpIdInput}
+                onChange={(e) => setDpIdInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                onPaste={onPasteTokenize(setDpIdInput)}
+              />
+            </div>
+            <div className="benpos-field cp-search-field">
+              <label className="benpos-label">Beneficiary Account Number</label>
+              <input
+                className="cp-folio-input"
+                placeholder="e.g. 46963958"
+                value={acNoInput}
+                onChange={(e) => setAcNoInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                onPaste={onPasteTokenize(setAcNoInput)}
+              />
+            </div>
+            <div className="benpos-field cp-search-field">
+              <label className="benpos-label">Name</label>
+              <input
+                className="cp-folio-input"
+                placeholder="Holder name (partial)"
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                onPaste={onPasteTokenize(setNameInput)}
+              />
+            </div>
+            <div className="benpos-field cp-search-field">
+              <label className="benpos-label">PAN</label>
+              <input
+                className="cp-folio-input"
+                placeholder="e.g. ABCDE1234F"
+                value={panInput}
+                onChange={(e) => setPanInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                onPaste={onPasteTokenize(setPanInput)}
+              />
+            </div>
+            <button className="btn-action btn-action--pink  cp-search-btn" onClick={handleSearch}>SEARCH</button>
+            <button className="btn-action btn-action--white cp-search-btn" onClick={handleReset}>RESET</button>
+          </div>
+        </div>
 
         <div className="im-table-wrapper">
           <table className="im-table">

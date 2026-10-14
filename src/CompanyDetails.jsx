@@ -305,6 +305,15 @@ function CompanyDetails() {
                   Promoter
                 </button>
               )}
+              {hasPermission('category_convert:view') && (
+                <button
+                  className="btn-upload"
+                  onClick={() => navigate(`/company/${issuerCode}/category-convert`)}
+                  disabled={loading || !issuer}
+                >
+                  Category Convert
+                </button>
+              )}
               <button
                 className="btn-upload"
                 onClick={handleEdit}

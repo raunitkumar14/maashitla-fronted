@@ -17,6 +17,7 @@ import CompanyCdsl from './CompanyCdsl';
 import CompanyIsins from './CompanyIsins';
 import CompanyDetails from './CompanyDetails';
 import CompanyPromoter from './CompanyPromoter';
+import CompanyCategoryConvert from './CompanyCategoryConvert';
 
 /*
  * ── How React Router works ──────────────────────────────────────────────────
@@ -104,7 +105,7 @@ function App() {
         <Route path="cdsl"             element={<CompanyCdsl />} />
         <Route path="transactions"     element={<CompanyComingSoon title="Transactions" />} />
         <Route path="promoter"         element={<CompanyPromoter />} />
-        <Route path="category-convert" element={<CompanyComingSoon title="Category Convert" />} />
+        <Route path="category-convert" element={<CompanyCategoryConvert />} />
       </Route>
 
       <Route path="/isin-master" element={
