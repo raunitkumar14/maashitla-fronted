@@ -62,6 +62,8 @@ function buildCategoryMap(items) {
       categorySubTypeDescription: String(first.categorySubTypeDescription ?? ''),
       regulation31TypePublic:     first.regulation31TypePublic ?? null,
       investorType:               first.investorType ?? null,
+      promoter:                   first.promoter ?? null,
+      regulation31TypePromoter:   first.regulation31TypePromoter ?? null,
     };
   }
 
@@ -86,8 +88,10 @@ function buildCategoryMap(items) {
     const subDesc  = String(item.categorySubTypeDescription ?? '').trim();
     if (!typeDesc || !subDesc) continue;
     physicalByDescription[`${normCategoryDesc(typeDesc)}|${normCategoryDesc(subDesc)}`] = {
-      regulation31TypePublic: item.regulation31TypePublic ?? null,
-      investorType:           item.investorType ?? null,
+      regulation31TypePublic:   item.regulation31TypePublic ?? null,
+      investorType:             item.investorType ?? null,
+      promoter:                 item.promoter ?? null,
+      regulation31TypePromoter: item.regulation31TypePromoter ?? null,
     };
   }
 

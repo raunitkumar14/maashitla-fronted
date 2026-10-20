@@ -134,11 +134,15 @@ function matchesDate(fieldVal, selectedDate) {
 // ── NSDL aggregate field lists ────────────────────────────────────────────────
 
 const NSDL_HOLDING_FIELDS = [
+  // fields 1-12: standard position columns
   'beneficiaryFreePositions', 'beneficiaryLockInPositions', 'beneficiaryBlockPositions',
   'beneficiaryPledgedPositions', 'beneficiaryPledgedWithLockInPositions',
   'beneficiaryPledgedUnconfirmedPositions', 'beneficiaryUnconfirmedPledgedWithLockInPositions',
   'beneficiaryRematPositions', 'beneficiaryRematLockInPositions',
   'beneficiaryCmIddPositions', 'cmPoolPositions', 'ccSettlementPositions',
+  // fields 13-16: NDU ("Hold due to NDU") quantities included in the total per business sheet
+  'beneficiaryFreePositionsHoldNdu', 'beneficiaryLockInPositionsHoldNdu',
+  'beneficiaryUnconfirmedFreePositionsHoldNdu', 'beneficiaryUnconfirmedLockInPositionsHoldNdu',
 ];
 
 const NSDL_NDU_FIELDS = [
@@ -244,6 +248,9 @@ function mapCdslRow(row) {
   const cdslExtra = getCategoryExtra('CDSL', row.customerType, row.boSubStatus);
   if (!cdslExtra) _missingCategoryKeys.add(`CDSL|${row.customerType}|${row.boSubStatus}`);
   const acNo = String(row.beneficiaryOwnerAcNo ?? '');
+  const promoterType = getPromoterType(row.isin, row.panOfFirstHolder);
+  const ccRaw   = getCategoryConvert(row.isin, row.panOfFirstHolder);
+  const ccEntry = ccRaw?.depository === 'CDSL' ? ccRaw : null;
   return {
     'Holding Rpt Date':              formatDateDDMMYYYY(row.dateOfBenpos),
     'ISIN':                          row.isin ?? null,
@@ -279,9 +286,9 @@ function mapCdslRow(row) {
     'Bank_Account_Type':             mapBankAccountType(row.dividendBankAccountType, 'CDSL') ?? null,
     'MICR_Code':                     row.dividendMicrNo ?? null,
     'IFSC':                          row.dividendBankIfsc ?? null,
-    'Category type description':     getPromoterType(row.isin, row.panOfFirstHolder) ?? getCategoryConvert(row.isin, row.panOfFirstHolder, 'CDSL', row.customerType, row.boSubStatus)?.typeDescription ?? catTypeDesc ?? null,
-    'Category sub type description': getCategoryConvert(row.isin, row.panOfFirstHolder, 'CDSL', row.customerType, row.boSubStatus)?.subTypeDescription ?? catSubDesc ?? null,
-    'Category':   cdslExtra?.regulation31TypePublic ?? row.customerType ?? null,
+    'Category type description':     promoterType ?? ccEntry?.typeDescription ?? catTypeDesc ?? null,
+    'Category sub type description': (promoterType && cdslExtra?.promoter) ? cdslExtra.promoter : (ccEntry?.subTypeDescription ?? catSubDesc ?? null),
+    'Category':   (promoterType && cdslExtra?.regulation31TypePromoter) ? cdslExtra.regulation31TypePromoter : (cdslExtra?.regulation31TypePublic ?? row.customerType ?? null),
   };
 }
 
@@ -290,6 +297,10 @@ function mapNsdlRow(row) {
     deriveCategoryDescription('NSDL', row.beneficiaryType, row.beneficiarySubType);
   const nsdlExtra = getCategoryExtra('NSDL', row.beneficiaryType, row.beneficiarySubType);
   if (!nsdlExtra) _missingCategoryKeys.add(`NSDL|${row.beneficiaryType}|${row.beneficiarySubType}`);
+  const promoterType = getPromoterType(row.isin, row.firstHolderPan);
+  const ccRaw   = getCategoryConvert(row.isin, row.firstHolderPan);
+  const ccEntry = ccRaw?.depository === 'NSDL' ? ccRaw : null;
+  const nduQty  = sumFields(row, NSDL_NDU_FIELDS);
   // TODO (client/Sunil): Holding Rpt Date and ISIN should technically come from
   // record type "01" of the raw NSDL file, not parsed/stored currently — using
   // date and isin columns as best-available approximation.
@@ -307,7 +318,7 @@ function mapNsdlRow(row) {
     '1st Holder PAN':                row.firstHolderPan ?? null,
     'Lock In Qty':                   toQty(row.beneficiaryLockInPositions),
     'Pledged Qty':                   toQty(row.beneficiaryPledgedPositions),
-    'NDU Qty':                       sumFields(row, NSDL_NDU_FIELDS),
+    'NDU Qty':                       nduQty,
     'PAN type':                      mapPanType(panTypeCharFromPan(row.firstHolderPan), 'NSDL') ?? null,
     'Resident Status':               nsdlExtra?.investorType || null,
     // Gender and Date of Birth are not present in NSDL BenPos data (field list confirmed).
@@ -328,9 +339,9 @@ function mapNsdlRow(row) {
     'Bank_Account_Type':             mapBankAccountType(row.bankAccountType, 'NSDL') ?? null,
     'MICR_Code':                     row.micrCode ?? null,
     'IFSC':                          row.ifsc ?? null,
-    'Category type description':     getPromoterType(row.isin, row.firstHolderPan) ?? getCategoryConvert(row.isin, row.firstHolderPan, 'NSDL', row.beneficiaryType, row.beneficiarySubType)?.typeDescription ?? catTypeDesc ?? null,
-    'Category sub type description': getCategoryConvert(row.isin, row.firstHolderPan, 'NSDL', row.beneficiaryType, row.beneficiarySubType)?.subTypeDescription ?? catSubDesc ?? null,
-    'Category':   nsdlExtra?.regulation31TypePublic ?? row.beneficiaryType ?? null,
+    'Category type description':     promoterType ?? ccEntry?.typeDescription ?? catTypeDesc ?? null,
+    'Category sub type description': (promoterType && nsdlExtra?.promoter) ? nsdlExtra.promoter : (ccEntry?.subTypeDescription ?? catSubDesc ?? null),
+    'Category':   (promoterType && nsdlExtra?.regulation31TypePromoter) ? nsdlExtra.regulation31TypePromoter : (nsdlExtra?.regulation31TypePublic ?? row.beneficiaryType ?? null),
   };
 }
 
@@ -339,6 +350,7 @@ function mapPhysicalRow(shareholder, lockInQty, dateStr) {
   // Do not run them through deriveCategoryDescription.
   const physExtra = getPhysicalCategoryExtra(shareholder.category, shareholder.subCategory);
   if (!physExtra) _missingCategoryKeys.add(`Physical|${shareholder.category}|${shareholder.subCategory}`);
+  const promoterType = getPromoterType(shareholder.isin, shareholder.holder1Pan);
   return {
     'Holding Rpt Date':              formatDateDDMMYYYY(dateStr),
     'ISIN':                          shareholder.isin ?? null,
@@ -373,9 +385,9 @@ function mapPhysicalRow(shareholder, lockInQty, dateStr) {
     'Bank_Account_Type':             mapBankAccountType(shareholder.accountType, 'PHYSICAL') ?? null,
     'MICR_Code':                     shareholder.bankMicrCode ?? null,
     'IFSC':                          shareholder.ifscCode ?? null,
-    'Category type description':     getPromoterType(shareholder.isin, shareholder.holder1Pan) ?? shareholder.category ?? null,
-    'Category sub type description': shareholder.subCategory ?? null,
-    'Category':   physExtra?.regulation31TypePublic ?? shareholder.category ?? null,
+    'Category type description':     promoterType ?? shareholder.category ?? null,
+    'Category sub type description': (promoterType && physExtra?.promoter) ? physExtra.promoter : (shareholder.subCategory ?? null),
+    'Category':   (promoterType && physExtra?.regulation31TypePromoter) ? physExtra.regulation31TypePromoter : (physExtra?.regulation31TypePublic ?? shareholder.category ?? null),
   };
 }
 
@@ -571,6 +583,61 @@ export async function exportAllBenpos(dateStr, onProgress) {
   return { count: rows.length, missingCategoryCount, promoterWarning, categoryWarning };
 }
 
+// ── Per-ISIN ZIP builder (shared by Issuer ZIP and All-ISIN ZIP) ──────────────
+// Groups allRows by ISIN, builds one xlsx per ISIN and streams each into a zip,
+// deleting that ISIN's rows from memory before moving to the next one.
+// isinCodes: pass the known ISIN list to compute skippedIsins, or null for the
+// all-ISIN path where every ISIN present in allRows should be exported.
+async function buildPerIsinZip(allRows, isinCodes, dateStr, onProgress) {
+  const byIsin = new Map();
+  for (const row of allRows) {
+    const isin = row['ISIN'];
+    if (!isin) continue;
+    if (!byIsin.has(isin)) byIsin.set(isin, []);
+    byIsin.get(isin).push(row);
+  }
+
+  const skippedIsins = isinCodes ? isinCodes.filter(isin => !byIsin.has(isin)) : [];
+  const isinsWithData = [...byIsin.keys()];
+  const total = isinsWithData.length;
+
+  const zipChunks = [];
+  let zipErr = null;
+  const zip = new Zip((err, chunk) => {
+    if (err) { zipErr = err; } else { zipChunks.push(chunk); }
+  });
+
+  for (let i = 0; i < total; i++) {
+    const isin = isinsWithData[i];
+    const isinRows = byIsin.get(isin);
+    onProgress?.(`Preparing file ${(i + 1).toLocaleString()} of ${total.toLocaleString()}: ${isin}…`);
+
+    const dataRows = isinRows.map(row => EXPORT_COLUMNS.map(col => {
+      const v = row[col];
+      return (v == null || (typeof v === 'string' && !v.trim())) ? undefined : v;
+    }));
+
+    const xlsxBlob = await buildXlsxBlob(EXPORT_COLUMNS, dataRows, {
+      sheetName: 'BenPos',
+      headerFill: 'ADD8E6',
+    });
+    const uint8 = new Uint8Array(await xlsxBlob.arrayBuffer());
+
+    const f = new ZipPassThrough(`BENPOS_${isin}_${fmtDateForFilename(dateStr)}.xlsx`);
+    zip.add(f);
+    f.push(uint8, true);
+    if (zipErr) throw zipErr;
+
+    byIsin.delete(isin); // release this ISIN's rows
+    await new Promise(resolve => setTimeout(resolve, 0)); // yield to UI
+  }
+
+  zip.end();
+  if (zipErr) throw zipErr;
+
+  return { downloadedCount: total, skippedIsins, zipChunks };
+}
+
 // ── Issuer ZIP export ─────────────────────────────────────────────────────────
 
 function sanitizeFilename(name, maxLen = 80) {
@@ -660,63 +727,79 @@ export async function exportIssuerBenposZip(issuer, dateStr, onProgress) {
     categoryWarning = 'Category convert lookup failed — category descriptions may be incomplete.';
   }
 
-  // 3. Map rows and group by ISIN
+  // 3. Map rows and build per-ISIN xlsx files streamed into a zip
   onProgress?.('Building rows…');
   const { rows: allRows, missingCategoryCount } = buildExportRows(cdslRows, nsdlRows, physShareholders, physShareholdings, dateStr);
 
-  const byIsin = new Map();
-  for (const row of allRows) {
-    const isin = row['ISIN'];
-    if (!isin) continue;
-    if (!byIsin.has(isin)) byIsin.set(isin, []);
-    byIsin.get(isin).push(row);
-  }
+  const { downloadedCount, skippedIsins, zipChunks } =
+    await buildPerIsinZip(allRows, isinCodes, dateStr, onProgress);
 
-  const skippedIsins = isinCodes.filter(isin => !byIsin.has(isin));
-  const isinsWithData = [...byIsin.keys()];
+  if (downloadedCount === 0) return { downloadedCount: 0, skippedIsins, missingCategoryCount, promoterWarning, categoryWarning };
 
-  if (isinsWithData.length === 0) return { downloadedCount: 0, skippedIsins };
-
-  // 4. Build one xlsx per ISIN, stream each into the zip immediately
-  //    (ZipPassThrough = store, no re-compression — .xlsx is already compressed)
-  const zipChunks = [];
-  let zipErr = null;
-  const zip = new Zip((err, chunk) => {
-    if (err) { zipErr = err; } else { zipChunks.push(chunk); }
-  });
-
-  for (let i = 0; i < isinsWithData.length; i++) {
-    const isin = isinsWithData[i];
-    const isinRows = byIsin.get(isin);
-    onProgress?.(`Building Excel ${i + 1}/${isinsWithData.length}: ${isin}…`);
-
-    const dataRows = [];
-    for (const row of isinRows) dataRows.push(EXPORT_COLUMNS.map(col => {
-      const v = row[col];
-      return (v == null || (typeof v === 'string' && !v.trim())) ? undefined : v;
-    }));
-
-    const xlsxBlob = await buildXlsxBlob(EXPORT_COLUMNS, dataRows, {
-      sheetName: 'BenPos',
-      headerFill: 'ADD8E6',
-    });
-    const uint8 = new Uint8Array(await xlsxBlob.arrayBuffer());
-
-    const f = new ZipPassThrough(`BENPOS_${isin}_${fmtDateForFilename(dateStr)}.xlsx`);
-    zip.add(f);
-    f.push(uint8, true);
-    if (zipErr) throw zipErr;
-  }
-
-  zip.end();
-  if (zipErr) throw zipErr;
-
-  // 5. Download zip
+  // 4. Download zip
   onProgress?.('Finalising ZIP…');
   const zipBlob = new Blob(zipChunks, { type: 'application/zip' });
   const issuerPart = sanitizeFilename(issuer.issuerName || issuer.issuerCode, 60);
   const zipName = `BENPOS_${issuerPart}_${fmtDateForFilename(dateStr)}.zip`;
   downloadBlob(zipBlob, zipName);
 
-  return { downloadedCount: isinsWithData.length, skippedIsins, missingCategoryCount, promoterWarning, categoryWarning };
+  return { downloadedCount, skippedIsins, missingCategoryCount, promoterWarning, categoryWarning };
+}
+
+// ── All-ISIN ZIP export ───────────────────────────────────────────────────────
+// Produces one ZIP containing one XLSX per ISIN (every ISIN that has BenPos
+// data on dateStr). Uses the same fetch / cache logic as exportAllBenpos but
+// delegates per-ISIN file building to buildPerIsinZip.
+
+export async function exportAllBenposZip(dateStr, onProgress) {
+  await loadCategoryMapping();
+  const { cdslRows, nsdlRows, physShareholders, physShareholdings } =
+    await fetchAllBenposExportData(dateStr, onProgress);
+
+  resetPromoterCache();
+  resetCategoryConvertCache();
+  let promoterWarning = null;
+  let categoryWarning = null;
+  const dataIssuers = [...new Set(
+    [...cdslRows, ...nsdlRows, ...physShareholders]
+      .map(r => String(r.isin ?? '').slice(3, 7))
+      .filter(Boolean)
+  )];
+  try {
+    const summaryRes = await api.get('/admin/v1/promoter-master/summary');
+    const promoterIssuers = new Set(
+      (summaryRes.data?.data?.issuers ?? []).map(i => i.issuerCode)
+    );
+    await loadPromoters(dataIssuers.filter(ic => promoterIssuers.has(ic)));
+  } catch {
+    promoterWarning = 'Promoter lookup failed — "Category type description" may be incomplete.';
+  }
+  try {
+    const ccSummaryRes = await api.get('/admin/v1/category-convert/summary');
+    const ccIssuers = new Set(
+      (ccSummaryRes.data?.data?.issuers ?? []).map(i => i.issuerCode)
+    );
+    await loadCategoryConvert(dataIssuers.filter(ic => ccIssuers.has(ic)));
+  } catch {
+    categoryWarning = 'Category convert lookup failed — category descriptions may be incomplete.';
+  }
+
+  onProgress?.('Building rows…');
+  const { rows: allRows, missingCategoryCount } = buildExportRows(
+    cdslRows, nsdlRows, physShareholders, physShareholdings, dateStr
+  );
+
+  // isinCodes = null: all ISINs present in data are exported; skippedIsins = []
+  const { downloadedCount, skippedIsins, zipChunks } =
+    await buildPerIsinZip(allRows, null, dateStr, onProgress);
+
+  if (downloadedCount === 0) {
+    return { downloadedCount: 0, skippedIsins: [], missingCategoryCount, promoterWarning, categoryWarning };
+  }
+
+  onProgress?.('Finalising ZIP…');
+  const zipBlob = new Blob(zipChunks, { type: 'application/zip' });
+  downloadBlob(zipBlob, `BenPos_All_ISIN_${fmtDateForFilename(dateStr)}.zip`);
+
+  return { downloadedCount, skippedIsins, missingCategoryCount, promoterWarning, categoryWarning };
 }

@@ -7,7 +7,7 @@ import { parseCdslBenposZip } from './parseCdslBenposZip';
 import { uploadCdslBenpos } from './uploadCdslBenpos';
 import { parseNsdlBenpos } from './parseNsdlBenpos';
 import { uploadNsdlBenpos } from './uploadNsdlBenpos';
-import { exportBenpos, exportAllBenpos, exportIssuerBenposZip } from './benposExport';
+import { exportBenpos, exportAllBenposZip, exportIssuerBenposZip } from './benposExport';
 
 // ── Progress card (shared between CDSL and NSDL upload) ───────────────────────
 
@@ -194,11 +194,19 @@ function BenPos() {
       setPromoterWarning(null);
       setCategoryWarning(null);
       try {
-        const { count, missingCategoryCount, promoterWarning: pw, categoryWarning: cw } = await exportAllBenpos(exportDate, msg => setExportProgress(msg));
-        let successMsg = `✓ Export complete — ${count.toLocaleString()} rows downloaded.`;
-        if (missingCategoryCount > 0)
-          successMsg += ` ${missingCategoryCount.toLocaleString()} row${missingCategoryCount !== 1 ? 's' : ''} had no category mapping.`;
-        setExportMessage(successMsg);
+        const { downloadedCount, skippedIsins, missingCategoryCount, promoterWarning: pw, categoryWarning: cw } =
+          await exportAllBenposZip(exportDate, msg => setExportProgress(msg));
+        if (downloadedCount === 0) {
+          setExportError(`No BenPos data found for any ISIN on ${exportDate}.`);
+        } else {
+          let successMsg = `✓ ${downloadedCount.toLocaleString()} ISIN${downloadedCount !== 1 ? 's' : ''} exported`;
+          if (skippedIsins.length > 0)
+            successMsg += `, ${skippedIsins.length.toLocaleString()} skipped (no data)`;
+          successMsg += '.';
+          if (missingCategoryCount > 0)
+            successMsg += ` ${missingCategoryCount.toLocaleString()} row${missingCategoryCount !== 1 ? 's' : ''} had no category mapping.`;
+          setExportMessage(successMsg);
+        }
         setPromoterWarning(pw ?? null);
         setCategoryWarning(cw ?? null);
       } catch (err) {

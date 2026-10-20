@@ -14,18 +14,20 @@ const PERM_DELETE = 'promoter_master:delete';
 // ── Excel parsing ─────────────────────────────────────────────────────────────
 
 function normalizeHeader(h) {
-  return String(h ?? '').replace(/\s+/g, '').toUpperCase();
+  return String(h ?? '').replace(/[\s_]+/g, '').toUpperCase();
 }
 
 const HEADER_MAP = {
   ISIN:         'isin',
   PANNO:        'pan',
+  PAN:          'pan',
   NAME:         'name',
   PROMOTERTYPE: 'promoterType',
+  TYPE:         'promoterType',
 };
 
-const REQUIRED_NORMALIZED = ['ISIN', 'PANNO', 'PROMOTERTYPE'];
-const REQUIRED_DISPLAY    = { ISIN: 'ISIN', PANNO: 'PAN NO', PROMOTERTYPE: 'PROMOTER TYPE' };
+const REQUIRED_FIELDS  = ['pan', 'promoterType'];
+const REQUIRED_DISPLAY = { pan: 'PAN NO', promoterType: 'PROMOTER TYPE' };
 
 function parseExcel(file) {
   return new Promise((resolve, reject) => {
@@ -41,27 +43,29 @@ function parseExcel(file) {
 
         const normHeaders = rawRows[0].map(normalizeHeader);
 
-        const missing = REQUIRED_NORMALIZED.filter(r => !normHeaders.includes(r));
-        if (missing.length) {
-          return reject(new Error(
-            `Missing required column${missing.length > 1 ? 's' : ''}: ${missing.map(m => REQUIRED_DISPLAY[m]).join(', ')}.`
-          ));
-        }
-
         const fieldIndex = {};
         normHeaders.forEach((h, i) => {
           const field = HEADER_MAP[h];
-          if (field) fieldIndex[field] = i;
+          if (field && !(field in fieldIndex)) fieldIndex[field] = i;
         });
+
+        const missing = REQUIRED_FIELDS.filter(f => !(f in fieldIndex));
+        if (missing.length) {
+          return reject(new Error(
+            `Missing required column${missing.length > 1 ? 's' : ''}: ${missing.map(f => REQUIRED_DISPLAY[f]).join(', ')}.`
+          ));
+        }
 
         const rows = [];
         for (let r = 1; r < rawRows.length; r++) {
           const raw = rawRows[r];
           if (raw.every(cell => String(cell).trim() === '')) continue;
-          const obj = {};
-          for (const [field, idx] of Object.entries(fieldIndex)) {
-            obj[field] = String(raw[idx] ?? '').trim();
-          }
+          const obj = {
+            pan:          String(raw[fieldIndex.pan]          ?? '').trim(),
+            name:         String(raw[fieldIndex.name]         ?? '').trim(),
+            promoterType: String(raw[fieldIndex.promoterType] ?? '').trim(),
+          };
+          if ('isin' in fieldIndex) obj.isin = String(raw[fieldIndex.isin] ?? '').trim();
           rows.push(obj);
         }
 
@@ -305,9 +309,8 @@ function CompanyPromoter() {
         </div>
         <div className="cp-upload-body">
           <p className="cp-upload-hint">
-            Upload an Excel file (.xlsx / .xls) with columns:{' '}
-            <strong>ISIN</strong>, <strong>PAN NO</strong>, <strong>NAME</strong>, <strong>PROMOTER TYPE</strong>.
-            {' '}Uploading adds new rows and updates existing ones (matched by PAN); other rows are kept.
+            Upload PAN NO, NAME and PROMOTER TYPE (PROMOTER or PROMOTER GROUP). Each PAN found in this company's BenPos data is marked as promoter in the export.
+            Uploading adds new PANs and updates existing ones (same PAN); other rows are kept.
             Use Delete / Delete All to remove rows.
           </p>
         </div>

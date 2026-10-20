@@ -14,24 +14,21 @@ const PERM_DELETE = 'category_convert:delete';
 // ── Excel parsing ─────────────────────────────────────────────────────────────
 
 function normalizeHeader(h) {
-  return String(h ?? '').replace(/\s+/g, '').toUpperCase();
+  return String(h ?? '').replace(/[\s_]+/g, '').toUpperCase();
 }
 
 const HEADER_MAP = {
-  ISIN:                              'isin',
-  PAN:                               'pan',
-  CLIENT_CDSL_UNIQUE_CODE:           'clientCode',
-  CLIENT_CDSL_UNIQUE_CODE_CONVERTED: 'convertedCode',
+  PAN:             'pan',
+  PANNO:           'pan',
+  CATEGORYTYPE:    'categoryType',
+  CATEGORYSUBTYPE: 'categorySubType',
 };
 
-const REQUIRED_NORMALIZED = [
-  'ISIN', 'PAN', 'CLIENT_CDSL_UNIQUE_CODE', 'CLIENT_CDSL_UNIQUE_CODE_CONVERTED',
-];
+const REQUIRED_FIELDS = ['pan', 'categoryType', 'categorySubType'];
 const REQUIRED_DISPLAY = {
-  ISIN:                              'ISIN',
-  PAN:                               'PAN',
-  CLIENT_CDSL_UNIQUE_CODE:           'Client_Cdsl_Unique_Code',
-  CLIENT_CDSL_UNIQUE_CODE_CONVERTED: 'Client_Cdsl_Unique_Code_Converted',
+  pan:             'PAN',
+  categoryType:    'Category type',
+  categorySubType: 'Category sub type',
 };
 
 function parseExcel(file) {
@@ -48,28 +45,28 @@ function parseExcel(file) {
 
         const normHeaders = rawRows[0].map(normalizeHeader);
 
-        const missing = REQUIRED_NORMALIZED.filter(r => !normHeaders.includes(r));
-        if (missing.length) {
-          return reject(new Error(
-            `Missing required column${missing.length > 1 ? 's' : ''}: ${missing.map(m => REQUIRED_DISPLAY[m]).join(', ')}.`
-          ));
-        }
-
         const fieldIndex = {};
         normHeaders.forEach((h, i) => {
           const field = HEADER_MAP[h];
-          if (field) fieldIndex[field] = i;
+          if (field && !(field in fieldIndex)) fieldIndex[field] = i;
         });
+
+        const missing = REQUIRED_FIELDS.filter(f => !(f in fieldIndex));
+        if (missing.length) {
+          return reject(new Error(
+            `Missing required column${missing.length > 1 ? 's' : ''}: ${missing.map(f => REQUIRED_DISPLAY[f]).join(', ')}.`
+          ));
+        }
 
         const rows = [];
         for (let r = 1; r < rawRows.length; r++) {
           const raw = rawRows[r];
           if (raw.every(cell => String(cell).trim() === '')) continue;
-          const obj = {};
-          for (const [field, idx] of Object.entries(fieldIndex)) {
-            obj[field] = String(raw[idx] ?? '').trim();
-          }
-          rows.push(obj);
+          rows.push({
+            pan:             String(raw[fieldIndex.pan]             ?? '').trim(),
+            categoryType:    String(raw[fieldIndex.categoryType]    ?? '').trim(),
+            categorySubType: String(raw[fieldIndex.categorySubType] ?? '').trim(),
+          });
         }
 
         if (!rows.length) return reject(new Error('No data rows found in the file.'));
@@ -281,7 +278,7 @@ function CompanyCategoryConvert() {
     return isNaN(d.getTime()) ? ds : d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
-  const colSpan = canDelete ? 5 : 4;
+  const colSpan = canDelete ? 8 : 7;
 
   return (
     <div className="isin-master">
@@ -309,10 +306,8 @@ function CompanyCategoryConvert() {
         </div>
         <div className="cp-upload-body">
           <p className="cp-upload-hint">
-            Upload an Excel / CSV file (.xlsx / .xls / .csv) with columns:{' '}
-            <strong>ISIN</strong>, <strong>PAN</strong>,{' '}
-            <strong>Client_Cdsl_Unique_Code</strong>, <strong>Client_Cdsl_Unique_Code_Converted</strong>.
-            {' '}Uploading adds new rows and updates existing ones (matched by PAN + client code); other rows are kept.
+            Upload PAN, Category type and Category sub type. For every PAN found in this company, the category in the BenPos export is changed to the given type and sub type.
+            Uploading adds new PANs and updates existing ones; other rows are kept.
             Use Delete / Delete All to remove rows.
           </p>
         </div>
@@ -412,9 +407,12 @@ function CompanyCategoryConvert() {
             <thead>
               <tr>
                 <th>PAN</th>
-                <th>Client Code</th>
-                <th>Converted Code</th>
-                <th>Uploaded At</th>
+                <th>Category type</th>
+                <th>Category sub type</th>
+                <th>Category type description</th>
+                <th>Category sub type description</th>
+                <th>Depository</th>
+                <th>Uploaded at</th>
                 {canDelete && <th style={{ width: 80 }}>Action</th>}
               </tr>
             </thead>
@@ -427,9 +425,12 @@ function CompanyCategoryConvert() {
                 pageRows.map(row => (
                   <tr key={row.id}>
                     <td>{row.pan}</td>
-                    <td>{row.clientCode}</td>
-                    <td>{row.convertedCode}</td>
-                    <td>{formatDate(row.createdAt)}</td>
+                    <td>{row.categoryType}</td>
+                    <td>{row.categorySubType}</td>
+                    <td>{row.categoryTypeDescription ?? '—'}</td>
+                    <td>{row.categorySubTypeDescription ?? '—'}</td>
+                    <td>{row.depository}</td>
+                    <td>{formatDate(row.uploadedAt)}</td>
                     {canDelete && (
                       <td>
                         {confirmRowId === row.id ? (
