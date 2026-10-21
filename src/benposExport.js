@@ -249,8 +249,7 @@ function mapCdslRow(row) {
   if (!cdslExtra) _missingCategoryKeys.add(`CDSL|${row.customerType}|${row.boSubStatus}`);
   const acNo = String(row.beneficiaryOwnerAcNo ?? '');
   const promoterType = getPromoterType(row.isin, row.panOfFirstHolder);
-  const ccRaw   = getCategoryConvert(row.isin, row.panOfFirstHolder);
-  const ccEntry = ccRaw?.depository === 'CDSL' ? ccRaw : null;
+  const ccEntry = getCategoryConvert(row.isin, row.panOfFirstHolder);
   return {
     'Holding Rpt Date':              formatDateDDMMYYYY(row.dateOfBenpos),
     'ISIN':                          row.isin ?? null,
@@ -287,7 +286,7 @@ function mapCdslRow(row) {
     'MICR_Code':                     row.dividendMicrNo ?? null,
     'IFSC':                          row.dividendBankIfsc ?? null,
     'Category type description':     promoterType ?? ccEntry?.typeDescription ?? catTypeDesc ?? null,
-    'Category sub type description': (promoterType && cdslExtra?.promoter) ? cdslExtra.promoter : (ccEntry?.subTypeDescription ?? catSubDesc ?? null),
+    'Category sub type description': ccEntry?.subTypeDescription ?? catSubDesc ?? null,
     'Category':   (promoterType && cdslExtra?.regulation31TypePromoter) ? cdslExtra.regulation31TypePromoter : (cdslExtra?.regulation31TypePublic ?? row.customerType ?? null),
   };
 }
@@ -298,8 +297,7 @@ function mapNsdlRow(row) {
   const nsdlExtra = getCategoryExtra('NSDL', row.beneficiaryType, row.beneficiarySubType);
   if (!nsdlExtra) _missingCategoryKeys.add(`NSDL|${row.beneficiaryType}|${row.beneficiarySubType}`);
   const promoterType = getPromoterType(row.isin, row.firstHolderPan);
-  const ccRaw   = getCategoryConvert(row.isin, row.firstHolderPan);
-  const ccEntry = ccRaw?.depository === 'NSDL' ? ccRaw : null;
+  const ccEntry = getCategoryConvert(row.isin, row.firstHolderPan);
   const nduQty  = sumFields(row, NSDL_NDU_FIELDS);
   // TODO (client/Sunil): Holding Rpt Date and ISIN should technically come from
   // record type "01" of the raw NSDL file, not parsed/stored currently — using
@@ -340,7 +338,7 @@ function mapNsdlRow(row) {
     'MICR_Code':                     row.micrCode ?? null,
     'IFSC':                          row.ifsc ?? null,
     'Category type description':     promoterType ?? ccEntry?.typeDescription ?? catTypeDesc ?? null,
-    'Category sub type description': (promoterType && nsdlExtra?.promoter) ? nsdlExtra.promoter : (ccEntry?.subTypeDescription ?? catSubDesc ?? null),
+    'Category sub type description': ccEntry?.subTypeDescription ?? catSubDesc ?? null,
     'Category':   (promoterType && nsdlExtra?.regulation31TypePromoter) ? nsdlExtra.regulation31TypePromoter : (nsdlExtra?.regulation31TypePublic ?? row.beneficiaryType ?? null),
   };
 }
