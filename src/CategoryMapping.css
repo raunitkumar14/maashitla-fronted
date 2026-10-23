@@ -1,0 +1,16 @@
+/* Dark grey CLEAR button */
+.btn-action--grey {
+  background-color: #666666;
+  color: #ffffff;
+}
+
+.btn-action--grey:hover {
+  background-color: #444444;
+}
+
+/* Icon + label button: aligns the inline SVG with the text */
+.cm-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}

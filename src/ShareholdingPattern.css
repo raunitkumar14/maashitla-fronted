@@ -1,0 +1,23 @@
+/* ── Shareholding Pattern page ───────────────────────────────────────────────
+ * Allow the Company autocomplete dropdown to overflow the card boundary.
+ * .im-card has overflow: hidden (for border-radius corner clipping), which
+ * clips the absolutely-positioned suggestion list. Scoped to .isin-master so
+ * no other page is affected.
+ */
+
+.isin-master .im-card {
+  overflow: visible;
+}
+
+/* The card header has its own gradient background — restore its top corners
+ * now that the card no longer clips children via overflow: hidden. */
+.isin-master .im-card-header {
+  border-radius: 6px 6px 0 0;
+}
+
+/* Raise the suggestion list above other page elements and give it enough
+ * room for several options before scrolling. */
+.isin-master .benpos-issuer-dropdown {
+  z-index: 1000;
+  max-height: 260px;
+}

@@ -33,7 +33,7 @@ const NAV_ITEMS = [
   { label: 'Reconciliation',    icon: '🔄', hasSubmenu: true },
   { label: 'ISIN Master',       icon: '📋', path: '/isin-master' },
   { label: 'Complaint',         icon: '💬' },
-  { label: 'Category Mapping',  icon: '🔗', badge: 'CM' },
+  { label: 'Category Mapping',  icon: '🔗', badge: 'CM', path: '/category-mapping' },
   { label: 'Pan Freeze',        icon: '🔒' },
   { label: 'Shareholder Search',icon: '🔍' },
   {

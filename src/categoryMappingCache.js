@@ -64,6 +64,8 @@ function buildCategoryMap(items) {
       investorType:               first.investorType ?? null,
       promoter:                   first.promoter ?? null,
       regulation31TypePromoter:   first.regulation31TypePromoter ?? null,
+      shpPromoterCode:            first.shpPromoterCode ?? null,
+      shpPublicCode:              first.shpPublicCode ?? null,
     };
   }
 
@@ -92,6 +94,8 @@ function buildCategoryMap(items) {
       investorType:             item.investorType ?? null,
       promoter:                 item.promoter ?? null,
       regulation31TypePromoter: item.regulation31TypePromoter ?? null,
+      shpPromoterCode:          item.shpPromoterCode ?? null,
+      shpPublicCode:            item.shpPublicCode ?? null,
     };
   }
 

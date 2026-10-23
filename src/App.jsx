@@ -10,6 +10,7 @@ import Roles from './Roles';
 import LoginHistoryList from './LoginHistoryList';
 import Profile from './Profile';
 import BenPos from './BenPos';
+import ShareholdingPattern from './ShareholdingPattern';
 import CompanyLayout, { CompanyComingSoon } from './CompanyLayout';
 import CompanyPhysical from './CompanyPhysical';
 import CompanyNsdl from './CompanyNsdl';
@@ -18,6 +19,7 @@ import CompanyIsins from './CompanyIsins';
 import CompanyDetails from './CompanyDetails';
 import CompanyPromoter from './CompanyPromoter';
 import CompanyCategoryConvert from './CompanyCategoryConvert';
+import CategoryMapping from './CategoryMapping';
 
 /*
  * ── How React Router works ──────────────────────────────────────────────────
@@ -135,6 +137,13 @@ function App() {
       {/* Reports sub-pages */}
       <Route path="/reports/benpos" element={
         <ProtectedPage breadcrumbs={['Reports', 'BenPos']}><BenPos /></ProtectedPage>
+      } />
+      <Route path="/reports/shareholding-pattern" element={
+        <ProtectedPage breadcrumbs={['Reports', 'Shareholding Pattern']}><ShareholdingPattern /></ProtectedPage>
+      } />
+
+      <Route path="/category-mapping" element={
+        <ProtectedPage pageName="Category Mapping"><CategoryMapping /></ProtectedPage>
       } />
     </Routes>
   );
