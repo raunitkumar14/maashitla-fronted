@@ -3,6 +3,8 @@
 // Pure module: no imports, no DOM, no network. The caller (shpExcelBuilder.js) passes the
 // numbers that were already computed for Table II / III / IV and the style ids of its styles.xml.
 
+import { TABLE_I_CELL_STYLE } from './shpTableIStyles.js';
+
 // ---------- column helpers ----------
 export const colLetter = (n) => { let s = ''; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
 export const colIndex = (s) => s.split('').reduce((a, ch) => a * 26 + ch.charCodeAt(0) - 64, 0);
@@ -111,7 +113,7 @@ const ADDITIVE = ['D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'N', 'O', 'P', 'Q', 'R
 const ALL_DATA_COLS = rng('D', 'AG');
 
 // ---------- helpers ----------
-const esc = (s) => String(s).replace(/[ --￾￿]/g, '')
+const esc = (s) => String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g, '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const defaultStrCell = (ref, text, s) => `<c r="${ref}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${esc(text)}</t></is></c>`;
 const numCell = (ref, v, s) => `<c r="${ref}" s="${s}"><v>${Number.isFinite(v) ? v : 0}</v></c>`;
@@ -135,21 +137,22 @@ function expand(range) {
  * @param {object} o.S style ids of the workbook's styles.xml (see STYLE_KEYS below)
  * @param {function} [o.strCell] (ref, text, styleId) => xml for a text cell (default: inline string)
  */
-export function buildTableIXml({ rows = {}, totalShares = 0, S, strCell = defaultStrCell }) {
-  if (!S) throw new Error('buildTableIXml: style ids (S) are required');
+export function buildTableIXml({ rows = {}, totalShares = 0, styleIds, strCell = defaultStrCell }) {
+  if (!styleIds) throw new Error('buildTableIXml: styleIds (from appendStyleSpecs) are required');
+  const sOf = (ref) => styleIds[TABLE_I_CELL_STYLE[ref]] ?? styleIds[0];
   const grid = {};                                   // grid[row][colIdx] = xml
   const put = (ref, xml) => { const [c, r] = splitRef(ref); (grid[r] ||= {})[colIndex(c)] = xml; };
   const merges = [];
 
   // title
-  put('B1', strCell('B1', TITLE, S.title));
-  for (const ref of expand('B1:AG1')) if (ref !== 'B1') put(ref, blankCell(ref, S.title));
+  put('B1', strCell('B1', TITLE, sOf('B1')));
+  for (const ref of expand('B1:AG1')) if (ref !== 'B1') put(ref, blankCell(ref, sOf(ref)));
   merges.push('B1:AG1');
 
   // headers (rows 3-6)
   for (const [range, text] of HEADERS) {
     const cells = expand(range);
-    cells.forEach((ref, i) => put(ref, i === 0 ? strCell(ref, text, S.hdr) : blankCell(ref, S.hdr)));
+    cells.forEach((ref, i) => put(ref, i === 0 ? strCell(ref, text, sOf(ref)) : blankCell(ref, sOf(ref))));
     if (cells.length > 1) merges.push(range);
   }
   for (const col of ['B', 'C', 'D']) { /* B3:B5 etc. already merged above; row 6 cells written above */ }
@@ -185,18 +188,23 @@ export function buildTableIXml({ rows = {}, totalShares = 0, S, strCell = defaul
 
   // body rows
   for (const row of BODY) {
-    put('B' + row.r, strCell('B' + row.r, row.b, S.lblB));
-    put('C' + row.r, strCell('C' + row.r, row.c, S.lblC));
+    put('B' + row.r, strCell('B' + row.r, row.b, sOf('B' + row.r)));
+    put('C' + row.r, strCell('C' + row.r, row.c, sOf('C' + row.r)));
     for (const c of ALL_DATA_COLS) {
       const ref = c + row.r;
-      if (GREY[row.key].has(c)) { put(ref, blankCell(ref, S.grey)); continue; }
-      const style = PCT_COLS.has(c) ? S.pct : (BEIGE_COLS.has(c) ? S.qtyBeige : S.qty);
-      put(ref, numCell(ref, val[row.key][c], style));
+      if (GREY[row.key].has(c)) { put(ref, blankCell(ref, sOf(ref))); continue; }
+      put(ref, numCell(ref, val[row.key][c], sOf(ref)));
     }
   }
   // total row 12
-  put('B12', strCell('B12', ' Total', S.totLbl)); put('C12', blankCell('C12', S.totLbl)); merges.push('B12:C12');
-  for (const c of ALL_DATA_COLS) put(c + '12', numCell(c + '12', total[c], PCT_COLS.has(c) ? S.totPct : S.totQty));
+  put('B12', strCell('B12', ' Total', sOf('B12'))); put('C12', blankCell('C12', sOf('C12'))); merges.push('B12:C12');
+  for (const c of ALL_DATA_COLS) put(c + '12', numCell(c + '12', total[c], sOf(c + '12')));
+
+  // every remaining cell of rows 1-12, columns A..AH (spacer row 2, column A, column AH) gets its original (blank) style
+  for (let r = 1; r <= 12; r++) for (let k = 1; k <= 34; k++) {
+    const ref = colLetter(k) + r;
+    if (!(grid[r] && grid[r][k]) && TABLE_I_CELL_STYLE[ref] !== undefined) put(ref, blankCell(ref, sOf(ref)));
+  }
 
   // assemble
   const colsXml = '<cols>' + Object.entries(COL_WIDTH).map(([c, w]) => `<col min="${colIndex(c)}" max="${colIndex(c)}" width="${w}" customWidth="1"/>`).join('') + '</cols>';
@@ -208,22 +216,9 @@ export function buildTableIXml({ rows = {}, totalShares = 0, S, strCell = defaul
   const mergeXml = `<mergeCells count="${merges.length}">${merges.map((m) => `<mergeCell ref="${m}"/>`).join('')}</mergeCells>`;
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
     + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-    + '<dimension ref="B1:AG12"/><sheetViews><sheetView workbookViewId="0" showGridLines="0"/></sheetViews>'
+    + '<dimension ref="A1:AH12"/><sheetViews><sheetView workbookViewId="0" showGridLines="0"/></sheetViews>'
     + '<sheetFormatPr defaultRowHeight="15"/>' + colsXml + `<sheetData>${rowsXml}</sheetData>` + mergeXml
     + '<pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/></worksheet>';
 }
 
-/** style keys the caller must provide in S (ids = cellXfs index in styles.xml):
- * title   dark-blue title band, bold white, left
- * hdr     dark-blue header cell, bold white, centered, wrap, thin border
- * lblB    body col B label: bold, centered, border
- * lblC    body col C label: bold, left, wrap, border
- * qty     white number cell, '#,##0' (or '0'), border
- * qtyBeige same as qty with the light beige fill (columns D, E, T)
- * pct     white percentage cell '0.00', border
- * grey    grey fill (not applicable), border
- * totLbl  Total label: dark-blue fill, bold white
- * totQty  Total number: dark-blue fill, bold white, '#,##0'
- * totPct  Total percent: dark-blue fill, bold white, '0.00'
- */
-export const STYLE_KEYS = ['title', 'hdr', 'lblB', 'lblC', 'qty', 'qtyBeige', 'pct', 'grey', 'totLbl', 'totQty', 'totPct'];
+/** Styles: call appendStyleSpecs(stylesXml, TABLE_I_STYLE_SPECS) (shpStyleSpecs.js) once, pass the returned `ids` as styleIds. */
