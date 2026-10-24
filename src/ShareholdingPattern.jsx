@@ -340,6 +340,9 @@ function ShareholdingPattern() {
           {infoMessage && (
             <div className="im-banner im-banner--info">ℹ {infoMessage}</div>
           )}
+          <div className="im-banner im-banner--info">
+            Table III lists only holders with 1% or more shares; smaller holders are included in the category totals.
+          </div>
         </div>
       </div>
     </div>
