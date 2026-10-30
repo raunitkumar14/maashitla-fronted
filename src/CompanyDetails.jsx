@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from './api/axios';
 import './IsinMaster.css';
@@ -7,9 +7,12 @@ import './CompanyDetails.css';
 import './Users.css';
 import './AddUser.css';
 import './EditUser.css';
+import './ShpConvertibleModal.css';
 import { useColumnVisibility } from './hooks/useColumnVisibility';
 import { ColumnSelector } from './components/ColumnSelector';
 import { hasPermission } from './auth';
+import ShpConvertibleModal, { SHP_MENU_ITEMS } from './ShpConvertibleModal';
+import ShpTableModal, { SHP_TABLE_MENU_ITEMS } from './ShpTableModal';
 
 const COLUMNS = [
   { header: 'Issuer ID',                       key: 'issuerId' },
@@ -45,16 +48,13 @@ const COLUMNS = [
   { header: 'Date of Incorporation',           key: 'dateOfIncorporation' },
   { header: 'RTA Code NSDL',                   key: 'rtaCodeNsdl' },
   { header: 'RTA Code CDSL',                   key: 'rtaCodeCdsl' },
-  { header: 'Listing Status',                  key: 'listingStatus' },
-  { header: 'Listing at',                      key: 'listingAt' },
-  { header: 'Symbol',                          key: 'symbol' },
-  { header: 'Scrip Code',                      key: 'scripCode' },
   { header: 'Professional/Any other',          key: 'professionalOrAnyOther' },
   { header: 'Professional Name',               key: 'professionalName' },
   { header: 'Phone 1',                         key: 'professionalPhone1' },
   { header: 'Phone 2',                         key: 'professionalPhone2' },
   { header: 'Email ID',                        key: 'professionalEmail' },
   { header: 'Remarks',                         key: 'remarks' },
+  { header: 'Whether Any ISIN of Company Listed', key: 'anyIsinListed' },
 ];
 
 // ── Column-visibility config (stable module-level reference) ─────────────────
@@ -73,9 +73,7 @@ const COLUMN_GROUP_MAP = {
   authorisedSignatory: 'Tax & Signatory', designationOfAuthSignatory: 'Tax & Signatory',
   totalIsin: 'Company Info', cin: 'Company Info',
   oldName: 'Company Info', dateOfIncorporation: 'Company Info',
-  rtaCodeNsdl: 'RTA & Listing', rtaCodeCdsl: 'RTA & Listing',
-  listingStatus: 'RTA & Listing', listingAt: 'RTA & Listing',
-  symbol: 'RTA & Listing', scripCode: 'RTA & Listing',
+  rtaCodeNsdl: 'RTA & Listing', rtaCodeCdsl: 'RTA & Listing', anyIsinListed: 'RTA & Listing',
   professionalOrAnyOther: 'Professional', professionalName: 'Professional',
   professionalPhone1: 'Professional', professionalPhone2: 'Professional',
   professionalEmail: 'Professional', remarks: 'Professional',
@@ -129,10 +127,6 @@ const FORM_LAYOUT = [
   { key: 'dateOfIncorporation',     label: 'Date of Incorporation',              type: 'date' },
   { key: 'rtaCodeNsdl',             label: 'RTA Code NSDL' },
   { key: 'rtaCodeCdsl',             label: 'RTA Code CDSL' },
-  { key: 'listingStatus',           label: 'Listing Status' },
-  { key: 'listingAt',               label: 'Listing at' },
-  { key: 'symbol',                  label: 'Symbol' },
-  { key: 'scripCode',               label: 'Scrip Code' },
 
   { section: 'Professional Contact' },
   { key: 'professionalOrAnyOther',  label: 'Professional / Any other' },
@@ -154,6 +148,7 @@ function fmtDate(val) {
 }
 
 function fmtCell(key, val) {
+  if (key === 'anyIsinListed') return val === true ? 'Yes' : val === false ? 'No' : '—';
   if (val === null || val === undefined || val === '') return '—';
   if (key === 'dateOfIncorporation') return fmtDate(val);
   return String(val);
@@ -196,6 +191,28 @@ function CompanyDetails() {
   const [form,       setFormState]  = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [apiError,   setApiError]   = useState('');
+
+  // ── Shareholding dropdown + modals ──────────────────────────────────────────
+  const [shpDropdownOpen, setShpDropdownOpen] = useState(false);
+  const [shpModalType,    setShpModalType]    = useState(null); // securityType or null
+  const [shpTableCode,    setShpTableCode]    = useState(null); // tableCode or null
+  const shpCloseTimerRef = useRef(null);
+
+  function handleShpEnter() {
+    if (shpCloseTimerRef.current) { clearTimeout(shpCloseTimerRef.current); shpCloseTimerRef.current = null; }
+    setShpDropdownOpen(true);
+  }
+  function handleShpLeave() {
+    shpCloseTimerRef.current = setTimeout(() => { setShpDropdownOpen(false); }, 160);
+  }
+  function openShpModal(securityType) {
+    setShpDropdownOpen(false);
+    setShpModalType(securityType);
+  }
+  function openShpTableModal(tableCode) {
+    setShpDropdownOpen(false);
+    setShpTableCode(tableCode);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -314,6 +331,50 @@ function CompanyDetails() {
                   Category Convert
                 </button>
               )}
+              {hasPermission('shp_convertible:view') && (
+                <div
+                  className="shp-dropdown-wrapper"
+                  onMouseEnter={handleShpEnter}
+                  onMouseLeave={handleShpLeave}
+                  onFocus={handleShpEnter}
+                  onBlur={handleShpLeave}
+                >
+                  <button
+                    className="btn-upload"
+                    disabled={loading || !issuer}
+                    aria-haspopup="true"
+                    aria-expanded={shpDropdownOpen}
+                  >
+                    Shareholding ▾
+                  </button>
+                  {shpDropdownOpen && (
+                    <div className="shp-dropdown-menu" role="menu">
+                      {SHP_MENU_ITEMS.map(item => (
+                        <button
+                          key={item.securityType}
+                          className="shp-dropdown-item"
+                          role="menuitem"
+                          onClick={() => openShpModal(item.securityType)}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                      <div className="shp-dropdown-divider" role="separator" />
+                      <div className="shp-dropdown-group-label">Shareholding tables</div>
+                      {SHP_TABLE_MENU_ITEMS.map(item => (
+                        <button
+                          key={item.tableCode}
+                          className="shp-dropdown-item"
+                          role="menuitem"
+                          onClick={() => openShpTableModal(item.tableCode)}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               <button
                 className="btn-upload"
                 onClick={handleEdit}
@@ -431,6 +492,23 @@ function CompanyDetails() {
           </div>
         )}
       </div>
+
+      {shpModalType && (
+        <ShpConvertibleModal
+          issuerCode={issuerCode}
+          securityType={shpModalType}
+          companyLabel={issuer?.issuerName ? `${issuer.issuerName} (${issuerCode})` : issuerCode}
+          onClose={() => setShpModalType(null)}
+        />
+      )}
+      {shpTableCode && (
+        <ShpTableModal
+          issuerCode={issuerCode}
+          tableCode={shpTableCode}
+          companyLabel={issuer?.issuerName ? `${issuer.issuerName} (${issuerCode})` : issuerCode}
+          onClose={() => setShpTableCode(null)}
+        />
+      )}
 
     </div>
   );

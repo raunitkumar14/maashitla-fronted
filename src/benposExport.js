@@ -290,6 +290,8 @@ function mapCdslRow(row) {
     'Category':   (promoterType && cdslExtra?.regulation31TypePromoter) ? cdslExtra.regulation31TypePromoter : (cdslExtra?.regulation31TypePublic ?? row.customerType ?? null),
     'SHP Promoter Code':             cdslExtra?.shpPromoterCode ?? null,
     'SHP Public Code':               cdslExtra?.shpPublicCode ?? null,
+    'shpCategoryTypeDescription':    cdslExtra?.categoryTypeDescription ?? null,
+    'shpForeignOwnership':           cdslExtra?.foreignOwnership ?? null,
   };
 }
 
@@ -344,6 +346,8 @@ function mapNsdlRow(row) {
     'Category':   (promoterType && nsdlExtra?.regulation31TypePromoter) ? nsdlExtra.regulation31TypePromoter : (nsdlExtra?.regulation31TypePublic ?? row.beneficiaryType ?? null),
     'SHP Promoter Code':             nsdlExtra?.shpPromoterCode ?? null,
     'SHP Public Code':               nsdlExtra?.shpPublicCode ?? null,
+    'shpCategoryTypeDescription':    nsdlExtra?.categoryTypeDescription ?? null,
+    'shpForeignOwnership':           nsdlExtra?.foreignOwnership ?? null,
   };
 }
 
@@ -392,6 +396,8 @@ function mapPhysicalRow(shareholder, lockInQty, dateStr) {
     'Category':   (promoterType && physExtra?.regulation31TypePromoter) ? physExtra.regulation31TypePromoter : (physExtra?.regulation31TypePublic ?? shareholder.category ?? null),
     'SHP Promoter Code':             physExtra?.shpPromoterCode ?? null,
     'SHP Public Code':               physExtra?.shpPublicCode ?? null,
+    'shpCategoryTypeDescription':    shareholder.category ?? null,
+    'shpForeignOwnership':           physExtra?.foreignOwnership ?? null,
   };
 }
 

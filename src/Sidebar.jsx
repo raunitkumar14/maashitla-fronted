@@ -30,7 +30,16 @@ const NAV_ITEMS = [
       { label: 'Shareholding Pattern',icon: 'SP', path: '/reports/shareholding-pattern' },
     ],
   },
-  { label: 'Reconciliation',    icon: '🔄', hasSubmenu: true },
+  {
+    label: 'Reconciliation',
+    icon: '🔄',
+    hasSubmenu: true,
+    children: [
+      { label: 'Reco Upload',    icon: '📤', path: '/reconciliation/reco-upload' },
+      { label: 'IDT',            icon: '🔁', path: '/reconciliation/idt' },
+      { label: 'Reconciliation', icon: '🔄', path: '/reconciliation/main' },
+    ],
+  },
   { label: 'ISIN Master',       icon: '📋', path: '/isin-master' },
   { label: 'Complaint',         icon: '💬' },
   { label: 'Category Mapping',  icon: '🔗', badge: 'CM', path: '/category-mapping' },

@@ -15,7 +15,8 @@ const COMPANY_COLUMNS = [
   { field: 'issuerCode', header: 'Issuer Code',  render: row => row.issuerCode         },
   { field: 'issuerName', header: 'Issuer Name',  render: row => row.issuerName || '—' },
   { field: 'totalIsin',  header: 'Total ISIN',   render: row => row.totalIsin          },
-  { field: 'source',     header: 'Source',       render: row => row.source             },
+  { field: 'source',        header: 'Source',                          render: row => row.source                                                       },
+  { field: 'anyIsinListed', header: 'Whether Any ISIN of Company Listed', render: row => row.anyIsinListed === true ? 'Yes' : row.anyIsinListed === false ? 'No' : '—' },
 ];
 
 // Stable reference — never recreated across renders.

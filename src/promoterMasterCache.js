@@ -1,6 +1,6 @@
 import api from './api/axios';
 
-// Map<issuerCode, Map<PAN, promoterType>>  — module-level, reset before each export.
+// Map<issuerCode, Map<PAN, {promoterType, name}>>  — module-level, reset before each export.
 const _cache = new Map();
 
 export function resetPromoterCache() {
@@ -21,7 +21,7 @@ export async function loadPromoters(issuerCodes) {
       const pan = String(p.pan ?? '').trim().toUpperCase();
       if (!pan) continue;
       if (!_cache.has(p.issuerCode)) _cache.set(p.issuerCode, new Map());
-      _cache.get(p.issuerCode).set(pan, p.promoterType);
+      _cache.get(p.issuerCode).set(pan, { promoterType: p.promoterType, name: p.name ?? '' });
     }
   }
 }
@@ -32,5 +32,10 @@ export function getPromoterType(isin, pan) {
   if (!isin || !pan) return null;
   const issuerCode = String(isin).slice(3, 7);
   const panNorm = String(pan).trim().toUpperCase();
-  return _cache.get(issuerCode)?.get(panNorm) ?? null;
+  return _cache.get(issuerCode)?.get(panNorm)?.promoterType ?? null;
+}
+
+// Returns Map<PAN, {promoterType, name}> for the given issuerCode (empty map if not loaded).
+export function getPromoterMap(issuerCode) {
+  return _cache.get(issuerCode) ?? new Map();
 }

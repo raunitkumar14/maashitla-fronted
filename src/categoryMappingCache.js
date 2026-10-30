@@ -66,6 +66,7 @@ function buildCategoryMap(items) {
       regulation31TypePromoter:   first.regulation31TypePromoter ?? null,
       shpPromoterCode:            first.shpPromoterCode ?? null,
       shpPublicCode:              first.shpPublicCode ?? null,
+      foreignOwnership:           first.foreignOwnership ?? null,
     };
   }
 
@@ -96,6 +97,7 @@ function buildCategoryMap(items) {
       regulation31TypePromoter: item.regulation31TypePromoter ?? null,
       shpPromoterCode:          item.shpPromoterCode ?? null,
       shpPublicCode:            item.shpPublicCode ?? null,
+      foreignOwnership:         item.foreignOwnership ?? null,
     };
   }
 

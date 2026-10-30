@@ -1,0 +1,153 @@
+/* ── Modal backdrop + container ─────────────────────────────────────────────── */
+
+.shp-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.52);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 1000;
+  padding: 32px 16px 40px;
+  overflow-y: auto;
+}
+
+.shp-modal {
+  background: #ffffff;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 1160px;
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.22);
+  flex-shrink: 0;
+}
+
+/* ── Modal header ────────────────────────────────────────────────────────────── */
+
+.shp-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: linear-gradient(to right, #1a1a2e, #16213e);
+  border-radius: 8px 8px 0 0;
+  gap: 12px;
+}
+
+.shp-modal-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shp-modal-close {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+.shp-modal-close:hover { opacity: 1; }
+
+/* ── Modal body: inner cards share existing im-card styles ───────────────────── */
+
+.shp-modal-body {
+  padding: 16px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shp-modal-card {
+  margin: 0 !important;
+}
+
+/* ── Sum outstanding label inside card header ────────────────────────────────── */
+
+.shp-sum-label {
+  font-weight: 400;
+  font-size: 13px;
+  opacity: 0.88;
+}
+
+/* ── Search input in card header ─────────────────────────────────────────────── */
+
+.shp-search-input {
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #1a1a2e;
+  min-width: 200px;
+  background: #fff;
+}
+.shp-search-input:focus {
+  outline: none;
+  border-color: #e91e8c;
+}
+
+/* ── Shareholding dropdown wrapper + menu ────────────────────────────────────── */
+
+.shp-dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.shp-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.14);
+  z-index: 300;
+  min-width: 248px;
+  padding: 4px 0;
+}
+
+.shp-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 9px 16px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 13px;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #1a1a2e;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.shp-dropdown-item:hover,
+.shp-dropdown-item:focus {
+  background: #f0f4ff;
+  color: #254061;
+  outline: none;
+}
+
+.shp-dropdown-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 4px 0;
+}
+
+.shp-dropdown-group-label {
+  padding: 4px 16px 2px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  font-family: Arial, Helvetica, sans-serif;
+  pointer-events: none;
+}

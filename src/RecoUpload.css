@@ -1,0 +1,423 @@
+/* ── Filter row ─────────────────────────────────────────────────────────── */
+
+.reco-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px 20px;
+  flex-wrap: wrap;
+}
+
+/* ── Company autocomplete ────────────────────────────────────────────────── */
+
+.reco-field--company {
+  min-width: 220px;
+}
+
+.reco-issuer-wrap {
+  position: relative;
+}
+
+.reco-issuer-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #333;
+  background: #ffffff;
+  outline: none;
+  font-family: Arial, Helvetica, sans-serif;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.reco-issuer-input:focus {
+  border-color: #1976d2;
+}
+
+.reco-issuer-spinner {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  color: #999;
+  pointer-events: none;
+}
+
+.reco-issuer-dropdown {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 100;
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+}
+
+.reco-issuer-option {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.reco-issuer-option:hover {
+  background: #f0f7ff;
+}
+
+.reco-issuer-option--all {
+  color: #555;
+  font-style: italic;
+  border-bottom: 1px solid #eee;
+}
+
+.reco-issuer-name {
+  flex: 1;
+  color: #222;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reco-issuer-code {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: #888;
+  font-family: monospace;
+}
+
+.reco-issuer-empty,
+.reco-issuer-loading {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #999;
+  font-style: italic;
+  font-family: Arial, Helvetica, sans-serif;
+  list-style: none;
+}
+
+.reco-issuer-load-more {
+  padding: 7px 12px;
+  font-size: 12px;
+  color: #1565c0;
+  cursor: pointer;
+  border-top: 1px solid #eee;
+  font-family: Arial, Helvetica, sans-serif;
+  list-style: none;
+}
+
+.reco-issuer-load-more:hover {
+  background: #f0f7ff;
+}
+
+.reco-issuer-selected {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px 8px 12px;
+  border: 1px solid #1976d2;
+  border-radius: 4px;
+  background: #e3f2fd;
+  font-size: 13px;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #1565c0;
+  min-height: 38px;
+}
+
+.reco-issuer-selected span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reco-issuer-clear {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #1565c0;
+  line-height: 1;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+
+.reco-issuer-clear:hover {
+  color: #c62828;
+}
+
+/* ── Floating-label field (Company / Depository / Date) ─────────────────── */
+
+.reco-field {
+  position: relative;
+  min-width: 160px;
+}
+
+.reco-label {
+  position: absolute;
+  top: -8px;
+  left: 10px;
+  font-size: 11px;
+  color: #888;
+  background: #ffffff;
+  padding: 0 4px;
+  pointer-events: none;
+  font-family: Arial, Helvetica, sans-serif;
+  z-index: 1;
+}
+
+.reco-select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  padding: 10px 32px 10px 12px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #333;
+  background-color: #ffffff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  cursor: pointer;
+  outline: none;
+  font-family: Arial, Helvetica, sans-serif;
+  transition: border-color 0.15s ease;
+}
+
+.reco-select:focus {
+  border-color: #1976d2;
+}
+
+.reco-select:disabled {
+  background-color: #f5f5f5;
+  color: #aaa;
+  cursor: not-allowed;
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+
+.reco-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  gap: 12px;
+}
+
+.reco-empty-circle {
+  width: 80px;
+  height: 80px;
+  background: #e3f2fd;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reco-empty-text {
+  margin: 0;
+  font-size: 13px;
+  color: #999;
+  font-style: italic;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ── Info toast ──────────────────────────────────────────────────────────── */
+
+.reco-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: Arial, Helvetica, sans-serif;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: reco-toast-in 0.2s ease;
+}
+
+.reco-toast--info {
+  background: #e8f4fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
+}
+
+@keyframes reco-toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Upload modal ────────────────────────────────────────────────────────── */
+
+.reco-modal {
+  width: 620px;
+  max-width: 96vw;
+  max-height: 90vh;
+  background: #ffffff;
+  border-radius: 6px;
+  overflow: hidden; /* clips children to border-radius; zones wrapper scrolls */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+  display: flex;
+  flex-direction: column;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ── Two-zone layout ─────────────────────────────────────────────────────── */
+
+/* Scrollable area between fixed header and footer */
+.reco-zones-wrapper {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  padding: 14px 14px 10px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.reco-zone {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Stack zones vertically on narrow viewports */
+@media (max-width: 480px) {
+  .reco-zones-wrapper {
+    flex-direction: column;
+  }
+}
+
+/* Hover highlight for empty drop zone */
+.reco-drop-zone--over {
+  background-color: #fafcff !important;
+  border-color: #1976d2 !important;
+}
+
+/* Inline error under a zone (outside the box) */
+.reco-zone-error {
+  margin: 4px 14px 0;
+}
+
+/* ── Remove button inside the green "selected" drop zone ─────────────────── */
+
+.reco-zone-remove-btn {
+  background: none;
+  border: 1px solid #c62828;
+  border-radius: 3px;
+  color: #c62828;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-family: Arial, Helvetica, sans-serif;
+  letter-spacing: 0.2px;
+  transition: background-color 0.12s ease;
+}
+
+.reco-zone-remove-btn:hover {
+  background-color: #fdecea;
+}
+
+/* ── Hint text (per-zone, below each drop box) ───────────────────────────── */
+
+.reco-modal-hint {
+  margin: 5px 14px 0;
+  font-size: 11px;
+  color: #777;
+  font-style: italic;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.4;
+}
+
+/* ── Disabled state for the pink upload button ───────────────────────────── */
+
+.btn-upload:disabled {
+  background-color: #f48fb1;
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+/* ── Totals summary bar ──────────────────────────────────────────────────── */
+
+.reco-totals-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  padding: 8px 20px;
+  background: #f5f9ff;
+  border-bottom: 1px solid #e0ecff;
+  font-size: 12px;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #555;
+}
+
+.reco-totals-bar strong {
+  color: #1a237e;
+}
+
+/* ── Upload progress / error ─────────────────────────────────────────────── */
+
+.reco-uploading-msg {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: #e3f2fd;
+  color: #1565c0;
+  font-size: 13px;
+  font-family: Arial, Helvetica, sans-serif;
+  border-bottom: 1px solid #bbdefb;
+}
+
+.reco-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #90caf9;
+  border-top-color: #1565c0;
+  border-radius: 50%;
+  animation: reco-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes reco-spin {
+  to { transform: rotate(360deg); }
+}
+
+.reco-upload-error {
+  padding: 8px 16px;
+  background: #fdecea;
+  color: #c62828;
+  font-size: 13px;
+  font-family: Arial, Helvetica, sans-serif;
+  border-bottom: 1px solid #ef9a9a;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+
+.reco-modal-footer {
+  padding: 10px 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid #e8ecf0;
+  flex-shrink: 0;
+}

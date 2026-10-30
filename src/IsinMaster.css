@@ -703,3 +703,104 @@
   white-space: pre;
   background: #fafafa;
 }
+
+/* ─── EDIT LISTING MODAL ─────────────────────────────────────────────────── */
+
+.im-edit-listing-modal {
+  width: 460px;
+  max-width: 95vw;
+  background: #ffffff;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+  display: flex;
+  flex-direction: column;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.im-edit-listing-body {
+  padding: 16px;
+}
+
+.im-edit-listing-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 14px;
+}
+
+.im-edit-listing-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.im-edit-listing-field label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #555;
+}
+
+.im-edit-listing-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.im-edit-listing-exchanges {
+  margin-top: 14px;
+}
+
+.im-edit-listing-checkboxes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px 10px;
+  margin-top: 4px;
+}
+
+.im-listing-cb-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.im-listing-cb-label input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.im-edit-listing-footer {
+  padding: 10px 16px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  border-top: 1px solid #e8ecf0;
+}
+
+/* Action column in the ISIN tables */
+
+.im-action-th {
+  white-space: nowrap;
+  text-align: center;
+}
+
+.im-action-cell {
+  white-space: nowrap;
+  text-align: center;
+}
+
+.im-row-edit-btn {
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid #1976d2;
+  border-radius: 3px;
+  background: #e3f2fd;
+  color: #1565c0;
+  cursor: pointer;
+  font-family: Arial, Helvetica, sans-serif;
+  white-space: nowrap;
+}
+
+.im-row-edit-btn:hover {
+  background: #bbdefb;
+}

@@ -137,7 +137,7 @@ function expand(range) {
  * @param {object} o.S style ids of the workbook's styles.xml (see STYLE_KEYS below)
  * @param {function} [o.strCell] (ref, text, styleId) => xml for a text cell (default: inline string)
  */
-export function buildTableIXml({ rows = {}, totalShares = 0, styleIds, strCell = defaultStrCell }) {
+export function buildTableIXml({ rows = {}, totalShares = 0, convTotal = 0, styleIds, strCell = defaultStrCell }) {
   if (!styleIds) throw new Error('buildTableIXml: styleIds (from appendStyleSpecs) are required');
   const sOf = (ref) => styleIds[TABLE_I_CELL_STYLE[ref]] ?? styleIds[0];
   const grid = {};                                   // grid[row][colIdx] = xml
@@ -171,7 +171,7 @@ export function buildTableIXml({ rows = {}, totalShares = 0, styleIds, strCell =
     switch (c) {
       case 'I': return pctOf(v.H, T);
       case 'M': return pctOf(v.L, T);
-      case 'S': return pctOf(v.R, T);
+      case 'S': return pctOf(v.R, T + convTotal);
       case 'U': return pctOf(v.T, v.E);
       case 'W': return pctOf(v.V, v.E);
       case 'Y': return pctOf(v.X, v.E);

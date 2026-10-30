@@ -20,6 +20,8 @@ import CompanyDetails from './CompanyDetails';
 import CompanyPromoter from './CompanyPromoter';
 import CompanyCategoryConvert from './CompanyCategoryConvert';
 import CategoryMapping from './CategoryMapping';
+import RecoUpload from './RecoUpload';
+import Reconciliation from './Reconciliation';
 
 /*
  * ── How React Router works ──────────────────────────────────────────────────
@@ -144,6 +146,14 @@ function App() {
 
       <Route path="/category-mapping" element={
         <ProtectedPage pageName="Category Mapping"><CategoryMapping /></ProtectedPage>
+      } />
+
+      <Route path="/reconciliation/reco-upload" element={
+        <ProtectedPage breadcrumbs={['Reco', 'Upload']}><RecoUpload /></ProtectedPage>
+      } />
+
+      <Route path="/reconciliation/main" element={
+        <ProtectedPage breadcrumbs={['Reco', 'Reconciliation']}><Reconciliation /></ProtectedPage>
       } />
     </Routes>
   );

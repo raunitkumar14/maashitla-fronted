@@ -6,6 +6,10 @@ import api from './api/axios';
 import { useColumnVisibility } from './hooks/useColumnVisibility';
 import { ColumnSelector } from './components/ColumnSelector';
 
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const LISTING_AT_OPTIONS = ['NSE', 'BSE', 'MCX', 'IFSC', 'NSE SME', 'BSE SME'];
+
 // ── Column definitions ────────────────────────────────────────────────────────
 
 const ISIN_COLUMNS = [
@@ -24,6 +28,11 @@ const ISIN_COLUMNS = [
   { header: 'ISIN Activation Date (NSDL)', field: 'isinActivationDateNsdl', isDate: true  },
   { header: 'Issuer Code',                  field: 'issuerCode',             isDate: false },
   { header: 'Source',                       field: 'source',                 isDate: false },
+  { header: 'Listing Status',               field: 'listingStatus',           isDate: false },
+  { header: 'Listed At',                    field: 'listingAt',               isDate: false },
+  { header: 'Listing Date',                 field: 'listingDate',             isDate: true  },
+  { header: 'Symbol',                       field: 'symbol',                  isDate: false },
+  { header: 'Scrip Code',                   field: 'scripCode',               isDate: false },
 ];
 
 // Stable column config for useColumnVisibility — defined at module level so the
@@ -192,7 +201,7 @@ function ExportModal({ appliedFilters, multiSearchRows, descFilterRows, isinDesc
             </button>
             <button className="im-export-option" onClick={() => runExport('all')}>
               <span className="im-export-option-title">&#8595; Export all data</span>
-              <span className="im-export-option-desc">Full ISIN Master dataset &mdash; current filter ignored · all 15 columns</span>
+              <span className="im-export-option-desc">Full ISIN Master dataset &mdash; current filter ignored · all 20 columns</span>
             </button>
           </div>
         )}
@@ -229,6 +238,113 @@ function ExportModal({ appliedFilters, multiSearchRows, descFilterRows, isinDesc
   );
 }
 
+// ── EditListingModal ──────────────────────────────────────────────────────────
+// Opens when the user clicks Edit on a row; PATCHes only the 5 listing fields.
+
+function EditListingModal({ row, onClose, onSaved }) {
+  const [form, setForm] = useState({
+    listingStatus: row.listingStatus ?? '',
+    listingAt:     parseListingAt(row),
+    listingDate:   row.listingDate   ? String(row.listingDate).slice(0, 10) : '',
+    symbol:        row.symbol        ?? '',
+    scripCode:     row.scripCode     ?? '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [errMsg, setErrMsg] = useState('');
+
+  function setField(k, v) { setForm(p => ({ ...p, [k]: v })); }
+
+  function toggleListingAt(opt) {
+    setForm(p => {
+      const arr = p.listingAt;
+      return { ...p, listingAt: arr.includes(opt) ? arr.filter(x => x !== opt) : [...arr, opt] };
+    });
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setErrMsg('');
+    try {
+      const body = {
+        listingStatus: form.listingStatus || null,
+        listingAt:     form.listingAt.length ? form.listingAt : null,
+        listingDate:   form.listingDate   || null,
+        symbol:        form.symbol        || null,
+        scripCode:     form.scripCode     || null,
+      };
+      await api.patch(`/admin/v1/isins/${row.isin}`, body);
+      onSaved(row.isin, body);
+    } catch (err) {
+      setErrMsg(err.response?.data?.error?.message ?? err.message ?? 'Save failed.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const FIELDS = [
+    { key: 'listingStatus', label: 'Listing Status', type: 'text' },
+    { key: 'listingDate',   label: 'Listing Date',    type: 'date' },
+    { key: 'symbol',        label: 'Symbol',          type: 'text' },
+    { key: 'scripCode',     label: 'Scrip Code',      type: 'text' },
+  ];
+
+  return (
+    <div className="upload-overlay" onClick={!saving ? onClose : undefined}>
+      <div className="im-edit-listing-modal" onClick={e => e.stopPropagation()}>
+        <div className="um-header">
+          <span className="um-header-badge" style={{ fontSize: 14 }}>&#9998;</span>
+          <span className="um-header-title">Edit Listing Details &mdash; {row.isin}</span>
+          <button className="um-close-btn" onClick={onClose} disabled={saving} aria-label="Close">&times;</button>
+        </div>
+        <div className="im-edit-listing-body">
+          {errMsg && (
+            <div className="im-banner im-banner--error" style={{ marginBottom: 12 }}>&#9888; {errMsg}</div>
+          )}
+          <div className="im-edit-listing-grid">
+            {FIELDS.map(({ key, label, type }) => (
+              <div key={key} className="im-edit-listing-field">
+                <label htmlFor={`eli-${key}`}>{label}</label>
+                <input
+                  id={`eli-${key}`}
+                  type={type}
+                  className="im-input im-edit-listing-input"
+                  value={form[key]}
+                  onChange={e => setField(key, e.target.value)}
+                  disabled={saving}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="im-edit-listing-field im-edit-listing-exchanges">
+            <label>Listed At</label>
+            <div className="im-edit-listing-checkboxes">
+              {LISTING_AT_OPTIONS.map(opt => (
+                <label key={opt} className="im-listing-cb-label">
+                  <input
+                    type="checkbox"
+                    checked={form.listingAt.includes(opt)}
+                    onChange={() => toggleListingAt(opt)}
+                    disabled={saving}
+                  />
+                  {opt}
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="im-edit-listing-footer">
+          <button className="btn-action btn-action--pink" onClick={handleSave} disabled={saving}>
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+          <button className="btn-action btn-action--white" onClick={onClose} disabled={saving}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function getPageRange(currentPage, totalPages) {
@@ -254,9 +370,21 @@ function formatDate(val) {
   return `${d}-${m}-${y}`;
 }
 
+function parseListingAt(row) {
+  if (Array.isArray(row.listingAtList)) return row.listingAtList;
+  if (Array.isArray(row.listingAt)) return row.listingAt;
+  const s = row.listingAt ?? '';
+  return s ? s.split(',').map(v => v.trim()).filter(Boolean) : [];
+}
+
 function renderCell(col, row) {
+  if (col.field === 'listingAt') {
+    const list = parseListingAt(row);
+    return list.length ? list.join(', ') : '—';
+  }
   const val = row[col.field];
   if (col.isDate) return formatDate(val);
+  if (Array.isArray(val)) return val.length ? val.join(', ') : '—';
   return (val == null || val === '') ? '—' : val;
 }
 
@@ -357,6 +485,9 @@ function IsinMaster() {
   const [isinLoading,    setIsinLoading]   = useState(false);
   const [isinFetchError, setIsinFetchError] = useState('');
   const [isinRefetchKey, setIsinRefetchKey] = useState(0);
+
+  const [editRow, setEditRow] = useState(null);
+  const [saveMsg, setSaveMsg] = useState('');
 
   // ── Column visibility ─────────────────────────────────────────────────────────
 
@@ -542,6 +673,20 @@ function IsinMaster() {
     setDescFilterMode(false);
   }
 
+  function handleEditSaved(isin, updatedFields) {
+    setEditRow(null);
+    setSaveMsg('✓ Listing details saved.');
+    const update = rows => rows.map(r => r.isin === isin ? { ...r, ...updatedFields } : r);
+    if (multiSearchRows !== null) {
+      setMultiSearchRows(prev => update(prev));
+    } else if (descFilterRows !== null) {
+      setDescFilterRows(prev => update(prev));
+    } else {
+      setIsinRefetchKey(k => k + 1);
+    }
+    setTimeout(() => setSaveMsg(''), 4000);
+  }
+
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
@@ -624,6 +769,10 @@ function IsinMaster() {
         </div>
       )}
 
+      {saveMsg && (
+        <div className="im-banner im-banner--success">{saveMsg}</div>
+      )}
+
       {/* ── ISIN Master List */}
       <div className="im-card">
         <div className="im-card-header">
@@ -667,19 +816,19 @@ function IsinMaster() {
         <div className="im-table-wrapper">
           <table className="im-table">
             <thead>
-              <tr>{visibleCols.map(col => <th key={col.field}>{col.header}</th>)}</tr>
+              <tr>{visibleCols.map(col => <th key={col.field}>{col.header}</th>)}<th className="im-action-th">Actions</th></tr>
             </thead>
             <tbody>
               {multiSearchLoading || descFilterLoading ? (
                 <tr>
-                  <td className="im-empty-state" colSpan={visibleCols.length}>
+                  <td className="im-empty-state" colSpan={visibleCols.length + 1}>
                     Searching&hellip;
                   </td>
                 </tr>
               ) : filteredMultiRows !== null ? (
                 filteredMultiRows.length === 0 ? (
                   <tr>
-                    <td className="im-empty-state" colSpan={visibleCols.length}>
+                    <td className="im-empty-state" colSpan={visibleCols.length + 1}>
                       No matching ISINs found.
                     </td>
                   </tr>
@@ -697,7 +846,7 @@ function IsinMaster() {
               ) : filteredDescRows !== null ? (
                 filteredDescRows.length === 0 ? (
                   <tr>
-                    <td className="im-empty-state" colSpan={visibleCols.length}>
+                    <td className="im-empty-state" colSpan={visibleCols.length + 1}>
                       No ISINs match the description filter.
                     </td>
                   </tr>
@@ -714,13 +863,13 @@ function IsinMaster() {
                 )
               ) : isinLoading ? (
                 <tr>
-                  <td className="im-empty-state" colSpan={visibleCols.length}>
+                  <td className="im-empty-state" colSpan={visibleCols.length + 1}>
                     Loading&hellip;
                   </td>
                 </tr>
               ) : filteredIsinData.length === 0 ? (
                 <tr>
-                  <td className="im-empty-state" colSpan={visibleCols.length}>
+                  <td className="im-empty-state" colSpan={visibleCols.length + 1}>
                     {isinData.length > 0
                       ? 'No ISINs match the description filter.'
                       : 'No data available. Click UPLOAD to import NSDL and CDSL files.'}
@@ -732,6 +881,9 @@ function IsinMaster() {
                     {visibleCols.map(col => (
                       <td key={col.field}>{renderCell(col, row)}</td>
                     ))}
+                    <td className="im-action-cell">
+                      <button className="im-row-edit-btn" onClick={() => setEditRow(row)}>Edit</button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -792,6 +944,15 @@ function IsinMaster() {
           isinDescriptionSearch={appliedDescFilter}
           visibleCols={visibleCols}
           onClose={() => setShowExportModal(false)}
+        />
+      )}
+
+      {/* ── Edit listing modal */}
+      {editRow && (
+        <EditListingModal
+          row={editRow}
+          onClose={() => setEditRow(null)}
+          onSaved={handleEditSaved}
         />
       )}
 

@@ -14,3 +14,15 @@
   align-items: center;
   gap: 4px;
 }
+
+/* Y / N badge in the Foreign Ownership column */
+.cm-yn-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: #f0f4ff;
+  color: #1a1a2e;
+}

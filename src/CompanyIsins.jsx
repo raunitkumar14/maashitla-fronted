@@ -11,6 +11,14 @@ function cell(row, field) {
   return (v == null || v === '') ? '—' : v;
 }
 
+function formatDate(val) {
+  if (val == null || val === '') return '—';
+  const s = String(val).slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return String(val);
+  const [y, m, d] = s.split('-');
+  return `${d}-${m}-${y}`;
+}
+
 // ── Column definitions ────────────────────────────────────────────────────────
 // render(row, ctx) — ctx = { page, perPage, idx, companyName }
 
@@ -20,7 +28,12 @@ const ISINS_COLUMNS = [
   { field: 'isinDesc',     header: 'ISIN Description',          render: row => cell(row, 'isinDescription') },
   { field: 'nameOfIssuer', header: 'Name of Issuer',            render: (row, { companyName }) => row.issuer?.issuerName || companyName || '—' },
   { field: 'secType',      header: 'Security Type Description', render: row => cell(row, 'securityType') },
-  { field: 'isinStatus',   header: 'ISIN Status',               render: row => cell(row, 'isinStatus') },
+  { field: 'isinStatus',    header: 'ISIN Status',               render: row => cell(row, 'isinStatus') },
+  { field: 'listingStatus', header: 'Listing Status',            render: row => cell(row, 'listingStatus') },
+  { field: 'listingAt',     header: 'Listed At',                 render: row => cell(row, 'listingAt') },
+  { field: 'listingDate',   header: 'Listing Date',              render: row => formatDate(row.listingDate) },
+  { field: 'symbol',        header: 'Symbol',                    render: row => cell(row, 'symbol') },
+  { field: 'scripCode',     header: 'Scrip Code',                render: row => cell(row, 'scripCode') },
 ];
 
 const VISIBILITY_COLUMNS = ISINS_COLUMNS.map(col => ({
@@ -81,6 +94,90 @@ function PaginationBar({ page, perPage, totalCount, totalPages, goto, setPage, s
   );
 }
 
+// ── EditListingModal ──────────────────────────────────────────────────────────
+
+function EditListingModal({ row, onClose, onSaved }) {
+  const [form, setForm] = useState({
+    listingStatus: row.listingStatus ?? '',
+    listingAt:     row.listingAt     ?? '',
+    listingDate:   row.listingDate   ? String(row.listingDate).slice(0, 10) : '',
+    symbol:        row.symbol        ?? '',
+    scripCode:     row.scripCode     ?? '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [errMsg, setErrMsg] = useState('');
+
+  function setField(k, v) { setForm(p => ({ ...p, [k]: v })); }
+
+  async function handleSave() {
+    setSaving(true);
+    setErrMsg('');
+    try {
+      const body = {
+        listingStatus: form.listingStatus || null,
+        listingAt:     form.listingAt     || null,
+        listingDate:   form.listingDate   || null,
+        symbol:        form.symbol        || null,
+        scripCode:     form.scripCode     || null,
+      };
+      await api.patch(`/admin/v1/isins/${row.isin}`, body);
+      onSaved(row.isin, body);
+    } catch (err) {
+      setErrMsg(err.response?.data?.error?.message ?? err.message ?? 'Save failed.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const FIELDS = [
+    { key: 'listingStatus', label: 'Listing Status', type: 'text' },
+    { key: 'listingAt',     label: 'Listed At',       type: 'text' },
+    { key: 'listingDate',   label: 'Listing Date',    type: 'date' },
+    { key: 'symbol',        label: 'Symbol',          type: 'text' },
+    { key: 'scripCode',     label: 'Scrip Code',      type: 'text' },
+  ];
+
+  return (
+    <div className="upload-overlay" onClick={!saving ? onClose : undefined}>
+      <div className="im-edit-listing-modal" onClick={e => e.stopPropagation()}>
+        <div className="um-header">
+          <span className="um-header-badge" style={{ fontSize: 14 }}>&#9998;</span>
+          <span className="um-header-title">Edit Listing Details &mdash; {row.isin}</span>
+          <button className="um-close-btn" onClick={onClose} disabled={saving} aria-label="Close">&times;</button>
+        </div>
+        <div className="im-edit-listing-body">
+          {errMsg && (
+            <div className="im-banner im-banner--error" style={{ marginBottom: 12 }}>&#9888; {errMsg}</div>
+          )}
+          <div className="im-edit-listing-grid">
+            {FIELDS.map(({ key, label, type }) => (
+              <div key={key} className="im-edit-listing-field">
+                <label htmlFor={`eli-${key}`}>{label}</label>
+                <input
+                  id={`eli-${key}`}
+                  type={type}
+                  className="im-input im-edit-listing-input"
+                  value={form[key]}
+                  onChange={e => setField(key, e.target.value)}
+                  disabled={saving}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="im-edit-listing-footer">
+          <button className="btn-action btn-action--pink" onClick={handleSave} disabled={saving}>
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+          <button className="btn-action btn-action--white" onClick={onClose} disabled={saving}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CompanyIsins() {
   const { issuerCode } = useParams();
   const location       = useLocation();
@@ -119,6 +216,9 @@ function CompanyIsins() {
   const [perPage,    setPerPage]    = useState(25);
   const [goto,       setGoto]       = useState('');
   const [isinFilter, setIsinFilter] = useState('');
+  const [fetchKey,   setFetchKey]   = useState(0);
+  const [editRow,    setEditRow]    = useState(null);
+  const [saveMsg,    setSaveMsg]    = useState('');
 
   // ── Column visibility ─────────────────────────────────────────────────────
 
@@ -153,12 +253,19 @@ function CompanyIsins() {
       }
     })();
     return () => { cancelled = true; };
-  }, [issuerCode, page, perPage]);
+  }, [issuerCode, page, perPage, fetchKey]);
 
   function handleGoto() {
     const target = parseInt(goto, 10);
     if (!isNaN(target) && target >= 1 && target <= totalPages) setPage(target);
     setGoto('');
+  }
+
+  function handleEditSaved(isin, updatedFields) {
+    setEditRow(null);
+    setSaveMsg('✓ Listing details saved.');
+    setIsins(prev => prev.map(r => r.isin === isin ? { ...r, ...updatedFields } : r));
+    setTimeout(() => setSaveMsg(''), 4000);
   }
 
   function handleIsinClick(isinRow) {
@@ -181,6 +288,10 @@ function CompanyIsins() {
       </div>
 
       <h1 className="page-heading">ISINs — {companyName}</h1>
+
+      {saveMsg && (
+        <div className="im-banner im-banner--success">{saveMsg}</div>
+      )}
 
       <div className="im-card">
         <div className="im-card-header">
@@ -229,6 +340,7 @@ function CompanyIsins() {
             <thead>
               <tr>
                 {visibleCols.map(col => <th key={col.field}>{col.header}</th>)}
+                <th className="im-action-th">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -237,11 +349,11 @@ function CompanyIsins() {
                   ? isins.filter(r => (r.isin ?? '').toUpperCase().includes(isinFilter.trim().toUpperCase()))
                   : isins;
                 if (loading) return (
-                  <tr><td className="im-empty-state" colSpan={visibleCols.length}>Loading…</td></tr>
+                  <tr><td className="im-empty-state" colSpan={visibleCols.length + 1}>Loading…</td></tr>
                 );
                 if (filtered.length === 0) return (
                   <tr>
-                    <td className="im-empty-state" colSpan={visibleCols.length}>
+                    <td className="im-empty-state" colSpan={visibleCols.length + 1}>
                       {isinFilter.trim() ? 'No ISINs match that filter.' : 'No ISINs found for this company.'}
                     </td>
                   </tr>
@@ -256,6 +368,9 @@ function CompanyIsins() {
                     {visibleCols.map(col => (
                       <td key={col.field}>{col.render(row, { page, perPage, idx, companyName })}</td>
                     ))}
+                    <td className="im-action-cell" onClick={e => e.stopPropagation()}>
+                      <button className="im-row-edit-btn" onClick={() => setEditRow(row)}>Edit</button>
+                    </td>
                   </tr>
                 ));
               })()}
@@ -274,6 +389,14 @@ function CompanyIsins() {
           onGoto={handleGoto}
         />
       </div>
+
+      {editRow && (
+        <EditListingModal
+          row={editRow}
+          onClose={() => setEditRow(null)}
+          onSaved={handleEditSaved}
+        />
+      )}
     </div>
   );
 }

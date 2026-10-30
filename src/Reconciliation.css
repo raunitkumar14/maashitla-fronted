@@ -1,0 +1,95 @@
+/* ── Header-bar filter controls ──────────────────────────────────────────── */
+
+.im-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.reco-hdr-field {
+  position: relative;
+}
+
+.reco-hdr-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 4px 26px 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
+  font-size: 12px;
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.15);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%23fff' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  cursor: pointer;
+  outline: none;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.reco-hdr-select option {
+  color: #333;
+  background: #fff;
+}
+
+/* ── Wide table wrapper with horizontal scroll ───────────────────────────── */
+
+.reco-table-wrapper {
+  overflow-x: auto;
+}
+
+/* ── Numeric cells ───────────────────────────────────────────────────────── */
+
+.reco-th-num,
+.reco-td-num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ── Mismatch badge ──────────────────────────────────────────────────────── */
+
+.reco-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.reco-badge--match {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+
+.reco-badge--mismatch {
+  background: #fdecea;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
+
+/* ── Sticky first two columns ────────────────────────────────────────────── */
+
+.reco-table-wrapper .im-table th:nth-child(1),
+.reco-table-wrapper .im-table td:nth-child(1) {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: inherit;
+}
+
+.reco-table-wrapper .im-table th:nth-child(2),
+.reco-table-wrapper .im-table td:nth-child(2) {
+  position: sticky;
+  left: 50px;
+  z-index: 2;
+  background: inherit;
+}
+
+.reco-table-wrapper .im-table thead th:nth-child(1),
+.reco-table-wrapper .im-table thead th:nth-child(2) {
+  z-index: 3;
+}

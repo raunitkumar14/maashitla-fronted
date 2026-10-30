@@ -150,7 +150,12 @@ function ShareholdingPattern() {
       const totalHoldings = isinObj?.totalHoldings ?? null;
       const faceValue     = isinObj?.faceValue ?? null;
 
-      const result = await exportShp(selectedIsin, selectedDate, totalHoldings, faceValue);
+      const result = await exportShp(selectedIsin, selectedDate, totalHoldings, faceValue, {
+        issuerName: selectedCompany?.issuerName ?? '',
+        scripCode: isinObj?.scripCode ?? '',
+        symbol: isinObj?.symbol ?? '',
+        classOfSecurity: isinObj?.securityType || 'Equity Shares',
+      });
 
       const msgs = [];
       if (result.noPromoters) msgs.push('No promoter holdings found.');
@@ -161,12 +166,16 @@ function ShareholdingPattern() {
         msgs.push(`${result.skippedPublicPans.length} public holding(s) skipped: no SHP Public Code (PAN: ${result.skippedPublicPans.slice(0, 20).join(', ')}${result.skippedPublicPans.length > 20 ? '…' : ''}).`);
       if (result.skippedUnknownCPans.length > 0)
         msgs.push(`${result.skippedUnknownCPans.length} holding(s) skipped: unknown SHP Public Code (PAN: ${result.skippedUnknownCPans.slice(0, 20).join(', ')}${result.skippedUnknownCPans.length > 20 ? '…' : ''}).`);
+      if (result.unmappedConvRows?.length > 0)
+        msgs.push(`${result.unmappedConvRows.length} convertible/warrant/ESOP holding(s) could not be mapped to an SHP code and were skipped (PAN: ${result.unmappedConvRows.slice(0, 5).map(r => r.pan).join(', ')}${result.unmappedConvRows.length > 5 ? '…' : ''}).`);
       if (result.faceValueMissing)
         msgs.push('Face value not available: all resident individuals shown under (g).');
       if (result.totalSharesSource === 'benpos')
         msgs.push('Total shares taken from BenPos total (ISIN Total Holdings is empty).');
 
-      const warnings = [result.promoterWarning, result.categoryWarning].filter(Boolean);
+      if (result.foreignOwnershipHistorySaved === false)
+        msgs.push('Foreign ownership history not saved.');
+      const warnings = [result.promoterWarning, result.categoryWarning, result.foreignOwnershipWarning].filter(Boolean);
       if (warnings.length) setWarningMessage(warnings.join(' '));
 
       setInfoMessage(msgs.length ? msgs.join(' ') : 'Shareholding Pattern downloaded successfully.');

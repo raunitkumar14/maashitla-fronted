@@ -10,7 +10,7 @@ import './CategoryMapping.css';
 const PERM_VIEW   = 'category_mapping:view';
 const PERM_CREATE = 'category_mapping:create';
 
-// 20 columns in display order
+// 21 columns in display order
 const CM_COLUMNS = [
   { header: 'RTA ID',                                field: 'rtaId' },
   { header: 'RTA DESCRIPTION',                       field: 'rtaDescription' },
@@ -32,6 +32,7 @@ const CM_COLUMNS = [
   { header: 'SHAREHOLDER/ DEBENTURE HOLDER DETAILS', field: 'shareholderDebentureHolderDetails' },
   { header: 'IDENTIFIER TYPE',                       field: 'identifierType' },
   { header: 'E-VOTING CLIENT TYPE',                  field: 'eVotingClientType' },
+  { header: 'FOREIGN OWNERSHIP',                     field: 'foreignOwnership' },
 ];
 
 // Upload template headers (human-readable names for the sample file)
@@ -42,18 +43,19 @@ const SAMPLE_HEADERS = [
   'Regulation 31 Type Promoter', 'Investor Type', 'SHP Promoter Code', 'SHP Public Code',
   'TDS Tax Slab', 'Shareholder Debenture Holder Type', 'Shareholder Category',
   'Shareholder Debenture Holder Details', 'Identifier Type', 'E-Voting Client Type',
+  'Foreign Ownership',
 ];
 
 const SAMPLE_ROWS = [
   [
     '1', 'Individual', '21', '1', 'Individual', 'Ordinary', 'CDSL',
     '', 'Indian - Public', '', 'Indian - Promoter', 'RES', '', '', '',
-    'SH', 'IND', 'Resident Individual', '', 'Y',
+    'SH', 'IND', 'Resident Individual', '', 'Y', 'N',
   ],
   [
     '1', 'Individual', '18', '12', 'NBFC', 'Systemically important NBFCs', 'NSDL',
     '', 'Indian - Public', '', 'Indian - Promoter', 'RES', '', '', '',
-    'SH', 'COM', 'Resident Company', '', 'Y',
+    'SH', 'COM', 'Resident Company', '', 'Y', 'Y',
   ],
 ];
 
@@ -301,7 +303,8 @@ function CategoryMapping() {
             Optional (new) columns: Regulation 31 Sub-Type Public, Regulation 31 Type Public,
             Promoter, Regulation 31 Type Promoter, Investor Type, SHP Promoter Code, SHP Public Code,
             TDS Tax Slab, Shareholder/Debenture Holder Type, Shareholder Category,
-            Shareholder/Debenture Holder Details, Identifier Type, E-Voting Client Type.
+            Shareholder/Debenture Holder Details, Identifier Type, E-Voting Client Type,
+            Foreign Ownership (Y or N; if the column is absent the existing value is kept unchanged).
           </p>
         </div>
       </div>
@@ -374,6 +377,15 @@ function CategoryMapping() {
                   <tr key={idx}>
                     {CM_COLUMNS.map(col => {
                       const v = row[col.field];
+                      if (col.field === 'foreignOwnership') {
+                        return (
+                          <td key={col.field} style={{ textAlign: 'center' }}>
+                            {v === 'Y' || v === 'N'
+                              ? <span className="cm-yn-badge">{v}</span>
+                              : '—'}
+                          </td>
+                        );
+                      }
                       return <td key={col.field}>{v == null || v === '' ? '—' : v}</td>;
                     })}
                   </tr>
