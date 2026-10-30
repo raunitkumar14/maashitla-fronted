@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import api from './api/axios';
 import './UploadModal.css';
 import './CategoryMappingUploadModal.css';
+import * as XLSX from 'xlsx';
 
 // Backend accepts .xlsx, .xls and .csv (matches the page hint text)
 const ACCEPTED_EXTS = ['.xlsx', '.xls', '.csv'];
@@ -16,6 +17,119 @@ function fmtBytes(n) {
   if (n < 1024)    return `${n} B`;
   if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
   return `${(n / 1048576).toFixed(1)} MB`;
+}
+
+// ── Excel parsing ──────────────────────────────────────────────────────────────
+// Strips spaces, hyphens, underscores, slashes then uppercases so that
+// "Regulation 31 Sub-Type - Public" and "Shareholder/ Debenture Holder Type"
+// normalise to clean keys that can be looked up in HEADER_MAP.
+function normalizeHeader(h) {
+  return String(h ?? '').replace(/[\s\-_/]+/g, '').toUpperCase();
+}
+
+const HEADER_MAP = {
+  'RTAID':                              'rtaId',
+  'RTADESCRIPTION':                     'rtaDescription',
+  'CATEGORYTYPE':                       'categoryType',
+  'CATEGORYSUBTYPE':                    'categorySubType',
+  'CATEGORYTYPEDESCRIPTION':            'categoryTypeDescription',
+  'CATEGORYSUBTYPEDESCRIPTION':         'categorySubTypeDescription',
+  'DEPOSITORY':                         'depository',
+  'REGULATION31SUBTYPEPUBLIC':          'regulation31SubTypePublic',
+  'REGULATION31TYPEPUBLIC':             'regulation31TypePublic',
+  'PROMOTER':                           'promoter',
+  'REGULATION31TYPEPROMOTER':           'regulation31TypePromoter',
+  'INVESTERTYPE':                       'investorType',
+  'INVESTORTYPE':                       'investorType',
+  'SHPPROMOTERCODE':                    'shpPromoterCode',
+  'SHPPUBLICCODE':                      'shpPublicCode',
+  'TDSTAXSLAB':                         'tdsTaxSlab',
+  'SHAREHOLDERDEBENTUREHOLDERTYPE':     'shareholderDebentureHolderType',
+  'SHAREHOLDERCATEGORY':                'shareholderCategory',
+  'SHAREHOLDERDEBENTUREHOLDERDETAILS':  'shareholderDebentureHolderDetails',
+  'IDENTIFIERTYPE':                     'identifierType',
+  'EVOTINGCLIENTTYPE':                  'eVotingClientType',
+  'FOREIGNOWNERSHIP':                   'foreignOwnership',
+};
+
+const REQUIRED_FIELDS = [
+  'depository', 'categoryType', 'categorySubType',
+  'categoryTypeDescription', 'categorySubTypeDescription',
+];
+const REQUIRED_DISPLAY = {
+  depository:                 'Depository',
+  categoryType:               'Category type',
+  categorySubType:            'Category sub type',
+  categoryTypeDescription:    'Category type description',
+  categorySubTypeDescription: 'Category sub type description',
+};
+
+function parseExcel(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Failed to read file.'));
+    reader.onload = (e) => {
+      try {
+        const wb      = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        const ws      = wb.Sheets[wb.SheetNames[0]];
+        const rawRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+        if (!rawRows.length) return reject(new Error('File is empty.'));
+
+        const normHeaders = rawRows[0].map(normalizeHeader);
+        const fieldIndex  = {};
+        normHeaders.forEach((h, i) => {
+          const field = HEADER_MAP[h];
+          if (field && !(field in fieldIndex)) fieldIndex[field] = i;
+        });
+
+        const missing = REQUIRED_FIELDS.filter(f => !(f in fieldIndex));
+        if (missing.length) {
+          const labels = missing.map(f => REQUIRED_DISPLAY[f]);
+          return reject(new Error(
+            `Missing required column${labels.length > 1 ? 's' : ''}: ${labels.join(', ')}.`
+          ));
+        }
+
+        const hasFO = 'foreignOwnership' in fieldIndex;
+
+        const rows = [];
+        for (let r = 1; r < rawRows.length; r++) {
+          const raw = rawRows[r];
+          if (raw.every(cell => String(cell).trim() === '')) continue;
+
+          const obj = {};
+          for (const [field, idx] of Object.entries(fieldIndex)) {
+            if (field === 'foreignOwnership') continue; // handled below
+            if (field === 'rtaId') {
+              const v = raw[idx];
+              if (v === '' || v == null) { obj.rtaId = null; continue; }
+              const n = parseInt(String(v).trim(), 10);
+              obj.rtaId = Number.isFinite(n) ? n : null;
+            } else {
+              const v = String(raw[idx] ?? '').trim();
+              obj[field] = v === '' ? null : v;
+            }
+          }
+
+          if (hasFO) {
+            const fo = String(raw[fieldIndex.foreignOwnership] ?? '').trim().toUpperCase();
+            obj.foreignOwnership = (fo === 'Y' || fo === 'YES') ? 'Y'
+                                 : (fo === 'N' || fo === 'NO')  ? 'N'
+                                 : null;
+          }
+
+          rows.push(obj);
+        }
+
+        if (!rows.length) return reject(new Error('No data rows found in the file.'));
+        resolve(rows);
+      } catch (err) {
+        reject(new Error(`Failed to parse file: ${err.message}`));
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
 }
 
 // ── CategoryMappingUploadModal ─────────────────────────────────────────────────
@@ -70,14 +184,20 @@ export default function CategoryMappingUploadModal({ onClose, onComplete }) {
     if (!selectedFile || isUploading) return;
     setPhase('uploading');
     setErrorMsg('');
+
+    let rows;
     try {
-      const form = new FormData();
-      form.append('file', selectedFile);
-      const res = await api.post('/admin/v1/category-mapping', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      rows = await parseExcel(selectedFile);
+    } catch (parseErr) {
+      setPhase('error');
+      setErrorMsg(parseErr.message);
+      return;
+    }
+
+    try {
+      const res  = await api.post('/admin/v1/category-mapping/bulk', rows);
       const data = res.data?.data ?? {};
-      const ins  = data.inserted ?? data.created ?? data.upserted ?? 0;
+      const ins  = data.count ?? data.inserted ?? data.created ?? 0;
       const upd  = data.updated ?? 0;
       onComplete({ ins, upd });
     } catch (err) {
