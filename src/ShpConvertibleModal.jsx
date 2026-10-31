@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import api from './api/axios';
 import { hasPermission } from './auth';
+import { parseDateCell, displayDate } from './shpDateUtils';
 import './IsinMaster.css';
 import './CompanyPromoter.css';
 import './ShpConvertibleModal.css';
@@ -76,18 +77,6 @@ function detectField(securityType, n) {
   return null;
 }
 
-// ── Date cell helper ───────────────────────────────────────────────────────────
-// With cellDates:true, Excel date cells arrive as JS Date objects.
-function formatDateCell(val) {
-  if (val instanceof Date) {
-    if (isNaN(val.getTime())) return '';
-    const y = val.getUTCFullYear();
-    const m = String(val.getUTCMonth() + 1).padStart(2, '0');
-    const d = String(val.getUTCDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  }
-  return String(val ?? '').trim();
-}
 
 const DATE_FIELDS = new Set(['allotmentDate', 'expiryDate']);
 const ALL_ROW_FIELDS = [
@@ -150,7 +139,7 @@ function parseExcelFile(file, securityType) {
             if (!(f in fieldIndex)) continue;
             const val = raw[fieldIndex[f]];
             if (DATE_FIELDS.has(f)) {
-              const s = formatDateCell(val);
+              const s = parseDateCell(val);
               if (s) obj[f] = s;
             } else {
               const s = String(val ?? '').trim();
@@ -372,8 +361,7 @@ function ShpConvertibleModal({ issuerCode, securityType, companyLabel, onClose }
   }
 
   function fmtDate(ds) {
-    if (!ds) return '—';
-    return String(ds).slice(0, 10);
+    return displayDate(ds);
   }
 
   function fmtQty(n) {

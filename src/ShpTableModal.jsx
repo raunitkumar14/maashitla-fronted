@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import api from './api/axios';
 import { hasPermission } from './auth';
+import { parseDateCell, displayDate } from './shpDateUtils';
 import './IsinMaster.css';
 import './CompanyPromoter.css';
 import './ShpConvertibleModal.css';
@@ -104,15 +105,6 @@ const V_FIELDS = [
   { key: 'dateOfCreation',             idx: 9 },
 ];
 
-function excelDateToStr(v) {
-  if (v instanceof Date && !isNaN(v)) {
-    const y = v.getFullYear();
-    const m = String(v.getMonth() + 1).padStart(2, '0');
-    const d = String(v.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  }
-  return String(v ?? '').trim() || null;
-}
 
 function parseFileV(file) {
   return new Promise((resolve, reject) => {
@@ -152,7 +144,7 @@ function parseFileV(file) {
           for (const { key, idx } of V_FIELDS) {
             const cell = raw[idx];
             if (key === 'dateOfCreation') {
-              const s = excelDateToStr(cell);
+              const s = parseDateCell(cell);
               if (s) obj[key] = s;
             } else {
               const s = String(cell ?? '').trim();
@@ -486,7 +478,11 @@ function ShpTableModal({ issuerCode, tableCode, companyLabel, onClose }) {
                       <tr key={idx}>
                         <td>{row.rowNo ?? idx + 1}</td>
                         {meta.columns.map(col => (
-                          <td key={col.key}>{row[col.key] ?? '—'}</td>
+                          <td key={col.key}>
+                            {col.key === 'dateOfCreation'
+                              ? displayDate(row[col.key])
+                              : (row[col.key] ?? '—')}
+                          </td>
                         ))}
                       </tr>
                     ))
