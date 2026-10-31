@@ -5,6 +5,7 @@ import './IsinMaster.css';
 import './Company.css';
 import { useColumnVisibility } from './hooks/useColumnVisibility';
 import { ColumnSelector } from './components/ColumnSelector';
+import { LISTING_AT_OPTIONS, parseListingAt, ListedAtCheckboxes } from './components/ListedAtCheckboxes';
 
 function cell(row, field) {
   const v = row[field];
@@ -30,7 +31,7 @@ const ISINS_COLUMNS = [
   { field: 'secType',      header: 'Security Type Description', render: row => cell(row, 'securityType') },
   { field: 'isinStatus',    header: 'ISIN Status',               render: row => cell(row, 'isinStatus') },
   { field: 'listingStatus', header: 'Listing Status',            render: row => cell(row, 'listingStatus') },
-  { field: 'listingAt',     header: 'Listed At',                 render: row => cell(row, 'listingAt') },
+  { field: 'listingAt',     header: 'Listed At',                 render: row => { const list = parseListingAt(row.listingAt); return list.length ? list.join(', ') : '—'; } },
   { field: 'listingDate',   header: 'Listing Date',              render: row => formatDate(row.listingDate) },
   { field: 'symbol',        header: 'Symbol',                    render: row => cell(row, 'symbol') },
   { field: 'scripCode',     header: 'Scrip Code',                render: row => cell(row, 'scripCode') },
@@ -97,9 +98,15 @@ function PaginationBar({ page, perPage, totalCount, totalPages, goto, setPage, s
 // ── EditListingModal ──────────────────────────────────────────────────────────
 
 function EditListingModal({ row, onClose, onSaved }) {
+  const _allParsed   = parseListingAt(row.listingAt);
+  const _legacyItems = _allParsed.filter(v => !LISTING_AT_OPTIONS.includes(v));
+  const legacyNote   = _legacyItems.length
+    ? `Previous non-standard value(s) will be removed on save: ${_legacyItems.join(', ')}`
+    : null;
+
   const [form, setForm] = useState({
     listingStatus: row.listingStatus ?? '',
-    listingAt:     row.listingAt     ?? '',
+    listingAt:     _allParsed.filter(v => LISTING_AT_OPTIONS.includes(v)),
     listingDate:   row.listingDate   ? String(row.listingDate).slice(0, 10) : '',
     symbol:        row.symbol        ?? '',
     scripCode:     row.scripCode     ?? '',
@@ -115,7 +122,7 @@ function EditListingModal({ row, onClose, onSaved }) {
     try {
       const body = {
         listingStatus: form.listingStatus || null,
-        listingAt:     form.listingAt     || null,
+        listingAt:     form.listingAt.length ? form.listingAt : null,
         listingDate:   form.listingDate   || null,
         symbol:        form.symbol        || null,
         scripCode:     form.scripCode     || null,
@@ -131,7 +138,6 @@ function EditListingModal({ row, onClose, onSaved }) {
 
   const FIELDS = [
     { key: 'listingStatus', label: 'Listing Status', type: 'text' },
-    { key: 'listingAt',     label: 'Listed At',       type: 'text' },
     { key: 'listingDate',   label: 'Listing Date',    type: 'date' },
     { key: 'symbol',        label: 'Symbol',          type: 'text' },
     { key: 'scripCode',     label: 'Scrip Code',      type: 'text' },
@@ -163,6 +169,15 @@ function EditListingModal({ row, onClose, onSaved }) {
                 />
               </div>
             ))}
+          </div>
+          <div className="im-edit-listing-field im-edit-listing-exchanges">
+            <label>Listed At</label>
+            <ListedAtCheckboxes
+              selected={form.listingAt}
+              onChange={val => setField('listingAt', val)}
+              disabled={saving}
+              legacyNote={legacyNote}
+            />
           </div>
         </div>
         <div className="im-edit-listing-footer">

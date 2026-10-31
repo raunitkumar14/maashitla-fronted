@@ -5,10 +5,9 @@ import IsinUploadModal from './IsinUploadModal';
 import api from './api/axios';
 import { useColumnVisibility } from './hooks/useColumnVisibility';
 import { ColumnSelector } from './components/ColumnSelector';
+import { LISTING_AT_OPTIONS, parseListingAt, ListedAtCheckboxes } from './components/ListedAtCheckboxes';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-
-const LISTING_AT_OPTIONS = ['NSE', 'BSE', 'MCX', 'IFSC', 'NSE SME', 'BSE SME'];
 
 // ── Column definitions ────────────────────────────────────────────────────────
 
@@ -242,9 +241,15 @@ function ExportModal({ appliedFilters, multiSearchRows, descFilterRows, isinDesc
 // Opens when the user clicks Edit on a row; PATCHes only the 5 listing fields.
 
 function EditListingModal({ row, onClose, onSaved }) {
+  const _allParsed   = parseListingAt(row.listingAtList ?? row.listingAt);
+  const _legacyItems = _allParsed.filter(v => !LISTING_AT_OPTIONS.includes(v));
+  const legacyNote   = _legacyItems.length
+    ? `Previous non-standard value(s) will be removed on save: ${_legacyItems.join(', ')}`
+    : null;
+
   const [form, setForm] = useState({
     listingStatus: row.listingStatus ?? '',
-    listingAt:     parseListingAt(row),
+    listingAt:     _allParsed.filter(v => LISTING_AT_OPTIONS.includes(v)),
     listingDate:   row.listingDate   ? String(row.listingDate).slice(0, 10) : '',
     symbol:        row.symbol        ?? '',
     scripCode:     row.scripCode     ?? '',
@@ -253,13 +258,6 @@ function EditListingModal({ row, onClose, onSaved }) {
   const [errMsg, setErrMsg] = useState('');
 
   function setField(k, v) { setForm(p => ({ ...p, [k]: v })); }
-
-  function toggleListingAt(opt) {
-    setForm(p => {
-      const arr = p.listingAt;
-      return { ...p, listingAt: arr.includes(opt) ? arr.filter(x => x !== opt) : [...arr, opt] };
-    });
-  }
 
   async function handleSave() {
     setSaving(true);
@@ -317,19 +315,12 @@ function EditListingModal({ row, onClose, onSaved }) {
           </div>
           <div className="im-edit-listing-field im-edit-listing-exchanges">
             <label>Listed At</label>
-            <div className="im-edit-listing-checkboxes">
-              {LISTING_AT_OPTIONS.map(opt => (
-                <label key={opt} className="im-listing-cb-label">
-                  <input
-                    type="checkbox"
-                    checked={form.listingAt.includes(opt)}
-                    onChange={() => toggleListingAt(opt)}
-                    disabled={saving}
-                  />
-                  {opt}
-                </label>
-              ))}
-            </div>
+            <ListedAtCheckboxes
+              selected={form.listingAt}
+              onChange={val => setField('listingAt', val)}
+              disabled={saving}
+              legacyNote={legacyNote}
+            />
           </div>
         </div>
         <div className="im-edit-listing-footer">
@@ -370,16 +361,10 @@ function formatDate(val) {
   return `${d}-${m}-${y}`;
 }
 
-function parseListingAt(row) {
-  if (Array.isArray(row.listingAtList)) return row.listingAtList;
-  if (Array.isArray(row.listingAt)) return row.listingAt;
-  const s = row.listingAt ?? '';
-  return s ? s.split(',').map(v => v.trim()).filter(Boolean) : [];
-}
 
 function renderCell(col, row) {
   if (col.field === 'listingAt') {
-    const list = parseListingAt(row);
+    const list = parseListingAt(row.listingAtList ?? row.listingAt);
     return list.length ? list.join(', ') : '—';
   }
   const val = row[col.field];

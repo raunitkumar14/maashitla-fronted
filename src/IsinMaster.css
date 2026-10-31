@@ -768,6 +768,12 @@
   cursor: pointer;
 }
 
+.im-listing-legacy-note {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: #888;
+}
+
 .im-edit-listing-footer {
   padding: 10px 16px;
   display: flex;
