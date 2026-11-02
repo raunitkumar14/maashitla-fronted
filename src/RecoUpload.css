@@ -266,7 +266,7 @@
 /* ── Upload modal ────────────────────────────────────────────────────────── */
 
 .reco-modal {
-  width: 620px;
+  width: 920px;
   max-width: 96vw;
   max-height: 90vh;
   background: #ffffff;
@@ -420,4 +420,180 @@
   gap: 8px;
   border-top: 1px solid #e8ecf0;
   flex-shrink: 0;
+}
+
+/* ── Header action button group ─────────────────────────────────────────── */
+
+.reco-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Blue-outline secondary button ──────────────────────────────────────── */
+
+.btn-action--blue-outline {
+  background-color: #ffffff;
+  color: #1565c0;
+  border: 1px solid #1976d2;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.15s ease;
+}
+
+.btn-action--blue-outline:hover {
+  background-color: #e3f2fd;
+}
+
+.btn-action--blue-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Narrow date-picker popup ────────────────────────────────────────────── */
+
+.reco-datepicker-modal {
+  width: 540px;
+}
+
+/* ── Inline reconciliation summary row ───────────────────────────────────── */
+
+.reco-check-summary {
+  display: flex;
+  gap: 40px;
+  padding: 14px 20px 16px;
+  border-bottom: 1px solid #e8ecf0;
+  flex-wrap: wrap;
+}
+
+.reco-check-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reco-check-summary-label {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.reco-check-summary-value {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1a237e;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ── Inline actions row (PROCESSING + exports) ───────────────────────────── */
+
+.reco-check-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid #e8ecf0;
+  flex-wrap: wrap;
+}
+
+/* ── Reconciliation modal placeholder (kept for reference) ───────────────── */
+
+.reco-reconciliation-placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  font-size: 13px;
+  color: #999;
+  font-style: italic;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ── Result card ─────────────────────────────────────────────────────────── */
+
+.reco-result-card {
+  margin-top: 0;
+}
+
+.reco-result-warning {
+  margin: 0 20px 12px;
+  padding: 10px 14px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #6d4c00;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.reco-result-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  padding: 0 20px 16px;
+}
+
+.reco-result-item {
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  padding: 12px 16px 12px 0;
+  flex: 1 1 180px;
+}
+
+.reco-result-label {
+  font-size: 11px;
+  color: #888;
+  font-family: Arial, Helvetica, sans-serif;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.reco-result-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a237e;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.reco-result-section {
+  border-top: 1px solid #e8ecf0;
+  padding: 12px 20px 16px;
+}
+
+.reco-result-section-title {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.reco-result-isins {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.reco-result-isin-tag {
+  padding: 3px 10px;
+  background: #e3f2fd;
+  color: #1565c0;
+  border-radius: 12px;
+  font-size: 12px;
+  font-family: monospace;
+  border: 1px solid #90caf9;
 }

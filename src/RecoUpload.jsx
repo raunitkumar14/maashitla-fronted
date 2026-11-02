@@ -1,620 +1,468 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import * as XLSX from 'xlsx';
 import api from './api/axios';
 import './IsinMaster.css';
 import './RecoUpload.css';
 import RecoUploadModal from './RecoUploadModal';
+import ReconciliationModal from './ReconciliationModal';
 
-// ── Column definitions ────────────────────────────────────────────────────────
-
-const CDSL_COLS = [
-  { header: 'ISIN',              field: 'isin' },
-  { header: 'ISIN Description',  field: 'isinDescription' },
-  { header: 'Free Positions',    field: 'freePosition',  numeric: true },
-  { header: 'Lock Positions',    field: 'lockPosition',  numeric: true },
-  { header: 'CDSL Positions',    field: 'cdslPosition',  numeric: true },
-];
-
-const NSDL_COLS = [
-  { header: 'ISIN',                       field: 'isin' },
-  { header: 'ISIN Short Name',            field: 'isinShortName' },
-  { header: 'Company Name',               field: 'companyName' },
-  { header: 'Flag Decimal ISIN',          field: 'flagDecimalIsin' },
-  { header: 'Free Positions',             field: 'freePosition',             numeric: true },
-  { header: 'Lock Positions',             field: 'lockPosition',             numeric: true },
-  { header: 'Unlock Balance',             field: 'unlockBalance',            numeric: true },
-  { header: 'Lock Balance',               field: 'lockBalance',              numeric: true },
-  { header: 'Pending Demat Balance',      field: 'pendingDematBalance',      numeric: true },
-  { header: 'Pending Remat Free Balance', field: 'pendingRematFreeBalance',  numeric: true },
-  { header: 'Pending Remat Lock Balance', field: 'pendingRematLockBalance',  numeric: true },
-  { header: 'Delivery Transit Balance',   field: 'deliveryTransitBalance',   numeric: true },
-  { header: 'Receipt Transit Balance',    field: 'receiptTransitBalance',    numeric: true },
-  { header: 'Security Type',              field: 'securityType' },
-];
-
-// ── Number formatter ──────────────────────────────────────────────────────────
+function fmtDate(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${d}-${m}-${y}`;
+}
 
 function fmtNum(val) {
-  if (val === null || val === undefined || val === '') return '';
+  if (val === null || val === undefined || val === '') return '—';
   const n = Number(val);
-  if (isNaN(n)) return val;
+  if (isNaN(n)) return String(val);
   return n.toLocaleString('en-IN');
 }
 
-// ── Pagination helpers ────────────────────────────────────────────────────────
-
-function getPageRange(current, total) {
-  if (total <= 0) return [];
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const pages = [1];
-  const start = Math.max(2, current - 1);
-  const end   = Math.min(total - 1, current + 1);
-  if (start > 2)       pages.push('...');
-  for (let p = start; p <= end; p++) pages.push(p);
-  if (end < total - 1) pages.push('...');
-  pages.push(total);
-  return pages;
+function buildExportSheet(items) {
+  const headers = [
+    'Sr No', 'Recon Date', 'Day', 'ISIN', 'ISIN Name', 'Security Type', 'FV', 'PV',
+    'Total Opening', 'Opening Physical', 'Opening NSDL', 'Opening CDSL',
+    'IDT NSDL In', 'IDT CDSL In', 'IDT NSDL Out', 'IDT CDSL Out',
+    'Demat NSDL', 'Demat CDSL', 'Remat NSDL', 'Remat CDSL',
+    'Corp Action NSDL', 'Corp Action CDSL', 'Corp Action Physical',
+    'Closing Physical', 'Closing NSDL', 'Closing CDSL', 'Total Closing',
+    'Mismatch Flag', 'Status', 'Remark',
+  ];
+  const rows = items.map(r => [
+    r.srNo, fmtDate(r.reconDate), r.dayName, r.isin, r.isinName, r.securityType, r.fv, r.pv,
+    r.totalOpeningPosition, r.openingPhysicalPosition, r.openingNsdlPosition, r.openingCdslPosition,
+    r.idtNsdlIn, r.idtCdslIn, r.idtNsdlOut, r.idtCdslOut,
+    r.dematNsdl, r.dematCdsl, r.rematNsdl, r.rematCdsl,
+    r.corporateActionNsdl, r.corporateActionCdsl, r.corporateActionPhysical,
+    r.closingPhysicalPosition, r.closingNsdlPosition, r.closingCdslPosition, r.totalClosingPosition,
+    r.mismatchFlag, r.reconciliationStatus, r.remark,
+  ]);
+  return XLSX.utils.aoa_to_sheet([headers, ...rows]);
 }
 
-function PaginationBar({ page, perPage, totalCount, totalPages, goto, setPage, setGoto, onGoto }) {
-  const first = totalCount === 0 ? 0 : (page - 1) * perPage + 1;
-  const last  = Math.min(page * perPage, totalCount);
+function buildErrorSheet(errors) {
+  const headers = [
+    'ISIN', 'ISIN Name', 'Recon Date', 'Case',
+    'Total Holding', 'Closing NSDL', 'Closing CDSL', 'Physical Qty',
+    'Computed', 'Difference', 'Reason',
+  ];
+  const caseLabel = v =>
+    v === 'PHYSICAL_PRESENT' ? 'Physical present'
+    : v === 'NO_PHYSICAL'    ? 'No physical'
+    : '';
+  const rows = errors.map(r => [
+    r.isin, r.isinName, fmtDate(r.reconDate), caseLabel(r.case),
+    r.totalHolding, r.closingNsdl, r.closingCdsl, r.physicalQty,
+    r.computed, r.difference, r.reason,
+  ]);
+  return XLSX.utils.aoa_to_sheet([headers, ...rows]);
+}
+
+// ── Upload result card ────────────────────────────────────────────────────────
+
+function RecoResultCard({ data }) {
+  const idt = data.idt ?? {};
   return (
-    <div className="im-pagination">
-      <span className="pagination-info">
-        {totalCount === 0
-          ? 'Showing 0 entries'
-          : `Showing ${first} to ${last} of ${totalCount} entries`}
-      </span>
-      <div className="pagination-controls">
-        {getPageRange(page, totalPages).map((item, idx) =>
-          item === '...'
-            ? <span key={`e-${idx}`} className="page-ellipsis">…</span>
-            : (
-              <button
-                key={item}
-                className={`page-btn${item === page ? ' page-btn--active' : ''}`}
-                onClick={() => setPage(item)}
-              >{item}</button>
-            )
-        )}
-        <span className="goto-label">Go to:</span>
-        <input
-          className="goto-input"
-          type="number"
-          min={1}
-          max={totalPages || 1}
-          value={goto}
-          onChange={e => setGoto(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && onGoto()}
-        />
-        <button className="page-btn" onClick={onGoto}>&rarr;</button>
+    <div className="im-card reco-result-card">
+      <div className="im-card-header">
+        <span>Upload Result — {data.reconDate}</span>
       </div>
+
+      {data.laterDatesExist && (
+        <div className="reco-result-warning">
+          Later dates already exist; their opening positions were not recalculated.
+        </div>
+      )}
+
+      <div className="reco-result-grid">
+        {[
+          { label: 'Created',                      value: data.created },
+          { label: 'Replaced',                     value: data.replaced },
+          { label: 'Skipped (not in ISIN Master)', value: data.skippedNotInIsinMaster },
+          { label: 'Without Previous Closing',     value: data.withoutPreviousClosing },
+          { label: 'Without Total Issued',         value: data.withoutTotalIssued },
+          { label: 'Negative Physical',            value: data.negativePhysical },
+          { label: 'IDT Files',                    value: idt.files },
+          { label: 'IDT Total Qty',                value: idt.totalQty },
+        ].map(item => (
+          <div className="reco-result-item" key={item.label}>
+            <span className="reco-result-label">{item.label}</span>
+            <span className="reco-result-value">{fmtNum(item.value)}</span>
+          </div>
+        ))}
+      </div>
+
+      {data.skippedNotInIsinMaster > 0 && data.skippedIsins?.length > 0 && (
+        <div className="reco-result-section">
+          <p className="reco-result-section-title">Skipped ISINs (not in ISIN Master)</p>
+          <div className="reco-result-isins">
+            {data.skippedIsins.map(isin => (
+              <span key={isin} className="reco-result-isin-tag">{isin}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {idt.ignoredFiles?.length > 0 && (
+        <div className="reco-result-section">
+          <p className="reco-result-section-title">IDT Ignored Files</p>
+          <div className="im-table-wrapper">
+            <table className="im-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Delivery Depo</th>
+                  <th>Receipt Depo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {idt.ignoredFiles.map((f, i) => (
+                  <tr key={i}>
+                    <td>{f.name}</td>
+                    <td>{f.deliveryDepo}</td>
+                    <td>{f.receiptDepo}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
-
-// ── Toast builder from upload response ───────────────────────────────────────
-
-function buildUploadToast(data) {
-  const parts = [];
-  if (data?.cdsl?.rows != null)              parts.push(`CDSL: ${data.cdsl.rows} rows`);
-  if (data?.nsdl?.rows != null)              parts.push(`NSDL: ${data.nsdl.rows} rows`);
-  if (data?.reconciliation?.created != null) parts.push(`Reconciliation: ${data.reconciliation.created} created`);
-  if (data?.skippedNotInIsinMaster)          parts.push(`${data.skippedNotInIsinMaster} skipped (not in ISIN Master)`);
-  if (data?.withoutTotalIssued)              parts.push(`${data.withoutTotalIssued} without total issued`);
-  if (data?.replaced)                        parts.push('Existing records replaced');
-  if (data?.laterDatesExist)                 parts.push('Note: later dates already exist');
-  return parts.length ? parts.join(' · ') : 'Upload successful';
 }
 
 // ── RecoUpload page ───────────────────────────────────────────────────────────
 
 function RecoUpload() {
-  // Filters
-  const [selectedIssuer, setSelectedIssuer] = useState(null); // {issuerCode, issuerName}
-  const [depository,     setDepository]     = useState('CDSL');
-  const [selectedDate,   setSelectedDate]   = useState('');
-  const [search,         setSearch]         = useState('');
+  // Dates (shared between the date-picker popup and the inline section)
+  const [dates,        setDates]        = useState([]);
+  const [loadingDates, setLoadingDates] = useState(true);
+  const [datesError,   setDatesError]   = useState(null);
 
-  // Issuer autocomplete
-  const [issuerQuery,        setIssuerQuery]        = useState('');
-  const [issuerSuggestions,  setIssuerSuggestions]  = useState([]);
-  const [issuerLoading,      setIssuerLoading]      = useState(false);
-  const [showIssuerDropdown, setShowIssuerDropdown] = useState(false);
-  const [suggPage,           setSuggPage]           = useState(1);
-  const [suggTotalPages,     setSuggTotalPages]     = useState(1);
-  const firstPageCacheRef = useRef(null);
-  const issuerTimerRef    = useRef(null);
+  // Modal / popup visibility
+  const [showDatePicker,  setShowDatePicker]  = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
-  // Date dropdown
-  const [dates, setDates] = useState([]); // [{reconDate, count}]
+  // Upload result card
+  const [uploadResult, setUploadResult] = useState(null);
 
-  // Table state
-  const [rows,       setRows]       = useState(null);
-  const [totals,     setTotals]     = useState(null);
-  const [totalCount, setTotalCount] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [loading,    setLoading]    = useState(false);
-  const [fetchError, setFetchError] = useState('');
+  // Selected date and its summary row
+  const [selectedDate,    setSelectedDate]    = useState(null);
+  const [selectedDateRow, setSelectedDateRow] = useState(null);
 
-  // Pagination
-  const [page,     setPageRaw] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [goto,     setGoto]    = useState('');
+  // Processing
+  const [processing,    setProcessing]    = useState(false);
+  const [processError,  setProcessError]  = useState(null);
+  const [processResult, setProcessResult] = useState(null);
 
-  // Modal + toast
-  const [showModal, setShowModal] = useState(false);
-  const [toast,     setToast]     = useState('');
-  const toastTimerRef  = useRef(null);
-  const searchTimerRef = useRef(null);
-  const [appliedSearch, setAppliedSearch] = useState('');
+  // Export
+  const [exportingAll,      setExportingAll]      = useState(false);
+  const [exportingSelected, setExportingSelected] = useState(false);
+  const [exportingErrors,   setExportingErrors]   = useState(false);
 
-  // ── Issuer autocomplete helpers ───────────────────────────────────────────
+  // Toast
+  const [toast, setToast] = useState(null);
 
-  async function fetchIssuers(query, fetchPage, append) {
-    setIssuerLoading(true);
-    try {
-      const params = { pageSize: 50, page: fetchPage };
-      if (query) params.issuerName = query;
-      const res = await api.get('/admin/v1/issuers', { params });
-      const { items = [], totalPages: tp = 1 } = res.data?.data ?? {};
-      if (!query && fetchPage === 1) firstPageCacheRef.current = { items, totalPages: tp };
-      setIssuerSuggestions(prev => append ? [...prev, ...items] : items);
-      setSuggTotalPages(tp);
-      setSuggPage(fetchPage);
-    } catch {
-      // non-fatal
-    } finally {
-      setIssuerLoading(false);
-    }
-  }
+  const anyBusy = processing || exportingAll || exportingSelected || exportingErrors;
 
-  function openIssuerDropdown() {
-    setShowIssuerDropdown(true);
-    if (!issuerQuery) {
-      if (firstPageCacheRef.current) {
-        setIssuerSuggestions(firstPageCacheRef.current.items);
-        setSuggTotalPages(firstPageCacheRef.current.totalPages);
-        setSuggPage(1);
-      } else {
-        fetchIssuers('', 1, false);
-      }
-    }
-  }
-
-  function handleIssuerQueryChange(e) {
-    const q = e.target.value;
-    setIssuerQuery(q);
-    setShowIssuerDropdown(true);
-    if (!q) {
-      // Revert to cached first page immediately
-      if (firstPageCacheRef.current) {
-        setIssuerSuggestions(firstPageCacheRef.current.items);
-        setSuggTotalPages(firstPageCacheRef.current.totalPages);
-        setSuggPage(1);
-      } else {
-        fetchIssuers('', 1, false);
-      }
-    }
-  }
-
-  // Debounced search when user types (non-empty query)
-  useEffect(() => {
-    if (!issuerQuery) return;
-    clearTimeout(issuerTimerRef.current);
-    issuerTimerRef.current = setTimeout(() => {
-      fetchIssuers(issuerQuery.trim(), 1, false);
-    }, 400);
-    return () => clearTimeout(issuerTimerRef.current);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [issuerQuery]);
-
-  function selectIssuer(item) {
-    setSelectedIssuer(item);
-    setIssuerQuery('');
-    setIssuerSuggestions([]);
-    setShowIssuerDropdown(false);
-    setPageRaw(1);
-  }
-
-  function clearIssuer() {
-    setSelectedIssuer(null);
-    setIssuerQuery('');
-    setPageRaw(1);
-  }
-
-  // ── Load dates when depository changes ────────────────────────────────────
-
-  useEffect(() => {
-    if (depository === 'IDT') { setDates([]); setSelectedDate(''); return; }
-    api.get('/admin/v1/reconciliations/imports/dates', { params: { depository } })
-      .then(res => {
-        const d = res.data?.data?.dates ?? res.data?.dates ?? [];
-        setDates(d);
-        setSelectedDate(d.length > 0 ? d[0].reconDate : '');
-      })
-      .catch(() => { setDates([]); setSelectedDate(''); });
-  }, [depository]);
-
-  // ── Debounce search input ─────────────────────────────────────────────────
-
-  useEffect(() => {
-    clearTimeout(searchTimerRef.current);
-    searchTimerRef.current = setTimeout(() => {
-      setAppliedSearch(search);
-      setPageRaw(1);
-    }, 400);
-    return () => clearTimeout(searchTimerRef.current);
-  }, [search]);
-
-  // ── Load table rows ───────────────────────────────────────────────────────
-
-  const issuerCode = selectedIssuer?.issuerCode ?? '';
-
-  const loadRows = useCallback(() => {
-    if (depository === 'IDT') { setRows([]); setTotals(null); setTotalCount(0); setTotalPages(0); return; }
-    if (!selectedDate) { setRows([]); setTotals(null); setTotalCount(0); setTotalPages(0); return; }
-
-    setLoading(true);
-    setFetchError('');
-
-    const params = {
-      depository,
-      reconDate: selectedDate,
-      page,
-      limit: pageSize,
-    };
-    if (appliedSearch) params.search     = appliedSearch;
-    if (issuerCode)    params.issuerCode = issuerCode;
-
-    api.get('/admin/v1/reconciliations/imports', { params })
-      .then(res => {
-        const d = res.data?.data ?? res.data ?? {};
-        setRows(d.items ?? []);
-        setTotals(d.totals ?? null);
-        setTotalCount(d.total ?? 0);
-        setTotalPages(d.totalPages ?? 0);
-      })
-      .catch(err => {
-        setFetchError(err.response?.data?.message || err.message || 'Failed to load data');
-        setRows([]);
-        setTotals(null);
-      })
-      .finally(() => setLoading(false));
-  }, [depository, selectedDate, page, pageSize, appliedSearch, issuerCode]);
-
-  useEffect(() => { loadRows(); }, [loadRows]);
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
-  function setPage(p) { setPageRaw(p); setGoto(''); }
-
-  function onGoto() {
-    const p = parseInt(goto, 10);
-    if (!isNaN(p) && p >= 1 && p <= totalPages) setPage(p);
-    setGoto('');
-  }
-
-  function showToast(msg) {
-    clearTimeout(toastTimerRef.current);
+  const showToast = useCallback((msg) => {
     setToast(msg);
-    toastTimerRef.current = setTimeout(() => setToast(''), 6000);
+    setTimeout(() => setToast(null), 3500);
+  }, []);
+
+  const extractMsg = (err) =>
+    err.response?.data?.error?.message ||
+    err.response?.data?.message ||
+    err.message;
+
+  // Fetch dates and, if a date is already selected, refresh its summary row.
+  const refreshDates = useCallback(async (currentSelectedDate) => {
+    setLoadingDates(true);
+    setDatesError(null);
+    try {
+      const res = await api.get('/admin/v1/reconciliations/dates');
+      const fresh = res.data.data;
+      setDates(fresh);
+      if (currentSelectedDate) {
+        const row = fresh.find(r => r.reconDate === currentSelectedDate);
+        if (row) setSelectedDateRow(row);
+      }
+    } catch (err) {
+      setDatesError(extractMsg(err));
+    } finally {
+      setLoadingDates(false);
+    }
+  }, []);
+
+  useEffect(() => { refreshDates(null); }, [refreshDates]);
+
+  // Called when the user picks a date from the popup — closes it immediately.
+  function handleDateSelect(date, row) {
+    setSelectedDate(date);
+    setSelectedDateRow(row);
+    setProcessResult(null);
+    setProcessError(null);
+    setShowDatePicker(false);
   }
 
-  function handleUploadSuccess(data) {
-    setShowModal(false);
-    showToast(buildUploadToast(data));
-    if (depository !== 'IDT') {
-      api.get('/admin/v1/reconciliations/imports/dates', { params: { depository } })
-        .then(res => {
-          const d = res.data?.data?.dates ?? res.data?.dates ?? [];
-          setDates(d);
-          if (d.length > 0) {
-            setSelectedDate(d[0].reconDate);
-            setPageRaw(1);
-          }
-        })
-        .catch(() => {});
+  async function handleProcess() {
+    if (!selectedDate || anyBusy) return;
+    setProcessing(true);
+    setProcessError(null);
+    setProcessResult(null);
+    try {
+      const res = await api.post(
+        '/admin/v1/reconciliations/process',
+        { reconDate: selectedDate },
+        { timeout: 300000 },
+      );
+      setProcessResult(res.data.data);
+      await refreshDates(selectedDate);
+    } catch (err) {
+      setProcessError(extractMsg(err));
+    } finally {
+      setProcessing(false);
     }
   }
 
-  // ── Render helpers ────────────────────────────────────────────────────────
-
-  const cols  = depository === 'NSDL' ? NSDL_COLS : CDSL_COLS;
-  const isIDT = depository === 'IDT';
-
-  function renderTotalsRow() {
-    if (!totals || isIDT) return null;
-    if (depository === 'CDSL') {
-      return (
-        <div className="reco-totals-bar">
-          <span>Totals —</span>
-          <span>Free: <strong>{fmtNum(totals.totalFree)}</strong></span>
-          <span>Lock: <strong>{fmtNum(totals.totalLock)}</strong></span>
-          <span>Position: <strong>{fmtNum(totals.totalPosition)}</strong></span>
-        </div>
-      );
-    }
-    return (
-      <div className="reco-totals-bar">
-        <span>Totals —</span>
-        <span>Free: <strong>{fmtNum(totals.totalFree)}</strong></span>
-        <span>Lock: <strong>{fmtNum(totals.totalLock)}</strong></span>
-        <span>Unlock Bal: <strong>{fmtNum(totals.totalUnlock)}</strong></span>
-        <span>Lock Bal: <strong>{fmtNum(totals.totalLockBalance)}</strong></span>
-        <span>Pending Demat: <strong>{fmtNum(totals.totalPendingDemat)}</strong></span>
-        <span>Delivery Transit: <strong>{fmtNum(totals.totalDeliveryTransit)}</strong></span>
-        <span>Receipt Transit: <strong>{fmtNum(totals.totalReceiptTransit)}</strong></span>
-      </div>
-    );
+  async function handleUploadSuccess(data) {
+    setShowUploadModal(false);
+    setUploadResult(data);
+    await refreshDates(selectedDate);
   }
 
-  function renderBody() {
-    if (isIDT) {
-      return (
-        <tr><td colSpan={cols.length}>
-          <div className="reco-empty-state">
-            <div className="reco-empty-circle">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
-                stroke="#90caf9" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="21 8 21 21 3 21 3 8"/>
-                <rect x="1" y="3" width="22" height="5"/>
-                <line x1="10" y1="12" x2="14" y2="12"/>
-              </svg>
-            </div>
-            <p className="reco-empty-text">IDT upload coming soon</p>
-          </div>
-        </td></tr>
-      );
+  async function handleExportAll() {
+    if (anyBusy) return;
+    setExportingAll(true);
+    try {
+      const res = await api.get('/admin/v1/reconciliations/export', { timeout: 120000 });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, buildExportSheet(res.data.data.items), 'Reconciled');
+      XLSX.writeFile(wb, 'reconciliation_export_all.xlsx');
+    } catch (err) {
+      showToast(extractMsg(err));
+    } finally {
+      setExportingAll(false);
     }
-    if (!selectedDate) {
-      return (
-        <tr><td colSpan={cols.length}>
-          <div className="reco-empty-state">
-            <div className="reco-empty-circle">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
-                stroke="#90caf9" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="21 8 21 21 3 21 3 8"/>
-                <rect x="1" y="3" width="22" height="5"/>
-                <line x1="10" y1="12" x2="14" y2="12"/>
-              </svg>
-            </div>
-            <p className="reco-empty-text">Select a date to view data</p>
-          </div>
-        </td></tr>
-      );
-    }
-    if (loading) {
-      return (
-        <tr><td colSpan={cols.length}
-          style={{ textAlign: 'center', padding: '24px', color: '#888', fontSize: '13px' }}>
-          Loading…
-        </td></tr>
-      );
-    }
-    if (fetchError) {
-      return (
-        <tr><td colSpan={cols.length}
-          style={{ textAlign: 'center', padding: '24px', color: '#c62828', fontSize: '13px' }}>
-          {fetchError}
-        </td></tr>
-      );
-    }
-    if (!rows || rows.length === 0) {
-      return (
-        <tr><td colSpan={cols.length}>
-          <div className="reco-empty-state">
-            <div className="reco-empty-circle">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
-                stroke="#90caf9" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="21 8 21 21 3 21 3 8"/>
-                <rect x="1" y="3" width="22" height="5"/>
-                <line x1="10" y1="12" x2="14" y2="12"/>
-              </svg>
-            </div>
-            <p className="reco-empty-text">No data available</p>
-          </div>
-        </td></tr>
-      );
-    }
-    return rows.map((row, i) => (
-      <tr key={row.id ?? i}>
-        {cols.map(col => (
-          <td key={col.field} style={col.numeric ? { textAlign: 'right' } : {}}>
-            {col.numeric ? fmtNum(row[col.field]) : (row[col.field] ?? '')}
-          </td>
-        ))}
-      </tr>
-    ));
   }
 
-  // ── JSX ───────────────────────────────────────────────────────────────────
+  async function handleExportSelected() {
+    if (!selectedDate || anyBusy) return;
+    setExportingSelected(true);
+    try {
+      const res = await api.get('/admin/v1/reconciliations/export', {
+        params: { reconDate: selectedDate },
+        timeout: 120000,
+      });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, buildExportSheet(res.data.data.items), 'Reconciled');
+      XLSX.writeFile(wb, `reconciliation_export_${selectedDate}.xlsx`);
+    } catch (err) {
+      showToast(extractMsg(err));
+    } finally {
+      setExportingSelected(false);
+    }
+  }
+
+  async function handleExportErrors() {
+    if (!selectedDate || anyBusy) return;
+    setExportingErrors(true);
+    try {
+      const res = await api.get('/admin/v1/reconciliations/errors', {
+        params: { reconDate: selectedDate },
+        timeout: 120000,
+      });
+      const errors = res.data.data.errors;
+      if (errors.length === 0) {
+        showToast('No errors found for the selected date.');
+        return;
+      }
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, buildErrorSheet(errors), 'Errors');
+      XLSX.writeFile(wb, `reconciliation_errors_${selectedDate}.xlsx`);
+    } catch (err) {
+      showToast(extractMsg(err));
+    } finally {
+      setExportingErrors(false);
+    }
+  }
 
   return (
     <div className="isin-master">
-      <h1 className="page-heading">Upload</h1>
+      <h1 className="page-heading">Reconciliation</h1>
 
-      {/* ── Card 1: Reconciliation Upload ── */}
+      {/* ── Header card ─────────────────────────────────────────────────────── */}
       <div className="im-card">
         <div className="im-card-header">
           <span>Reconciliation Upload</span>
-          <button className="btn-upload" onClick={() => setShowModal(true)}>
-            &#8679;&nbsp;UPLOAD
-          </button>
+          <div className="reco-header-actions">
+            <button className="btn-upload" onClick={() => setShowDatePicker(true)}>
+              RECONCILIATION
+            </button>
+            <button className="btn-upload" onClick={() => setShowUploadModal(true)}>
+              &#8679;&nbsp;UPLOAD
+            </button>
+          </div>
         </div>
+      </div>
 
-        <div className="reco-filter-row">
-          {/* Company — searchable autocomplete */}
-          <div className="reco-field reco-field--company">
-            <label className="reco-label">Company</label>
-            {selectedIssuer ? (
-              <div className="reco-issuer-selected">
-                <span title={selectedIssuer.issuerCode}>
-                  {selectedIssuer.issuerName || selectedIssuer.issuerCode}
-                </span>
-                <button
-                  type="button"
-                  className="reco-issuer-clear"
-                  onClick={clearIssuer}
-                  aria-label="Clear company filter"
-                >×</button>
+      {/* ── Upload result ────────────────────────────────────────────────────── */}
+      {uploadResult && <RecoResultCard data={uploadResult} />}
+
+      {/* ── Inline reconciliation section (shown once a date is selected) ───── */}
+      {selectedDate && (
+        <div className="im-card" style={{ marginTop: 16 }}>
+          <div className="im-card-header">
+            <span>Reconciliation — {fmtDate(selectedDate)}</span>
+            <button
+              className="btn-action btn-action--white"
+              onClick={() => setShowDatePicker(true)}
+            >
+              CHANGE DATE
+            </button>
+          </div>
+
+          {/* Date summary */}
+          <div className="reco-check-summary">
+            <div className="reco-check-summary-item">
+              <span className="reco-check-summary-label">Total ISINs</span>
+              <span className="reco-check-summary-value">
+                {selectedDateRow?.total ?? '—'}
+              </span>
+            </div>
+            <div className="reco-check-summary-item">
+              <span className="reco-check-summary-label">Reconciled</span>
+              <span
+                className="reco-check-summary-value"
+                style={{ color: (selectedDateRow?.reconciled ?? 0) > 0 ? '#2e7d32' : undefined }}
+              >
+                {selectedDateRow?.reconciled ?? '—'}
+              </span>
+            </div>
+            <div className="reco-check-summary-item">
+              <span className="reco-check-summary-label">Pending</span>
+              <span
+                className="reco-check-summary-value"
+                style={{ color: (selectedDateRow?.pending ?? 0) > 0 ? '#c62828' : undefined }}
+              >
+                {selectedDateRow?.pending ?? '—'}
+              </span>
+            </div>
+          </div>
+
+          {/* Processing spinner / error */}
+          {processing && (
+            <div className="reco-uploading-msg">
+              <span className="reco-spinner" /> Processing {fmtDate(selectedDate)}…
+            </div>
+          )}
+          {!processing && processError && (
+            <div className="reco-upload-error">{processError}</div>
+          )}
+
+          {/* Result grid — only after a successful Processing run */}
+          {processResult && (
+            <>
+              <div style={{ borderTop: '1px solid #e8ecf0', padding: '10px 20px 0' }}>
+                <p className="reco-result-section-title">
+                  Result — {fmtDate(processResult.reconDate)}
+                </p>
               </div>
-            ) : (
-              <div className="reco-issuer-wrap">
-                <input
-                  className="reco-issuer-input"
-                  type="text"
-                  placeholder="All companies…"
-                  value={issuerQuery}
-                  onChange={handleIssuerQueryChange}
-                  onFocus={openIssuerDropdown}
-                  onBlur={() => setTimeout(() => setShowIssuerDropdown(false), 150)}
-                  autoComplete="off"
-                />
-                {issuerLoading && <span className="reco-issuer-spinner">…</span>}
-                {showIssuerDropdown && (
-                  <ul className="reco-issuer-dropdown">
-                    <li
-                      className="reco-issuer-option reco-issuer-option--all"
-                      onMouseDown={e => { e.preventDefault(); clearIssuer(); setShowIssuerDropdown(false); }}
+              {processResult.failed > 0 && (
+                <div className="reco-result-warning">
+                  {processResult.failed} ISIN{processResult.failed !== 1 ? 's' : ''} failed the
+                  reconciliation check. Download the error report for details.
+                </div>
+              )}
+              <div className="reco-result-grid">
+                {[
+                  { label: 'Checked',           value: processResult.checked },
+                  { label: 'Reconciled',         value: processResult.reconciled },
+                  { label: 'Failed',             value: processResult.failed },
+                  { label: 'Already Reconciled', value: processResult.alreadyReconciled },
+                  { label: 'Physical Present',   value: processResult.caseBreakdown?.physicalPresent ?? 0 },
+                  { label: 'No Physical',        value: processResult.caseBreakdown?.noPhysical ?? 0 },
+                ].map(item => (
+                  <div className="reco-result-item" key={item.label}>
+                    <div className="reco-result-label">{item.label}</div>
+                    <div
+                      className="reco-result-value"
+                      style={{
+                        color: item.label === 'Failed'      && item.value > 0 ? '#c62828'
+                             : item.label === 'Reconciled'  && item.value > 0 ? '#2e7d32'
+                             : undefined,
+                      }}
                     >
-                      All companies
-                    </li>
-                    {issuerSuggestions.map(item => (
-                      <li
-                        key={item.issuerCode}
-                        className="reco-issuer-option"
-                        onMouseDown={e => { e.preventDefault(); selectIssuer(item); }}
-                      >
-                        <span className="reco-issuer-name">{item.issuerName || '—'}</span>
-                        <span className="reco-issuer-code">{item.issuerCode}</span>
-                      </li>
-                    ))}
-                    {!issuerLoading && issuerSuggestions.length === 0 && (
-                      <li className="reco-issuer-empty">No results</li>
-                    )}
-                    {!issuerLoading && suggPage < suggTotalPages && (
-                      <li
-                        className="reco-issuer-load-more"
-                        onMouseDown={e => { e.preventDefault(); fetchIssuers(issuerQuery, suggPage + 1, true); }}
-                      >
-                        Load more…
-                      </li>
-                    )}
-                    {issuerLoading && (
-                      <li className="reco-issuer-loading">Loading…</li>
-                    )}
-                  </ul>
-                )}
+                      {item.value}
+                    </div>
+                  </div>
+                ))}
               </div>
+            </>
+          )}
+
+          {/* Actions row */}
+          <div className="reco-check-actions">
+            <button className="btn-upload" onClick={handleProcess} disabled={anyBusy}>
+              {processing && <span className="reco-spinner" style={{ marginRight: 6 }} />}
+              PROCESSING
+            </button>
+            {processResult && (
+              <>
+                <button
+                  className="btn-action btn-action--blue-outline"
+                  onClick={handleExportAll}
+                  disabled={anyBusy}
+                >
+                  {exportingAll && <span className="reco-spinner" style={{ marginRight: 6 }} />}
+                  EXPORT ALL RECONCILED
+                </button>
+                <button
+                  className="btn-action btn-action--blue-outline"
+                  onClick={handleExportSelected}
+                  disabled={anyBusy}
+                >
+                  {exportingSelected && <span className="reco-spinner" style={{ marginRight: 6 }} />}
+                  EXPORT SELECTED DATE
+                </button>
+                {processResult.failed > 0 && (
+                  <button
+                    className="btn-action btn-action--blue-outline"
+                    onClick={handleExportErrors}
+                    disabled={anyBusy}
+                  >
+                    {exportingErrors && <span className="reco-spinner" style={{ marginRight: 6 }} />}
+                    DOWNLOAD ERROR REPORT
+                  </button>
+                )}
+              </>
             )}
           </div>
-
-          {/* Depository */}
-          <div className="reco-field">
-            <label className="reco-label">Depository</label>
-            <select
-              className="reco-select"
-              value={depository}
-              onChange={e => { setDepository(e.target.value); setSelectedDate(''); setPage(1); }}
-            >
-              <option value="CDSL">CDSL</option>
-              <option value="NSDL">NSDL</option>
-              <option value="IDT">IDT</option>
-            </select>
-          </div>
-
-          {/* Select Date */}
-          <div className="reco-field">
-            <label className="reco-label">Select Date</label>
-            <select
-              className="reco-select"
-              value={selectedDate}
-              disabled={isIDT || dates.length === 0}
-              onChange={e => { setSelectedDate(e.target.value); setPage(1); }}
-            >
-              {dates.length === 0 && <option value="">No dates available</option>}
-              {dates.map(d => (
-                <option key={d.reconDate} value={d.reconDate}>
-                  {d.reconDate}{d.count != null ? ` (${d.count})` : ''}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
-      </div>
+      )}
 
-      {/* ── Card 2: Reconciliation Import Data ── */}
-      <div className="im-card">
-        <div className="im-card-header">
-          <span>Reconciliation Import Data</span>
-          <div className="im-header-actions">
-            <input
-              className="im-input"
-              type="text"
-              placeholder="Search…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{ marginRight: 8 }}
-            />
-            <label className="entries-label">
-              Entries per page
-              <select
-                className="entries-select"
-                value={pageSize}
-                onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
-              >
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
-            </label>
-          </div>
-        </div>
+      {/* ── Date-picker popup ────────────────────────────────────────────────── */}
+      {showDatePicker && (
+        <ReconciliationModal
+          dates={dates}
+          loadingDates={loadingDates}
+          datesError={datesError}
+          onSelect={handleDateSelect}
+          onClose={() => setShowDatePicker(false)}
+        />
+      )}
 
-        {renderTotalsRow()}
-
-        <div className="im-table-wrapper">
-          <table className="im-table">
-            <thead>
-              <tr>
-                {cols.map(col => (
-                  <th key={col.field} style={col.numeric ? { textAlign: 'right' } : {}}>
-                    {col.header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {renderBody()}
-            </tbody>
-          </table>
-        </div>
-
-        {!isIDT && selectedDate && !loading && rows && rows.length > 0 && (
-          <PaginationBar
-            page={page}
-            perPage={pageSize}
-            totalCount={totalCount}
-            totalPages={totalPages}
-            goto={goto}
-            setPage={setPage}
-            setGoto={setGoto}
-            onGoto={onGoto}
-          />
-        )}
-      </div>
-
-      {/* ── Upload modal ── */}
-      {showModal && (
+      {/* ── Upload modal ─────────────────────────────────────────────────────── */}
+      {showUploadModal && (
         <RecoUploadModal
-          onClose={() => setShowModal(false)}
+          onClose={() => setShowUploadModal(false)}
           onSuccess={handleUploadSuccess}
         />
       )}
 
-      {/* ── Toast ── */}
+      {/* ── Toast ────────────────────────────────────────────────────────────── */}
       {toast && <div className="reco-toast reco-toast--info">{toast}</div>}
     </div>
   );

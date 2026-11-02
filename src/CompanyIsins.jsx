@@ -6,6 +6,7 @@ import './Company.css';
 import { useColumnVisibility } from './hooks/useColumnVisibility';
 import { ColumnSelector } from './components/ColumnSelector';
 import { LISTING_AT_OPTIONS, parseListingAt, ListedAtCheckboxes } from './components/ListedAtCheckboxes';
+import TotalHoldingModal from './TotalHoldingModal';
 
 function cell(row, field) {
   const v = row[field];
@@ -35,6 +36,7 @@ const ISINS_COLUMNS = [
   { field: 'listingDate',   header: 'Listing Date',              render: row => formatDate(row.listingDate) },
   { field: 'symbol',        header: 'Symbol',                    render: row => cell(row, 'symbol') },
   { field: 'scripCode',     header: 'Scrip Code',                render: row => cell(row, 'scripCode') },
+  { field: 'totalHolding', header: 'ADD TOTAL HOLDING', isAction: true, render: () => null },
 ];
 
 const VISIBILITY_COLUMNS = ISINS_COLUMNS.map(col => ({
@@ -232,8 +234,9 @@ function CompanyIsins() {
   const [goto,       setGoto]       = useState('');
   const [isinFilter, setIsinFilter] = useState('');
   const [fetchKey,   setFetchKey]   = useState(0);
-  const [editRow,    setEditRow]    = useState(null);
-  const [saveMsg,    setSaveMsg]    = useState('');
+  const [editRow,          setEditRow]          = useState(null);
+  const [totalHoldingRow,  setTotalHoldingRow]  = useState(null);
+  const [saveMsg,          setSaveMsg]          = useState('');
 
   // ── Column visibility ─────────────────────────────────────────────────────
 
@@ -280,6 +283,13 @@ function CompanyIsins() {
     setEditRow(null);
     setSaveMsg('✓ Listing details saved.');
     setIsins(prev => prev.map(r => r.isin === isin ? { ...r, ...updatedFields } : r));
+    setTimeout(() => setSaveMsg(''), 4000);
+  }
+
+  function handleTotalHoldingSaved(isin, fields) {
+    setTotalHoldingRow(null);
+    setSaveMsg('✓ Total Holding saved.');
+    setIsins(prev => prev.map(r => r.isin === isin ? { ...r, ...fields } : r));
     setTimeout(() => setSaveMsg(''), 4000);
   }
 
@@ -354,8 +364,9 @@ function CompanyIsins() {
           <table className="im-table">
             <thead>
               <tr>
-                {visibleCols.map(col => <th key={col.field}>{col.header}</th>)}
+                {visibleCols.filter(col => !col.isAction).map(col => <th key={col.field}>{col.header}</th>)}
                 <th className="im-action-th">Actions</th>
+                {visibleCols.filter(col => col.isAction).map(col => <th key={col.field} className="im-action-th">{col.header}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -380,12 +391,15 @@ function CompanyIsins() {
                     onClick={() => handleIsinClick(row)}
                     title="Open mini-dashboard for this ISIN"
                   >
-                    {visibleCols.map(col => (
+                    {visibleCols.filter(col => !col.isAction).map(col => (
                       <td key={col.field}>{col.render(row, { page, perPage, idx, companyName })}</td>
                     ))}
                     <td className="im-action-cell" onClick={e => e.stopPropagation()}>
                       <button className="im-row-edit-btn" onClick={() => setEditRow(row)}>Edit</button>
                     </td>
+                    {visibleCols.filter(col => col.isAction).map(col => (
+                      <td key={col.field} className="im-action-cell" onClick={e => e.stopPropagation()}><button className="im-row-edit-btn" onClick={() => setTotalHoldingRow(row)}>Edit</button></td>
+                    ))}
                   </tr>
                 ));
               })()}
@@ -410,6 +424,14 @@ function CompanyIsins() {
           row={editRow}
           onClose={() => setEditRow(null)}
           onSaved={handleEditSaved}
+        />
+      )}
+
+      {totalHoldingRow && (
+        <TotalHoldingModal
+          row={totalHoldingRow}
+          onClose={() => setTotalHoldingRow(null)}
+          onSaved={handleTotalHoldingSaved}
         />
       )}
     </div>

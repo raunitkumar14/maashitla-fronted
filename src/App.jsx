@@ -149,7 +149,7 @@ function App() {
       } />
 
       <Route path="/reconciliation/reco-upload" element={
-        <ProtectedPage breadcrumbs={['Reco', 'Upload']}><RecoUpload /></ProtectedPage>
+        <ProtectedPage pageName="Reconciliation"><RecoUpload /></ProtectedPage>
       } />
 
       <Route path="/reconciliation/main" element={

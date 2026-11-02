@@ -6,6 +6,7 @@ import api from './api/axios';
 import { useColumnVisibility } from './hooks/useColumnVisibility';
 import { ColumnSelector } from './components/ColumnSelector';
 import { LISTING_AT_OPTIONS, parseListingAt, ListedAtCheckboxes } from './components/ListedAtCheckboxes';
+import TotalHoldingModal from './TotalHoldingModal';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -32,6 +33,7 @@ const ISIN_COLUMNS = [
   { header: 'Listing Date',                 field: 'listingDate',             isDate: true  },
   { header: 'Symbol',                       field: 'symbol',                  isDate: false },
   { header: 'Scrip Code',                   field: 'scripCode',               isDate: false },
+  { header: 'ADD TOTAL HOLDING', field: 'totalHolding', dataField: 'totalHoldings', isDate: false, isAction: true },
 ];
 
 // Stable column config for useColumnVisibility — defined at module level so the
@@ -98,7 +100,8 @@ function ExportModal({ appliedFilters, multiSearchRows, descFilterRows, isinDesc
 
   const isFetching = phase === 'fetching';
 
-  const colCountLabel = `${visibleCols.length} of ${ISIN_COLUMNS.length} columns`;
+  const visibleExportCols = visibleCols.filter(col => !col.isAction);
+  const colCountLabel = `${visibleExportCols.length} of ${ISIN_COLUMNS.filter(c => !c.isAction).length} columns`;
 
   // Whichever in-memory dataset is active (multi-search or desc-filter full fetch)
   const inMemoryRows = multiSearchRows ?? descFilterRows ?? null;
@@ -127,7 +130,7 @@ function ExportModal({ appliedFilters, multiSearchRows, descFilterRows, isinDesc
     // In-memory results (multi-search or desc-filter) — apply desc filter and export directly
     if (mode === 'search' && inMemoryRows !== null) {
       const rows = applyLocalDescFilter(inMemoryRows, isinDescriptionSearch);
-      triggerCsvDownload(generateCsvString(rows, visibleCols), 'isin_master.csv');
+      triggerCsvDownload(generateCsvString(rows, visibleExportCols), 'isin_master.csv');
       onClose();
       return;
     }
@@ -160,7 +163,7 @@ function ExportModal({ appliedFilters, multiSearchRows, descFilterRows, isinDesc
         : allRows;
 
       triggerCsvDownload(
-        generateCsvString(exportRows, mode === 'all' ? ISIN_COLUMNS : visibleCols),
+        generateCsvString(exportRows, mode === 'all' ? ISIN_COLUMNS.filter(c => !c.isAction) : visibleExportCols),
         'isin_master.csv'
       );
       onClose();
@@ -200,7 +203,7 @@ function ExportModal({ appliedFilters, multiSearchRows, descFilterRows, isinDesc
             </button>
             <button className="im-export-option" onClick={() => runExport('all')}>
               <span className="im-export-option-title">&#8595; Export all data</span>
-              <span className="im-export-option-desc">Full ISIN Master dataset &mdash; current filter ignored · all 20 columns</span>
+              <span className="im-export-option-desc">Full ISIN Master dataset &mdash; current filter ignored · all {ISIN_COLUMNS.length} columns</span>
             </button>
           </div>
         )}
@@ -367,8 +370,14 @@ function renderCell(col, row) {
     const list = parseListingAt(row.listingAtList ?? row.listingAt);
     return list.length ? list.join(', ') : '—';
   }
+  if (col.isAction) return '';
   const val = row[col.field];
   if (col.isDate) return formatDate(val);
+  if (col.isNumeric) {
+    if (val == null || val === '') return '—';
+    const n = Number(val);
+    return isNaN(n) ? String(val) : n.toLocaleString('en-IN');
+  }
   if (Array.isArray(val)) return val.length ? val.join(', ') : '—';
   return (val == null || val === '') ? '—' : val;
 }
@@ -471,8 +480,9 @@ function IsinMaster() {
   const [isinFetchError, setIsinFetchError] = useState('');
   const [isinRefetchKey, setIsinRefetchKey] = useState(0);
 
-  const [editRow, setEditRow] = useState(null);
-  const [saveMsg, setSaveMsg] = useState('');
+  const [editRow,           setEditRow]           = useState(null);
+  const [totalHoldingRow,   setTotalHoldingRow]   = useState(null);
+  const [saveMsg,           setSaveMsg]           = useState('');
 
   // ── Column visibility ─────────────────────────────────────────────────────────
 
@@ -672,6 +682,20 @@ function IsinMaster() {
     setTimeout(() => setSaveMsg(''), 4000);
   }
 
+  function handleTotalHoldingSaved(isin, fields) {
+    setTotalHoldingRow(null);
+    setSaveMsg('✓ Total Holding saved.');
+    const update = rows => rows.map(r => r.isin === isin ? { ...r, ...fields } : r);
+    if (multiSearchRows !== null) {
+      setMultiSearchRows(prev => update(prev));
+    } else if (descFilterRows !== null) {
+      setDescFilterRows(prev => update(prev));
+    } else {
+      setIsinData(prev => update(prev));
+    }
+    setTimeout(() => setSaveMsg(''), 4000);
+  }
+
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
@@ -801,7 +825,11 @@ function IsinMaster() {
         <div className="im-table-wrapper">
           <table className="im-table">
             <thead>
-              <tr>{visibleCols.map(col => <th key={col.field}>{col.header}</th>)}<th className="im-action-th">Actions</th></tr>
+              <tr>
+                {visibleCols.filter(col => !col.isAction).map(col => <th key={col.field} style={col.isNumeric ? { textAlign: 'right' } : {}}>{col.header}</th>)}
+                <th className="im-action-th">Actions</th>
+                {visibleCols.filter(col => col.isAction).map(col => <th key={col.field} className="im-action-th">{col.header}</th>)}
+              </tr>
             </thead>
             <tbody>
               {multiSearchLoading || descFilterLoading ? (
@@ -822,8 +850,12 @@ function IsinMaster() {
                     .slice((isinPage - 1) * isinPerPage, isinPage * isinPerPage)
                     .map((row, idx) => (
                       <tr key={row.isin || idx}>
-                        {visibleCols.map(col => (
-                          <td key={col.field}>{renderCell(col, row)}</td>
+                        {visibleCols.filter(col => !col.isAction).map(col => (
+                          <td key={col.field} style={col.isNumeric ? { textAlign: 'right' } : {}}>{renderCell(col, row)}</td>
+                        ))}
+                        <td className="im-action-cell" />
+                        {visibleCols.filter(col => col.isAction).map(col => (
+                          <td key={col.field} className="im-action-cell"><button className="im-row-edit-btn" onClick={() => setTotalHoldingRow(row)}>Edit</button></td>
                         ))}
                       </tr>
                     ))
@@ -840,8 +872,12 @@ function IsinMaster() {
                     .slice((isinPage - 1) * isinPerPage, isinPage * isinPerPage)
                     .map((row, idx) => (
                       <tr key={row.isin || idx}>
-                        {visibleCols.map(col => (
-                          <td key={col.field}>{renderCell(col, row)}</td>
+                        {visibleCols.filter(col => !col.isAction).map(col => (
+                          <td key={col.field} style={col.isNumeric ? { textAlign: 'right' } : {}}>{renderCell(col, row)}</td>
+                        ))}
+                        <td className="im-action-cell" />
+                        {visibleCols.filter(col => col.isAction).map(col => (
+                          <td key={col.field} className="im-action-cell"><button className="im-row-edit-btn" onClick={() => setTotalHoldingRow(row)}>Edit</button></td>
                         ))}
                       </tr>
                     ))
@@ -863,12 +899,15 @@ function IsinMaster() {
               ) : (
                 filteredIsinData.map((row, idx) => (
                   <tr key={row.isin || idx}>
-                    {visibleCols.map(col => (
+                    {visibleCols.filter(col => !col.isAction).map(col => (
                       <td key={col.field}>{renderCell(col, row)}</td>
                     ))}
                     <td className="im-action-cell">
                       <button className="im-row-edit-btn" onClick={() => setEditRow(row)}>Edit</button>
                     </td>
+                    {visibleCols.filter(col => col.isAction).map(col => (
+                      <td key={col.field} className="im-action-cell"><button className="im-row-edit-btn" onClick={() => setTotalHoldingRow(row)}>Edit</button></td>
+                    ))}
                   </tr>
                 ))
               )}
@@ -938,6 +977,15 @@ function IsinMaster() {
           row={editRow}
           onClose={() => setEditRow(null)}
           onSaved={handleEditSaved}
+        />
+      )}
+
+      {/* ── Total Holding modal */}
+      {totalHoldingRow && (
+        <TotalHoldingModal
+          row={totalHoldingRow}
+          onClose={() => setTotalHoldingRow(null)}
+          onSaved={handleTotalHoldingSaved}
         />
       )}
 

@@ -35,9 +35,7 @@ const NAV_ITEMS = [
     icon: '🔄',
     hasSubmenu: true,
     children: [
-      { label: 'Reco Upload',    icon: '📤', path: '/reconciliation/reco-upload' },
-      { label: 'IDT',            icon: '🔁', path: '/reconciliation/idt' },
-      { label: 'Reconciliation', icon: '🔄', path: '/reconciliation/main' },
+      { label: 'Reconciliation', icon: '📤', path: '/reconciliation/reco-upload' },
     ],
   },
   { label: 'ISIN Master',       icon: '📋', path: '/isin-master' },

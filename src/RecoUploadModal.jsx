@@ -120,9 +120,10 @@ function ZipDropZone({ heading, dropText, hint, onChange, disabled }) {
 // ── RecoUploadModal ───────────────────────────────────────────────────────────
 
 export default function RecoUploadModal({ onClose, onSuccess }) {
-  const [cdslFile,   setCdslFile]   = useState(null);
-  const [nsdlFile,   setNsdlFile]   = useState(null);
-  const [uploading,  setUploading]  = useState(false);
+  const [cdslFile,    setCdslFile]    = useState(null);
+  const [nsdlFile,    setNsdlFile]    = useState(null);
+  const [idtFile,     setIdtFile]     = useState(null);
+  const [uploading,   setUploading]   = useState(false);
   const [uploadError, setUploadError] = useState('');
 
   useEffect(() => {
@@ -131,7 +132,7 @@ export default function RecoUploadModal({ onClose, onSuccess }) {
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose, uploading]);
 
-  const canUpload = (cdslFile !== null || nsdlFile !== null) && !uploading;
+  const canUpload = cdslFile !== null && nsdlFile !== null && idtFile !== null && !uploading;
 
   async function handleUpload() {
     if (!canUpload) return;
@@ -139,17 +140,20 @@ export default function RecoUploadModal({ onClose, onSuccess }) {
     setUploadError('');
 
     const formData = new FormData();
-    if (cdslFile) formData.append('cdslZip', cdslFile);
-    if (nsdlFile) formData.append('nsdlZip', nsdlFile);
+    formData.append('cdslZip', cdslFile);
+    formData.append('nsdlZip', nsdlFile);
+    formData.append('idtZip',  idtFile);
 
     try {
       const res = await api.post('/admin/v1/reconciliations/upload', formData, {
-        timeout: 120000,
+        timeout: 300000,
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       onSuccess(res.data?.data ?? res.data);
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Upload failed. Please try again.';
+      const msg = err.response?.data?.error?.message
+        || err.response?.data?.message
+        || err.message;
       setUploadError(msg);
       setUploading(false);
     }
@@ -192,7 +196,7 @@ export default function RecoUploadModal({ onClose, onSuccess }) {
           <div className="reco-upload-error">{uploadError}</div>
         )}
 
-        {/* ── Two drop zones (scrollable on small screens) ── */}
+        {/* ── Three drop zones ── */}
         <div className="reco-zones-wrapper">
           <ZipDropZone
             heading="CDSL ZIP"
@@ -206,6 +210,13 @@ export default function RecoUploadModal({ onClose, onSuccess }) {
             dropText="Drag & drop the NSDL ZIP here"
             hint="ZIP must contain the NSDL .txt file."
             onChange={setNsdlFile}
+            disabled={uploading}
+          />
+          <ZipDropZone
+            heading="IDT ZIP"
+            dropText="Drag & drop the IDT ZIP here"
+            hint="ZIP must contain the IDT .txt files."
+            onChange={setIdtFile}
             disabled={uploading}
           />
         </div>
