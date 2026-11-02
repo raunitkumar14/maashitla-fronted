@@ -1002,6 +1002,9 @@ function buildDashboardXml(entityInfo, t1Rows, tableVRows) {
     { txt: 'Whether the listed entity has any significant beneficial owner?',                                            col: null, yesIfSBO: true, iJKGrey: true },
   ];
 
+  // Row heights for the 11 declaration rows: 15pt per wrapped line, ~60 chars/line at col width 20×3
+  const DECL_HT = [30, 30, 20, 30, 30, 20, 30, 30, 30, 30, 30];
+
   const FOOTNOTE =
     "* If the Listed Entity selects the option 'No' for the questions above, the columns for the partly paid up " +
     'shares, Outstanding Convertible Securities/Warrants, depository receipts, locked-in shares, No of shares pledged ' +
@@ -1013,90 +1016,98 @@ function buildDashboardXml(entityInfo, t1Rows, tableVRows) {
   const sc_ = (c,r,v,sid)   => strCell(`${COL[c]}${r}`, v, sid);
   const nc_ = (c,r,v,sid)   => numCell(`${COL[c]}${r}`, v, sid);
   const ec_ = (c,r,sid)     => emptyCell(`${COL[c]}${r}`, sid);
+  // Fill columns c1+1..c2 in row r with empty cells (all same style) — ensures outer merge border renders
+  const fillRow = (r,c1,c2,sid) => { let s=''; for (let c=c1+1;c<=c2;c++) s+=ec_(c,r,sid); return s; };
 
   // ── Row 1: blank ──
   rows.push('<row r="1"/>');
 
   // ── Row 2: title C2:K2 — navy, bold white, centered ──
   mc(2,2,2,10);
-  rows.push(`<row r="2">${sc_(2,2,'Shareholding Pattern under Regulation 31 of SEBI (Listing Obligations and Disclosure Requirements) Regulations, 2015',S.HDR)}</row>`);
+  rows.push(`<row r="2">${sc_(2,2,'Shareholding Pattern under Regulation 31 of SEBI (Listing Obligations and Disclosure Requirements) Regulations, 2015',S.HDR)}${fillRow(2,2,10,S.HDR)}</row>`);
 
   // ── Row 3: blank ──
   rows.push('<row r="3"/>');
 
-  // ── Row 4: 1 | "Name of Listed Entity :" | <issuerName> ──
-  // C4=serial, D4:E4=label, F4:K4=value (lightBlue)
+  // ── Row 4: 1 | "Name of Listed Entity :" D4:E4 | issuerName F4:K4 (lightBlue) ──
   mc(4,3,4,4); mc(4,5,4,10);
-  rows.push(`<row r="4">${nc_(2,4,1,S.ANNOT)}${sc_(3,4,'Name of Listed Entity :',D.LABEL)}${sc_(5,4,issuerName,D.VAL_BLUE)}</row>`);
+  rows.push(`<row r="4">${nc_(2,4,1,S.ANNOT)}${sc_(3,4,'Name of Listed Entity :',D.LABEL)}${fillRow(4,3,4,D.LABEL)}${sc_(5,4,issuerName,D.VAL_BLUE)}${fillRow(4,5,10,D.VAL_BLUE)}</row>`);
 
-  // ── Row 5: 2 | "Scrip Code/..." | <scrip info> ──
-  // C5=serial, D5:F5=label, G5:K5=value (bold, white bg, centered)
+  // ── Row 5: 2 | "Scrip Code/..." D5:F5 | scrip info G5:K5 ──
   mc(5,3,5,5); mc(5,6,5,10);
-  rows.push(`<row r="5">${nc_(2,5,2,S.ANNOT)}${sc_(3,5,'Scrip Code/Name of Scrip/Class of Security :',D.LABEL)}${sc_(6,5,scripInfo,D.BOLD_CTR)}</row>`);
+  rows.push(`<row r="5">${nc_(2,5,2,S.ANNOT)}${sc_(3,5,'Scrip Code/Name of Scrip/Class of Security :',D.LABEL)}${fillRow(5,3,5,D.LABEL)}${sc_(6,5,scripInfo,D.BOLD_CTR)}${fillRow(5,6,10,D.BOLD_CTR)}</row>`);
 
-  // ── Row 6: 3 | "Share Holding Pattern Filed under:..." | "SHAREHOLDING AS ON DATE" (maroon) ──
-  // C6=serial, D6:H6=label, I6:K6=maroon header
+  // ── Row 6: 3 | label D6:H6 | "SHAREHOLDING AS ON DATE" I6:K6 (maroon) ──
   mc(6,3,6,7); mc(6,8,6,10);
-  rows.push(`<row r="6">${nc_(2,6,3,S.ANNOT)}${sc_(3,6,'Share Holding Pattern Filed under: Reg. 31(1)(a)/Reg. 31(1)(b)/Reg.31(1)(C )',D.LABEL)}${sc_(8,6,'SHAREHOLDING AS ON DATE',D.MAROON)}</row>`);
+  rows.push(`<row r="6">${nc_(2,6,3,S.ANNOT)}${sc_(3,6,'Share Holding Pattern Filed under: Reg. 31(1)(a)/Reg. 31(1)(b)/Reg.31(1)(C )',D.LABEL)}${fillRow(6,3,7,D.LABEL)}${sc_(8,6,'SHAREHOLDING AS ON DATE',D.MAROON)}${fillRow(6,8,10,D.MAROON)}</row>`);
 
-  // ── Row 7: a) sub-label | date (spans rows 7-8 in I:K) ──
-  // D7:H7=sub-label, I7:K8=date value (bold centered, 2-row merge)
+  // ── Row 7: a) label D7:H7 | date I7:K8 (2-row merge, bold centered) ──
   mc(7,3,7,7); mc(7,8,8,10);
-  rows.push(`<row r="7">${ec_(2,7,S.ANNOT)}${sc_(3,7,'a) If under 31(1)(b) then indicate the report for Quarter ending',D.LABEL)}${sc_(8,7,dateFmt,D.BOLD_CTR)}</row>`);
+  rows.push(`<row r="7">${ec_(2,7,S.ANNOT)}${sc_(3,7,'a) If under 31(1)(b) then indicate the report for Quarter ending',D.LABEL)}${fillRow(7,3,7,D.LABEL)}${sc_(8,7,dateFmt,D.BOLD_CTR)}${ec_(9,7,D.BOLD_CTR)}${ec_(10,7,D.BOLD_CTR)}</row>`);
 
-  // ── Row 8: b) sub-label (I8:K8 is within the row-7 merge) ──
+  // ── Row 8: b) label D8:H8 (I8:K8 covered by I7:K8 merge — write empty cells for outer border) ──
   mc(8,3,8,7);
-  rows.push(`<row r="8">${ec_(2,8,S.ANNOT)}${sc_(3,8,'b) If under 31(1)(c) then indicate date of allotment/extinguishment',D.LABEL)}</row>`);
+  rows.push(`<row r="8">${ec_(2,8,S.ANNOT)}${sc_(3,8,'b) If under 31(1)(c) then indicate date of allotment/extinguishment',D.LABEL)}${fillRow(8,3,7,D.LABEL)}${ec_(8,8,D.BOLD_CTR)}${ec_(9,8,D.BOLD_CTR)}${ec_(10,8,D.BOLD_CTR)}</row>`);
 
-  // ── Row 9: 4 | Declaration intro ──
+  // ── Row 9: 4 | Declaration intro D9:K9 ──
   mc(9,3,9,10);
-  rows.push(`<row r="9">${nc_(2,9,4,S.ANNOT)}${sc_(3,9,'Declaration: The Listed entity is required to submit the following declaration to the extent of submission of information:-',D.LABEL)}</row>`);
+  rows.push(`<row r="9">${nc_(2,9,4,S.ANNOT)}${sc_(3,9,'Declaration: The Listed entity is required to submit the following declaration to the extent of submission of information:-',D.LABEL)}${fillRow(9,3,10,D.LABEL)}</row>`);
 
   // ── Row 10: blank ──
   rows.push('<row r="10"/>');
 
   // ── Row 11: declaration table header (navy, bold white, wrap+center) ──
   mc(11,4,11,6);
-  rows.push(`<row r="11" ht="36" customHeight="1">${sc_(3,11,'S.No.',S.HDR)}${sc_(4,11,'Particulars',S.HDR)}${sc_(7,11,'Yes/No',S.HDR)}${sc_(8,11,'Promoter and Promoter Group',S.HDR)}${sc_(9,11,'Public shareholder',S.HDR)}${sc_(10,11,'Non Promoter- Non Public',S.HDR)}</row>`);
+  rows.push(`<row r="11" ht="36" customHeight="1">${sc_(3,11,'S.No.',S.HDR)}${sc_(4,11,'Particulars',S.HDR)}${fillRow(11,4,6,S.HDR)}${sc_(7,11,'Yes/No',S.HDR)}${sc_(8,11,'Promoter and Promoter Group',S.HDR)}${sc_(9,11,'Public shareholder',S.HDR)}${sc_(10,11,'Non Promoter- Non Public',S.HDR)}</row>`);
 
   // ── Rows 12-22: declaration rows ──
-  // J18:K20 = single merged grey block for promoterOnly rows (7-9)
+  // J18:K20 = merged grey block spanning the 3 promoterOnly rows
   mc(18,9,20,10);
+  // Pre-build per-row extra cells for the non-top-left cells of J18:K20
+  const grayExtra = {};
+  for (let r = 18; r <= 20; r++) {
+    grayExtra[r] = '';
+    for (let c = 9; c <= 10; c++) {
+      if (r === 18 && c === 9) continue; // top-left written in loop
+      grayExtra[r] += ec_(c, r, S.GRAY);
+    }
+  }
 
   for (let i = 0; i < DECL.length; i++) {
     const er = 12 + i;
     const d  = DECL[i];
     mc(er,4,er,6); // E:G merged for Particulars
 
-    const pVal   = d.col && !d.alwaysNo ? getV(t1Rows.A,  d.col) : 0;
-    const pubVal  = d.col && !d.alwaysNo && !d.promoterOnly ? getV(t1Rows.B,  d.col) : 0;
-    const npVal   = d.col && !d.alwaysNo && !d.promoterOnly
+    const pVal  = d.col && !d.alwaysNo ? getV(t1Rows.A,  d.col) : 0;
+    const pubVal = d.col && !d.alwaysNo && !d.promoterOnly ? getV(t1Rows.B,  d.col) : 0;
+    const npVal  = d.col && !d.alwaysNo && !d.promoterOnly
       ? getV(t1Rows.C1, d.col) + getV(t1Rows.C2, d.col) : 0;
 
     const total = pVal + pubVal + npVal;
     const yn   = d.alwaysNo ? 'No' : d.yesIfSBO ? (hasSBO ? 'Yes' : 'No') : (total > 0 ? 'Yes' : 'No');
-    const pYN   = pVal   > 0 ? 'Yes' : '-';
+    const pYN  = pVal   > 0 ? 'Yes' : '-';
     const pubYN = pubVal > 0 ? 'Yes' : '-';
     const npYN  = npVal  > 0 ? 'Yes' : '-';
 
     let cells =
       `${nc_(3,er,i+1,S.ANNOT)}` +
-      `${sc_(4,er,d.txt,D.LABEL)}` +
+      `${sc_(4,er,d.txt,D.LABEL)}${ec_(5,er,D.LABEL)}${ec_(6,er,D.LABEL)}` + // E:G merge fill
       `${sc_(7,er,yn,D.BOLD_CTR)}`;
 
     if (d.iJKGrey) {
-      // Row 11: I:K merged grey
+      // Row 22 (i=10): I:K merged grey — write all three cells
       mc(er,8,er,10);
-      cells += ec_(8,er,S.GRAY);
+      cells += `${ec_(8,er,S.GRAY)}${ec_(9,er,S.GRAY)}${ec_(10,er,S.GRAY)}`;
     } else if (d.promoterOnly) {
-      // Rows 7-9: only Promoter (I) has data; J:K covered by J18:K20 merge
+      // Rows 18-20 (i=6-8): only Promoter (I) has data; J:K covered by J18:K20
       cells += sc_(8,er,pYN,S.ANNOT);
-      if (i === 6) cells += ec_(9,er,S.GRAY); // top-left of J18:K20
+      if (i === 6) cells += ec_(9,er,S.GRAY); // J18: top-left of J18:K20
+      cells += grayExtra[er] ?? '';            // K18; J19+K19; J20+K20
     } else {
       cells += `${sc_(8,er,pYN,S.ANNOT)}${sc_(9,er,pubYN,S.ANNOT)}${sc_(10,er,npYN,S.ANNOT)}`;
     }
 
-    rows.push(`<row r="${er}">${cells}</row>`);
+    rows.push(`<row r="${er}" ht="${DECL_HT[i]}" customHeight="1">${cells}</row>`);
   }
 
   // ── Row 23: blank gap ──
@@ -1114,8 +1125,8 @@ function buildDashboardXml(entityInfo, t1Rows, tableVRows) {
     '<col min="1" max="2" width="3"  customWidth="1"/>' +
     '<col min="3" max="3" width="6"  customWidth="1"/>' +
     '<col min="4" max="4" width="12" customWidth="1"/>' +
-    '<col min="5" max="7" width="20" customWidth="1"/>' +
-    '<col min="8" max="8" width="10" customWidth="1"/>' +
+    '<col min="5" max="7" width="22" customWidth="1"/>' +
+    '<col min="8" max="8" width="12" customWidth="1"/>' +
     '<col min="9" max="11" width="24" customWidth="1"/>' +
     '</cols>';
 
@@ -1146,7 +1157,7 @@ const ANNEX_A_STYLE_SPECS = [
 ];
 
 // ── Annexure B style specs ─────────────────────────────────────────────────────
-// 0: AB_DATA_CTR — bold, light blue #DCE6F1 fill, thin border, center (Date/text cells)
+// 0: AB_DATA_CTR — bold, light blue #DCE6F1 fill, thin border, center (text/fallback cells)
 // 1: AB_DATA_NUM — same as AB_DATA_CTR but with 0.00 number format (Board/Utilized % cells)
 const ANNEX_B_STYLE_SPECS = [
   { font: { b: true, sz: 11, color: '000000', name: 'Calibri' }, fill: 'DCE6F1',
@@ -1191,7 +1202,7 @@ const ANCH_CONFIG = {
     ],
     fields:       ['numberOfShareholders', 'outstandingShares', 'votingRightsFrozen', 'notes'],
     numericFields: new Set(['numberOfShareholders', 'outstandingShares', 'votingRightsFrozen']),
-    colWidths: [3, 8, 22, 42, 20, 50, 3],
+    colWidths: [2, 8, 22, 42, 20, 50, 2],
   },
   'III-A': {
     title: 'Details of the shareholders acting as persons in Concert for Public',
@@ -1205,7 +1216,7 @@ const ANCH_CONFIG = {
     ],
     fields:       ['shareholderName', 'pacName', 'numberOfShares', 'pacPercentage'],
     numericFields: new Set(['numberOfShares', 'pacPercentage']),
-    colWidths: [3, 8, 25, 25, 18, 28, 3],
+    colWidths: [2, 8, 25, 25, 18, 28, 2],
   },
   'III-B': {
     title: 'Details of Shares which remain unclaimed for Public',
@@ -1219,7 +1230,7 @@ const ANCH_CONFIG = {
     ],
     fields:       ['numberOfShareholders', 'outstandingShares', 'votingRightsFrozen', 'notes'],
     numericFields: new Set(['numberOfShareholders', 'outstandingShares', 'votingRightsFrozen']),
-    colWidths: [3, 8, 22, 42, 20, 50, 3],
+    colWidths: [2, 8, 22, 42, 20, 50, 2],
   },
 };
 
@@ -1236,36 +1247,34 @@ function buildAncillarySheetXml(tableCode, dataRows, ancSid) {
     cfg.colWidths.map((w, i) => `<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('') +
     '</cols>';
 
-  // Row 1: Title — A1:G1 merged
+  // Row 1: Title — B1:F1 merged; A and G are plain margin columns
   rn++;
-  merges.push(merge(rn-1, 0, rn-1, 6));
+  merges.push(merge(rn-1, 1, rn-1, 5));
   {
     let rx = `<row r="${rn}" ht="25" customHeight="1">`;
-    rx += strCell(`${COL[0]}${rn}`, cfg.title, S.TITLE);
-    for (let c = 1; c <= 6; c++) rx += emptyCell(`${COL[c]}${rn}`, S.TITLE);
+    rx += strCell(`${COL[1]}${rn}`, cfg.title, S.TITLE);
+    for (let c = 2; c <= 5; c++) rx += emptyCell(`${COL[c]}${rn}`, S.TITLE);
     rx += '</row>';
     rows.push(rx);
   }
 
-  // Row 2: Spacer
+  // Row 2: Spacer — B..F only
   rn++;
   if (cfg.row2MergeEndCol !== null) merges.push(merge(rn-1, 1, rn-1, cfg.row2MergeEndCol));
   {
     let rx = `<row r="${rn}" ht="6" customHeight="1">`;
-    for (let c = 0; c <= 6; c++) rx += emptyCell(`${COL[c]}${rn}`, S.TITLE);
+    for (let c = 1; c <= 5; c++) rx += emptyCell(`${COL[c]}${rn}`, S.TITLE);
     rx += '</row>';
     rows.push(rx);
   }
 
-  // Row 3: Headers (A empty, B:F headers, G empty)
+  // Row 3: Headers — B..F only
   rn++;
   {
     let rx = `<row r="${rn}" ht="40" customHeight="1">`;
-    rx += emptyCell(`${COL[0]}${rn}`, S.HDR);
     for (let h = 0; h < cfg.headers.length; h++) {
       rx += strCell(`${COL[1+h]}${rn}`, cfg.headers[h], S.HDR);
     }
-    rx += emptyCell(`${COL[6]}${rn}`, S.HDR);
     rx += '</row>';
     rows.push(rx);
   }
@@ -1276,12 +1285,10 @@ function buildAncillarySheetXml(tableCode, dataRows, ancSid) {
   if (!effectiveRows) {
     rn++;
     let rx = `<row r="${rn}">`;
-    rx += emptyCell(`${COL[0]}${rn}`, S.HOLDER);
     rx += numCell(`${COL[1]}${rn}`, 1, S.HOLDER);
     for (let f = 0; f < cfg.fields.length; f++) {
       rx += strCell(`${COL[2+f]}${rn}`, 'NIL', ancSid[0]);
     }
-    rx += emptyCell(`${COL[6]}${rn}`, S.HOLDER);
     rx += '</row>';
     rows.push(rx);
   } else {
@@ -1290,7 +1297,6 @@ function buildAncillarySheetXml(tableCode, dataRows, ancSid) {
       const sno = dr.rowNo ?? (i + 1);
       rn++;
       let rx = `<row r="${rn}">`;
-      rx += emptyCell(`${COL[0]}${rn}`, S.HOLDER);
       rx += numCell(`${COL[1]}${rn}`, sno, S.HOLDER);
       for (let f = 0; f < cfg.fields.length; f++) {
         const field  = cfg.fields[f];
@@ -1308,7 +1314,6 @@ function buildAncillarySheetXml(tableCode, dataRows, ancSid) {
           rx += strCell(ref, String(val), ancSid[0]);
         }
       }
-      rx += emptyCell(`${COL[6]}${rn}`, S.HOLDER);
       rx += '</row>';
       rows.push(rx);
     }
@@ -1471,29 +1476,28 @@ function buildAnnexureBXml(annexBData, abDataCtrSid, abDataNumSid, titleSid) {
   const colsXml =
     '<cols>' +
     '<col min="1" max="1" width="50" customWidth="1"/>' +
-    '<col min="2" max="2" width="20" customWidth="1"/>' +
-    '<col min="3" max="3" width="25" customWidth="1"/>' +
-    '<col min="4" max="4" width="20" customWidth="1"/>' +
+    '<col min="2" max="2" width="25" customWidth="1"/>' +
+    '<col min="3" max="3" width="20" customWidth="1"/>' +
     '</cols>';
 
-  // Row 1: "Annexure B" merged A1:D1
+  // Row 1: "Annexure B" merged A1:C1
   rn++;
-  merges.push(merge(rn - 1, 0, rn - 1, 3));
+  merges.push(merge(rn - 1, 0, rn - 1, 2));
   {
     let rx = `<row r="${rn}" ht="30" customHeight="1">`;
     rx += strCell(`A${rn}`, 'Annexure B', titleSid);
-    for (let c = 1; c <= 3; c++) rx += emptyCell(`${COL[c]}${rn}`, titleSid);
+    for (let c = 1; c <= 2; c++) rx += emptyCell(`${COL[c]}${rn}`, titleSid);
     rx += '</row>';
     out.push(rx);
   }
 
-  // Row 2: navy band merged A2:D2
+  // Row 2: navy band merged A2:C2
   rn++;
-  merges.push(merge(rn - 1, 0, rn - 1, 3));
+  merges.push(merge(rn - 1, 0, rn - 1, 2));
   {
     let rx = `<row r="${rn}" ht="25" customHeight="1">`;
     rx += strCell(`A${rn}`, 'Table VI - Statement showing foreign ownership limits', S.HDR);
-    for (let c = 1; c <= 3; c++) rx += emptyCell(`${COL[c]}${rn}`, S.HDR);
+    for (let c = 1; c <= 2; c++) rx += emptyCell(`${COL[c]}${rn}`, S.HDR);
     rx += '</row>';
     out.push(rx);
   }
@@ -1502,7 +1506,7 @@ function buildAnnexureBXml(annexBData, abDataCtrSid, abDataNumSid, titleSid) {
   rn++;
   {
     let rx = `<row r="${rn}" ht="6" customHeight="1">`;
-    for (let c = 0; c <= 3; c++) rx += emptyCell(`${COL[c]}${rn}`, S.DEFAULT);
+    for (let c = 0; c <= 2; c++) rx += emptyCell(`${COL[c]}${rn}`, S.DEFAULT);
     rx += '</row>';
     out.push(rx);
   }
@@ -1510,9 +1514,9 @@ function buildAnnexureBXml(annexBData, abDataCtrSid, abDataNumSid, titleSid) {
   // Row 4: column headers (navy, bold white, centered, borders)
   rn++;
   {
-    const hdrs = ['Particulars', 'Date', 'Board approved limits %', 'Limits utilized %'];
+    const hdrs = ['Particulars', 'Board approved limits %', 'Limits utilized %'];
     let rx = `<row r="${rn}" ht="30" customHeight="1">`;
-    for (let c = 0; c < 4; c++) rx += strCell(`${COL[c]}${rn}`, hdrs[c], S.HDR);
+    for (let c = 0; c < 3; c++) rx += strCell(`${COL[c]}${rn}`, hdrs[c], S.HDR);
     rx += '</row>';
     out.push(rx);
   }
@@ -1524,25 +1528,22 @@ function buildAnnexureBXml(annexBData, abDataCtrSid, abDataNumSid, titleSid) {
     let rx = `<row r="${rn}" ht="18" customHeight="1">`;
     rx += strCell(`A${rn}`, ANNEX_B_PARTICULARS[i], S.TOTAL);
     if (i === 0) {
-      rx += strCell(`B${rn}`, fmtBenposDate(data.benposDate), abDataCtrSid);
-      rx += numCell(`C${rn}`, 100, abDataNumSid);
+      rx += numCell(`B${rn}`, 100, abDataNumSid);
       rx += data.utilizedPct == null
-        ? strCell(`D${rn}`, '-', abDataCtrSid)
-        : numCell(`D${rn}`, Number(data.utilizedPct), abDataNumSid);
+        ? strCell(`C${rn}`, '-', abDataCtrSid)
+        : numCell(`C${rn}`, Number(data.utilizedPct), abDataNumSid);
     } else {
       const q = quarters[i - 1] ?? null;
       if (!q || q.benposDate == null) {
         rx += strCell(`B${rn}`, '-', abDataCtrSid);
         rx += strCell(`C${rn}`, '-', abDataCtrSid);
-        rx += strCell(`D${rn}`, '-', abDataCtrSid);
       } else {
-        rx += strCell(`B${rn}`, fmtBenposDate(q.benposDate), abDataCtrSid);
         rx += q.boardLimitPct == null
-          ? strCell(`C${rn}`, '-', abDataCtrSid)
-          : numCell(`C${rn}`, Number(q.boardLimitPct), abDataNumSid);
+          ? strCell(`B${rn}`, '-', abDataCtrSid)
+          : numCell(`B${rn}`, Number(q.boardLimitPct), abDataNumSid);
         rx += q.utilizedPct == null
-          ? strCell(`D${rn}`, '-', abDataCtrSid)
-          : numCell(`D${rn}`, Number(q.utilizedPct), abDataNumSid);
+          ? strCell(`C${rn}`, '-', abDataCtrSid)
+          : numCell(`C${rn}`, Number(q.utilizedPct), abDataNumSid);
       }
     }
     rx += '</row>';

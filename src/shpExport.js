@@ -1,8 +1,8 @@
 import api from './api/axios';
 import { fetchBenposExportData, buildExportRows } from './benposExport';
-import { loadCategoryMapping, getCategoryMap, normCategoryDesc } from './categoryMappingCache';
+import { loadCategoryMapping, getCategoryMap, normCategoryDesc, normCode } from './categoryMappingCache';
 import { resetPromoterCache, loadPromoters, getPromoterMap } from './promoterMasterCache';
-import { resetCategoryConvertCache, loadCategoryConvert } from './categoryConvertCache';
+import { resetCategoryConvertCache, loadCategoryConvert, getCategoryConvert } from './categoryConvertCache';
 import { buildShpAllSheetsBlob, VALID_C_CODES } from './shpExcelBuilder';
 
 const BLOB_URL_REVOKE_MS = 10_000;
@@ -45,6 +45,33 @@ function downloadBlob(blob, filename) {
 function fmtDateForFilename(dateStr) {
   if (!dateStr || dateStr.length < 10) return dateStr || 'Unknown';
   return `${dateStr.slice(8, 10)}-${dateStr.slice(5, 7)}-${dateStr.slice(0, 4)}`;
+}
+
+// Rewrites the three SHP-specific fields of a BenPos output row to reflect the
+// target category from Category Convert.
+// GUARD 1: if the PAN is in the promoter master, return without change — promoter
+//          master always takes highest precedence, exactly as in BenPos export.
+// GUARD 2: shpCategoryTypeDescription is set to the target entry's description so
+//          that the existing resolveShpCode calls (promoter loop line ~186, public
+//          loop line ~289) correctly apply the Individual → Firm/Trust PAN override
+//          when the converted category is "Individual".
+function applyConvertToShpRow(row, isin, issuerCode, catMap) {
+  const pan = String(row['1st Holder PAN'] ?? '').trim().toUpperCase();
+  if (!pan) return;
+  if (getPromoterMap(issuerCode).has(pan)) return;          // GUARD 1: promoter master wins
+  const ccEntry = getCategoryConvert(isin, pan);
+  if (!ccEntry) return;
+  const dep     = String(ccEntry.depository ?? '').trim().toUpperCase();
+  const typeKey = normCategoryDesc(ccEntry.typeDescription ?? '');
+  const subKey  = normCategoryDesc(ccEntry.subTypeDescription ?? '');
+  const target  = dep === 'PHYSICAL'
+    ? (catMap.physicalByDescription ?? {})[`${typeKey}|${subKey}`] ?? null
+    : (catMap.exactByDescription    ?? {})[`${dep}|${typeKey}|${subKey}`] ?? null;
+  if (!target) return;
+  row['SHP Promoter Code']          = target.shpPromoterCode ?? null;
+  row['SHP Public Code']            = target.shpPublicCode   ?? null;
+  row['shpCategoryTypeDescription'] = target.categoryTypeDescription ?? ccEntry.typeDescription ?? null; // GUARD 2
+  row['shpForeignOwnership']        = target.foreignOwnership ?? null;
 }
 
 /**
@@ -119,6 +146,12 @@ export async function exportShp(isin, dateStr, isinTotalHoldings, faceValue, ent
   const { rows: allRows } = buildExportRows(
     cdslRows, nsdlRows, physShareholders, physShareholdings, dateStr
   );
+
+  // ── Apply Category Convert to SHP fields (promoter master still wins) ─────────
+  {
+    const catMapCC = getCategoryMap();
+    for (const row of allRows) applyConvertToShpRow(row, isin, issuerCode, catMapCC);
+  }
 
   // ── Annexure A: promoters from master with zero holding in this benpos ────────
   const holderPanSet = new Set();
@@ -374,23 +407,73 @@ export async function exportShp(isin, dateStr, isinTotalHoldings, faceValue, ent
   // ── Handle unmatched convertible PANs (zero-equity holder rows) ───────────────
   const unmappedConvRows = [];
   if (convMap.size > 0) {
-    const physMap = getCategoryMap().physicalByDescription;
+    const catMap = getCategoryMap();
+    const physMap = catMap.physicalByDescription;
     for (const [pan, conv] of convMap) {
       if (conv._consumed) continue;
-      const physKey = normCategoryDesc(conv.type ?? '') + '|' + normCategoryDesc(conv.subType ?? '');
-      const physEntry = physMap[physKey];
-      if (!physEntry) {
-        unmappedConvRows.push({ pan, type: conv.type, subType: conv.subType });
-        continue;
-      }
+
       const isPromoter = String(conv.promoterFlag ?? '').trim().toLowerCase() === 'yes';
-      const rawCode = isPromoter ? physEntry.shpPromoterCode : physEntry.shpPublicCode;
+
+      let entry   = null;
+      let rawCode = null;
+
+      // Step 0: Category Convert (PAN-only, no depository gate; promoter master still wins)
+      {
+        const cc0 = getCategoryConvert(isin, pan);
+        if (cc0 && !getPromoterMap(issuerCode).has(pan)) {
+          const dep0     = String(cc0.depository ?? '').trim().toUpperCase();
+          const typeKey0 = normCategoryDesc(cc0.typeDescription ?? '');
+          const subKey0  = normCategoryDesc(cc0.subTypeDescription ?? '');
+          const t0 = dep0 === 'PHYSICAL'
+            ? (catMap.physicalByDescription ?? {})[`${typeKey0}|${subKey0}`] ?? null
+            : (catMap.exactByDescription    ?? {})[`${dep0}|${typeKey0}|${subKey0}`] ?? null;
+          if (t0) {
+            const rc = isPromoter ? t0.shpPromoterCode : t0.shpPublicCode;
+            if (rc) { entry = t0; rawCode = rc; }
+          }
+        }
+      }
+
+      // Step 1: description match against PHYSICAL rows (existing behaviour — unchanged)
+      if (!rawCode) {
+        const physKey = normCategoryDesc(conv.type ?? '') + '|' + normCategoryDesc(conv.subType ?? '');
+        const phys1   = physMap[physKey] ?? null;
+        if (phys1) {
+          const rc = isPromoter ? phys1.shpPromoterCode : phys1.shpPublicCode;
+          if (rc) { entry = phys1; rawCode = rc; }
+        }
+      }
+
+      // Step 2: code match fallback — search PHYSICAL → NSDL → CDSL
+      if (!rawCode) {
+        const convTypeNorm = normCode(conv.type);
+        const convSubNorm  = normCode(conv.subType ?? '');
+        const physCandidate = (catMap.physicalByCode ?? {})[`${convTypeNorm}|${convSubNorm}`];
+        if (physCandidate) {
+          const rc = isPromoter ? physCandidate.shpPromoterCode : physCandidate.shpPublicCode;
+          if (rc) { entry = physCandidate; rawCode = rc; }
+        }
+        if (!rawCode) {
+          const exactMap = catMap.exact;
+          outer: for (const dep of ['NSDL', 'CDSL']) {
+            for (const [key, exactEntry] of Object.entries(exactMap)) {
+              const parts = key.split('|');
+              if (parts[0] !== dep) continue;
+              if (normCode(parts[1]) !== convTypeNorm) continue;
+              if (normCode(parts[2] ?? '') !== convSubNorm) continue;
+              const rc = isPromoter ? exactEntry.shpPromoterCode : exactEntry.shpPublicCode;
+              if (rc) { entry = exactEntry; rawCode = rc; break outer; }
+            }
+          }
+        }
+      }
+
       if (!rawCode) {
         unmappedConvRows.push({ pan, type: conv.type, subType: conv.subType });
         continue;
       }
       const overrideMap = isPromoter ? PROMOTER_INDIVIDUAL_OVERRIDE : PUBLIC_INDIVIDUAL_OVERRIDE;
-      const code = resolveShpCode(rawCode, overrideMap, conv.type, pan);
+      const code = resolveShpCode(rawCode, overrideMap, entry?.categoryTypeDescription ?? conv.type, pan);
 
       if (isPromoter) {
         const pmEntry = getPromoterMap(issuerCode).get(pan);

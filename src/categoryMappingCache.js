@@ -9,6 +9,14 @@ export function normCategoryDesc(s) {
   return String(s ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
+// Normalise a category type/subtype code for numeric-equal comparison.
+// "01" and "1" both normalise to "1"; non-numeric strings are lowercased only.
+export function normCode(s) {
+  const t = String(s ?? '').trim();
+  const n = Number(t);
+  return Number.isFinite(n) && t !== '' ? String(n) : t.toLowerCase();
+}
+
 // ── Normalise the physicalByDescription section of any map object ─────────────
 
 function normalizePhysicalKeys(map) {
@@ -70,6 +78,22 @@ function buildCategoryMap(items) {
     };
   }
 
+  // exactByDescription: keyed by "DEP|normDesc(typeDesc)|normDesc(subTypeDesc)"
+  // Allows Category Convert lookups by description when numeric codes are unavailable.
+  // Duplicates resolved by sorting by the original exact key, taking first.
+  const exactDescGroups = {};
+  for (const [exactKey, entry] of Object.entries(exact)) {
+    const dep     = exactKey.split('|')[0];
+    const descKey = `${dep}|${normCategoryDesc(entry.categoryTypeDescription)}|${normCategoryDesc(entry.categorySubTypeDescription)}`;
+    if (!exactDescGroups[descKey]) exactDescGroups[descKey] = [];
+    exactDescGroups[descKey].push({ exactKey, entry });
+  }
+  const exactByDescription = {};
+  for (const [descKey, group] of Object.entries(exactDescGroups)) {
+    group.sort((a, b) => a.exactKey.localeCompare(b.exactKey, undefined, { numeric: true }));
+    exactByDescription[descKey] = group[0].entry;
+  }
+
   // unambiguousByType: "DEP|type" -> description, only when all subtypes of
   // that (dep, type) pair share the same categoryTypeDescription.
   const typeDescSets = {};
@@ -101,7 +125,29 @@ function buildCategoryMap(items) {
     };
   }
 
-  return { exact, unambiguousByType, physicalByDescription };
+  // physicalByCode: keyed by normCode(categoryType)|normCode(categorySubType)
+  // Used as a fallback when the uploaded type/subType are numeric codes, not descriptions.
+  const physicalByCode = {};
+  for (const item of physicalItems) {
+    const type = normCode(item.categoryType    ?? '');
+    const sub  = normCode(item.categorySubType ?? '');
+    if (!type) continue;
+    const key = `${type}|${sub}`;
+    if (!physicalByCode[key]) {
+      physicalByCode[key] = {
+        regulation31TypePublic:   item.regulation31TypePublic ?? null,
+        investorType:             item.investorType ?? null,
+        promoter:                 item.promoter ?? null,
+        regulation31TypePromoter: item.regulation31TypePromoter ?? null,
+        shpPromoterCode:          item.shpPromoterCode ?? null,
+        shpPublicCode:            item.shpPublicCode   ?? null,
+        foreignOwnership:         item.foreignOwnership ?? null,
+        categoryTypeDescription:  String(item.categoryTypeDescription ?? ''),
+      };
+    }
+  }
+
+  return { exact, unambiguousByType, physicalByDescription, physicalByCode, exactByDescription };
 }
 
 // ── Module-level cache ────────────────────────────────────────────────────────
@@ -109,7 +155,7 @@ function buildCategoryMap(items) {
 // synchronous callers (Company detail pages) always have data, even before any
 // async fetch completes.
 
-let _map     = { exact: {}, unambiguousByType: {}, physicalByDescription: {} };
+let _map     = { exact: {}, unambiguousByType: {}, physicalByDescription: {}, physicalByCode: {}, exactByDescription: {} };
 let _promise = null;
 
 export function getCategoryMap() {
