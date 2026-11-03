@@ -22,6 +22,8 @@ import CompanyCategoryConvert from './CompanyCategoryConvert';
 import CategoryMapping from './CategoryMapping';
 import RecoUpload from './RecoUpload';
 import Reconciliation from './Reconciliation';
+import Comparison from './Comparison';
+import EVoting from './EVoting';
 
 /*
  * ── How React Router works ──────────────────────────────────────────────────
@@ -142,6 +144,13 @@ function App() {
       } />
       <Route path="/reports/shareholding-pattern" element={
         <ProtectedPage breadcrumbs={['Reports', 'Shareholding Pattern']}><ShareholdingPattern /></ProtectedPage>
+      } />
+      <Route path="/reports/comparison" element={
+        <ProtectedPage breadcrumbs={['Reports', 'Comparison']}><Comparison /></ProtectedPage>
+      } />
+
+      <Route path="/reports/e-voting" element={
+        <ProtectedPage breadcrumbs={['Reports', 'E-Voting']}><EVoting /></ProtectedPage>
       } />
 
       <Route path="/category-mapping" element={

@@ -51,6 +51,7 @@ export async function buildXlsxBlob(headers, rows, opts = {}) {
     rowsPerSheet = 1000000, // Excel max is 1,048,576 incl. header
     onProgress = null,
     asChunks = false, // test helper
+    freezeTopRow = false,
   } = opts;
 
   const ncols = headers.length;
@@ -125,13 +126,16 @@ export async function buildXlsxBlob(headers, rows, opts = {}) {
     ? "<cols>" + colWidths.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join("") + "</cols>"
     : "";
   const headerRowXml = `<row r="1">${headers.map((h, c) => cellXml(`${cols[c]}1`, h, ' s="1"')).join("")}</row>`;
+  const sheetViewsXml = freezeTopRow
+    ? '<sheetViews><sheetView tabSelected="1" workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft"/></sheetView></sheetViews>'
+    : '';
 
   let done = 0;
   const BATCH = 2000;
   for (let s = 0; s < sheetCount; s++) {
     const f = new ZipDeflate(`xl/worksheets/sheet${s + 1}.xml`, { level: 3 });
     zip.add(f);
-    f.push(strToU8(XML_HEAD + `<worksheet xmlns="${NS}">` + colsXml + "<sheetData>" + headerRowXml), false);
+    f.push(strToU8(XML_HEAD + `<worksheet xmlns="${NS}">` + sheetViewsXml + colsXml + "<sheetData>" + headerRowXml), false);
     const start = s * perSheetData;
     const end = Math.min(rows.length, start + perSheetData);
     for (let b = start; b < end; b += BATCH) {

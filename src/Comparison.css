@@ -1,0 +1,137 @@
+/* ── ISIN field width ────────────────────────────────────────────────────── */
+
+.comp-isin-field {
+  flex: 1 1 280px;
+  min-width: 220px;
+}
+
+/* ── Combobox wrapper (positioning context for arrow + dropdown) ─────────── */
+
+.comp-combobox-wrap {
+  position: relative;
+}
+
+/* ── Input — same metrics as benpos-date-input ───────────────────────────── */
+
+.comp-combobox-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 30px 10px 12px; /* right padding for the arrow */
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #333;
+  background-color: #ffffff;
+  outline: none;
+  font-family: Arial, Helvetica, sans-serif;
+  transition: border-color 0.15s ease;
+  cursor: pointer;
+}
+
+.comp-combobox-input:focus,
+.comp-combobox-input.comp-combobox-input--open {
+  border-color: #1976d2;
+  cursor: text;
+}
+
+/* ── Chevron arrow ───────────────────────────────────────────────────────── */
+
+.comp-combobox-arrow {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  line-height: 1;
+  color: #888;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease;
+  pointer-events: auto;
+}
+
+.comp-combobox-arrow--open {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+/* ── Dropdown list ───────────────────────────────────────────────────────── */
+
+.comp-combobox-dropdown {
+  position: absolute;
+  top: calc(100% + 1px);
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: #ffffff;
+  border: 1px solid #cccccc;
+  border-radius: 0 0 4px 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 280px;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);
+}
+
+/* ── Option ──────────────────────────────────────────────────────────────── */
+
+.comp-combobox-option {
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #333;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.comp-combobox-option:hover,
+.comp-combobox-option--highlighted {
+  background: #f0f7ff;
+  color: #1565c0;
+}
+
+.comp-combobox-option--all {
+  font-weight: 500;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* ── Status / hint row (loading, "no match", "showing first N") ──────────── */
+
+.comp-combobox-hint {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #888;
+  font-style: italic;
+  pointer-events: none;
+}
+
+.comp-combobox-hint--error {
+  color: #c62828;
+  font-style: normal;
+}
+
+/* ── Date select display (div standing in for a date <input>) ────────────── */
+
+.comp-datesel-display {
+  display: flex;
+  align-items: center;
+  user-select: none;
+  min-height: 37px;
+}
+
+.comp-datesel-display:focus,
+.comp-datesel-display.comp-combobox-input--open {
+  outline: none;
+  border-color: #1976d2;
+  cursor: pointer;
+}
+
+.comp-combobox-input--disabled {
+  background-color: #f8f8f8;
+  color: #bbb;
+  cursor: not-allowed;
+  pointer-events: none;
+}
