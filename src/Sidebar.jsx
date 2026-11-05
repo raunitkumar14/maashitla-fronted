@@ -14,9 +14,9 @@ const NAV_ITEMS = [
   { label: 'Dashboard',         icon: '⊞' },
   { label: 'Company',           icon: '🏢', path: '/company' },
   { label: 'Inward',            icon: '📥' },
-  { label: 'Outward',           icon: '📤' },
-  { label: 'Daak Entry',        icon: '📮' },
-  { label: 'Corporate Action',  icon: '⚙️' },
+  { label: 'Outward',           icon: '📤', path: '/outward' },
+  { label: 'Daak Entry',        icon: '📮', path: '/daak-entry' },
+  { label: 'Corporate Action',  icon: '⚙️', path: '/corporate-action' },
   {
     label: 'Reports',
     icon: '📊',

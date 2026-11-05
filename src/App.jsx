@@ -24,6 +24,13 @@ import RecoUpload from './RecoUpload';
 import Reconciliation from './Reconciliation';
 import Comparison from './Comparison';
 import EVoting from './EVoting';
+import CorporateAction from './CorporateAction';
+import CorporateActionAdd from './CorporateActionAdd';
+import CorporateActionDetails from './CorporateActionDetails';
+import DaakEntry from './DaakEntry';
+import DaakEntryForm from './DaakEntryForm';
+import Outward from './Outward';
+import OutwardForm from './OutwardForm';
 
 /*
  * ── How React Router works ──────────────────────────────────────────────────
@@ -163,6 +170,39 @@ function App() {
 
       <Route path="/reconciliation/main" element={
         <ProtectedPage breadcrumbs={['Reco', 'Reconciliation']}><Reconciliation /></ProtectedPage>
+      } />
+
+      {/* Corporate Action */}
+      <Route path="/corporate-action" element={
+        <ProtectedPage pageName="Corporate Action"><CorporateAction /></ProtectedPage>
+      } />
+      <Route path="/corporate-action/add" element={
+        <ProtectedPage breadcrumbs={['Corporate-Action', 'Add']}><CorporateActionAdd /></ProtectedPage>
+      } />
+      <Route path="/corporate-action/:id" element={
+        <ProtectedPage breadcrumbs={['Corporate-Action', 'Details']}><CorporateActionDetails /></ProtectedPage>
+      } />
+
+      {/* Outward */}
+      <Route path="/outward" element={
+        <ProtectedPage pageName="Outward"><Outward /></ProtectedPage>
+      } />
+      <Route path="/outward/add" element={
+        <ProtectedPage breadcrumbs={['Outward', 'Add']}><OutwardForm /></ProtectedPage>
+      } />
+      <Route path="/outward/:id" element={
+        <ProtectedPage breadcrumbs={['Outward', 'Edit']}><OutwardForm /></ProtectedPage>
+      } />
+
+      {/* Daak Entry */}
+      <Route path="/daak-entry" element={
+        <ProtectedPage pageName="Daak Entry"><DaakEntry /></ProtectedPage>
+      } />
+      <Route path="/daak-entry/add" element={
+        <ProtectedPage breadcrumbs={['Daak-Entry', 'Add']}><DaakEntryForm /></ProtectedPage>
+      } />
+      <Route path="/daak-entry/:id" element={
+        <ProtectedPage breadcrumbs={['Daak-Entry', 'Edit']}><DaakEntryForm /></ProtectedPage>
       } />
     </Routes>
   );

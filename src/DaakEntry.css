@@ -1,0 +1,279 @@
+/* ─── FILTER GRID (4 fixed columns) ─────────────────────────────────────── */
+
+.dk-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 26px 18px;
+  padding: 24px 20px 8px;
+}
+
+/* ─── FILTER ACTION ROW ───────────────────────────────────────────────────── */
+
+.dk-filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px 24px;
+  flex-wrap: wrap;
+}
+
+/* ─── SECTION FORM GRID (Add / Edit) ─────────────────────────────────────── */
+
+.dk-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 32px 20px;
+  padding: 24px 20px 20px;
+}
+
+.dk-field-span2 { grid-column: span 2; }
+.dk-field-span3 { grid-column: span 3; }
+.dk-field-span4 { grid-column: span 4; }
+
+/* ─── TEXTAREA ────────────────────────────────────────────────────────────── */
+
+.dk-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #333;
+  background-color: #ffffff;
+  outline: none;
+  font-family: Arial, Helvetica, sans-serif;
+  transition: border-color 0.15s ease;
+  resize: vertical;
+  min-height: 76px;
+}
+
+.dk-textarea:focus { border-color: #1976d2; }
+.dk-textarea--error { border-color: #d32f2f !important; }
+
+/* ─── READ-ONLY INPUT ─────────────────────────────────────────────────────── */
+
+.dk-readonly {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #666;
+  background-color: #f4f4f4;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: default;
+}
+
+/* ─── COMPANY AUTOCOMPLETE ───────────────────────────────────────────────── */
+
+.dk-company-wrap { position: relative; }
+
+.dk-company-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #333;
+  background-color: #ffffff;
+  outline: none;
+  font-family: Arial, Helvetica, sans-serif;
+  transition: border-color 0.15s ease;
+}
+
+.dk-company-input:focus       { border-color: #1976d2; }
+.dk-company-input--error      { border-color: #d32f2f !important; }
+
+.dk-company-dropdown {
+  position: absolute;
+  top: calc(100% + 1px);
+  left: 0;
+  right: 0;
+  z-index: 300;
+  background: #ffffff;
+  border: 1px solid #cccccc;
+  border-radius: 0 0 4px 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dk-company-opt {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.dk-company-opt:hover            { background: #e3f2fd; color: #1565c0; }
+.dk-company-opt--others          { font-style: italic; border-top: 1px solid #eee; color: #555; }
+.dk-company-opt--others:hover    { background: #f0f4ff; color: #1565c0; }
+.dk-company-opt--hint            { color: #aaa; cursor: default; font-style: italic; }
+.dk-company-opt--hint:hover      { background: transparent; color: #aaa; }
+
+/* ─── ADD-NEW MASTER DIALOG ─────────────────────────────────────────────── */
+
+.dk-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dk-dialog {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+  width: 380px;
+  max-width: 95vw;
+  overflow: hidden;
+}
+
+.dk-dialog-hdr {
+  background: linear-gradient(to right, #1565c0, #1e88e5);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.dk-dialog-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 17px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.dk-dialog-body {
+  padding: 20px 18px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dk-dialog-lbl {
+  display: block;
+  font-size: 12px;
+  color: #555;
+  margin-bottom: 5px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.dk-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 18px 20px;
+}
+
+/* ─── EXPORT ICON INLINE ─────────────────────────────────────────────────── */
+
+.dk-dl-icon { margin-right: 4px; }
+
+/* ─── OUTWARD UPLOAD MODAL ───────────────────────────────────────────────── */
+
+.dk-upload-modal {
+  width: 540px;
+  max-width: 95vw;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.dk-upload-drop {
+  margin: 16px 16px 8px;
+  padding: 28px 20px;
+  border: 1.5px dashed #d0d0d0;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+  text-align: center;
+}
+
+.dk-upload-drop:hover,
+.dk-upload-drop--over    { background: #fafcff; border-color: #1976d2; }
+.dk-upload-drop--ready   { background: #f0fff4; border-color: #43a047; cursor: default; }
+
+.dk-upload-cloud { width: 48px; height: 48px; }
+
+.dk-upload-drop-text  { font-size: 13px; color: #333; margin: 0; }
+.dk-upload-browse-txt { font-size: 12px; color: #1976d2; margin: 0; text-decoration: underline; cursor: pointer; }
+.dk-upload-fname      { font-size: 12px; color: #2e7d32; margin: 0; word-break: break-all; }
+.dk-upload-err-txt    { font-size: 12px; color: #c62828; margin: 0; }
+
+.dk-upload-hint {
+  margin: 0 16px 10px;
+  font-size: 11.5px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.dk-upload-tpl-btn {
+  font-size: 12px;
+  color: #1976d2;
+  cursor: pointer;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: Arial, Helvetica, sans-serif;
+}
+.dk-upload-tpl-btn:hover { color: #0d47a1; }
+
+.dk-upload-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px 16px;
+  flex-wrap: wrap;
+}
+
+.dk-upload-result { padding: 12px 16px 16px; }
+
+.dk-upload-summary {
+  display: flex;
+  gap: 24px;
+  font-size: 13px;
+  color: #333;
+  margin-bottom: 12px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.dk-invalid-hdg {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #c62828;
+  margin-bottom: 7px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.dk-invalid-scroll { max-height: 180px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; }
+
+.dk-invalid-tbl { width: 100%; border-collapse: collapse; font-size: 12px; font-family: Arial, Helvetica, sans-serif; }
+.dk-invalid-tbl th { background: #f4f8ff; color: #1565c0; padding: 6px 10px; text-align: left; border-bottom: 1px solid #dde; position: sticky; top: 0; }
+.dk-invalid-tbl td { padding: 5px 10px; border-bottom: 1px solid #eee; color: #333; }
