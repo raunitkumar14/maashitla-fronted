@@ -93,8 +93,8 @@ function DaakExportModal({ title, buildParams, exportFn, filename, onClose }) {
 
 function DaakEntry() {
   const navigate   = useNavigate();
-  const canCreate  = hasPermission('daak_inward:create');
-  const canUpdate  = hasPermission('daak_inward:update');
+  const canCreate  = hasPermission('daak_entry:create');
+  const canUpdate  = hasPermission('daak_entry:update');
 
   // ── Filter fields ──────────────────────────────────────────────────────────
   const [companyQuery,       setCompanyQuery]       = useState('');

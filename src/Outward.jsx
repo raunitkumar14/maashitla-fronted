@@ -81,8 +81,8 @@ function DaakExportModal({ title, buildParams, exportFn, filename, onClose }) {
 
 function Outward() {
   const navigate  = useNavigate();
-  const canCreate = hasPermission('daak_outward:create');
-  const canUpdate = hasPermission('daak_outward:update');
+  const canCreate = hasPermission('daak_entry:create');
+  const canUpdate = hasPermission('daak_entry:update');
 
   // ── Filter fields ──────────────────────────────────────────────────────────
   const [outwardId,       setOutwardId]       = useState('');
