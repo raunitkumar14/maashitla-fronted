@@ -197,9 +197,11 @@ export default function CategoryMappingUploadModal({ onClose, onComplete }) {
     try {
       const res  = await api.post('/admin/v1/category-mapping/bulk', rows);
       const data = res.data?.data ?? {};
-      const ins  = data.count ?? data.inserted ?? data.created ?? 0;
-      const upd  = data.updated ?? 0;
-      onComplete({ ins, upd });
+      if (data.job) {
+        onComplete({ job: data.job });
+      } else {
+        onComplete({ ins: data.count ?? 0, upd: 0 });
+      }
     } catch (err) {
       setPhase('error');
       setErrorMsg(err.response?.data?.error?.message ?? err.message ?? 'Upload failed.');

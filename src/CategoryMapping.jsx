@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import api from './api/axios';
 import { hasPermission } from './auth';
 import { buildXlsxBlob } from './xlsxStream';
@@ -163,8 +163,10 @@ function CategoryMapping() {
 
   // Upload modal + result banners
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [uploadStatus,    setUploadStatus]    = useState(null); // null | 'done' | 'error'
+  const [uploadStatus,    setUploadStatus]    = useState(null); // null | 'polling' | 'done' | 'error'
   const [uploadMsg,       setUploadMsg]       = useState('');
+  const [uploadErrors,    setUploadErrors]    = useState([]);
+  const pollIntervalRef = useRef(null);
 
   // Load all rows once — the API returns the full set with no pagination params
   const loadRows = useCallback(() => {
@@ -183,6 +185,10 @@ function CategoryMapping() {
   }, [canView]); // eslint-disable-line
 
   useEffect(() => { loadRows(); }, [loadRows]);
+
+  useEffect(() => () => {
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+  }, []);
 
   // Client-side search: match on type, subtype, descriptions, depository
   const filteredRows = (allRows ?? []).filter(row => {
@@ -221,11 +227,79 @@ function CategoryMapping() {
     setGoto('');
   }
 
-  function handleUploadComplete({ ins, upd }) {
-    setUploadMsg(`✓ Upload complete — ${ins} inserted, ${upd} updated.`);
-    setUploadStatus('done');
+  function handleUploadComplete({ job, ins }) {
+    // Clear any previous poll loop before starting a new one
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
     setShowUploadModal(false);
-    loadRows();
+    setUploadErrors([]);
+
+    if (!job) {
+      // Synchronous path (small file — backend processed inline)
+      setUploadMsg(`✓ Upload complete — ${ins ?? 0} rows processed.`);
+      setUploadStatus('done');
+      loadRows();
+      return;
+    }
+
+    // Asynchronous path — job queued; poll until COMPLETED or FAILED
+    setUploadMsg(`Upload started — ${job.totalRows} rows queued.`);
+    setUploadStatus('polling');
+
+    const POLL_INTERVAL_MS  = 2000;
+    const MAX_DURATION_MS   = 5 * 60 * 1000; // 5-minute safety limit
+    const MAX_CONSEC_ERRORS = 5;
+    const deadline          = Date.now() + MAX_DURATION_MS;
+    let   consecErrors      = 0;
+
+    function stopPolling() {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+
+    pollIntervalRef.current = setInterval(async () => {
+      // Safety: stop if we've been polling for over 5 minutes
+      if (Date.now() > deadline) {
+        stopPolling();
+        setUploadMsg('Upload timed out — please refresh and check the job status manually.');
+        setUploadStatus('error');
+        return;
+      }
+
+      try {
+        const res = await api.get(`/admin/v1/category-mapping/bulk/${job.id}`);
+        // Response shape: { success: true, data: { job: { id, status, totalRows, ... } } }
+        const j = res.data?.data?.job;
+        if (!j) return; // unexpected shape — skip tick
+
+        consecErrors = 0; // reset failure counter on any successful response
+
+        if (j.status === 'COMPLETED') {
+          stopPolling();
+          setUploadErrors((j.errors ?? []).slice(0, 5));
+          setUploadMsg(`✓ Upload complete — ${j.succeededRows} succeeded, ${j.failedRows} failed.`);
+          setUploadStatus('done');
+          loadRows();
+        } else if (j.status === 'FAILED') {
+          stopPolling();
+          setUploadErrors((j.errors ?? []).slice(0, 5));
+          setUploadMsg(j.errors?.[0]?.message ?? 'Upload failed.');
+          setUploadStatus('error');
+          loadRows();
+        }
+        // Any other status (PENDING, RUNNING) → keep polling
+      } catch {
+        consecErrors += 1;
+        if (consecErrors >= MAX_CONSEC_ERRORS) {
+          stopPolling();
+          setUploadMsg('Could not reach server — please refresh and check the upload status manually.');
+          setUploadStatus('error');
+        }
+        // Fewer than 5 consecutive failures → stay silent and try next tick
+      }
+    }, POLL_INTERVAL_MS);
   }
 
   async function handleSampleDownload() {
@@ -310,11 +384,32 @@ function CategoryMapping() {
       </div>
 
       {/* Upload result banners */}
+      {uploadStatus === 'polling' && (
+        <div className="im-banner im-banner--info">&#9203; {uploadMsg}</div>
+      )}
       {uploadStatus === 'done' && (
-        <div className="im-banner im-banner--success">{uploadMsg}</div>
+        <div className="im-banner im-banner--success">
+          <div>{uploadMsg}</div>
+          {uploadErrors.length > 0 && (
+            <ul style={{ margin: '4px 0 0', paddingLeft: '18px' }}>
+              {uploadErrors.map((e, i) => (
+                <li key={i}>{e.categoryKey ? `${e.categoryKey}: ` : ''}{e.message}</li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
       {uploadStatus === 'error' && (
-        <div className="im-banner im-banner--error">&#9888; {uploadMsg}</div>
+        <div className="im-banner im-banner--error">
+          <div>&#9888; {uploadMsg}</div>
+          {uploadErrors.length > 0 && (
+            <ul style={{ margin: '4px 0 0', paddingLeft: '18px' }}>
+              {uploadErrors.map((e, i) => (
+                <li key={i}>{e.categoryKey ? `${e.categoryKey}: ` : ''}{e.message}</li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
 
       {/* ── Card 2: search ──────────────────────────────────────────────────── */}
