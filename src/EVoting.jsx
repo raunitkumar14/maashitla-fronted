@@ -68,12 +68,16 @@ function buildCdslText(rows, isin, evsn) {
       ? (typeof row.shares === 'number' ? row.shares.toFixed(3) : String(row.shares))
       : '';
     // 23 fields / 22 separators:
-    // 01=seq ~ memberType ~ boid ~ pan ~ uid(blank) ~ subStatus ~ shares ~ name1 + 15 blank fields
+    // 01=seq ~ memberType ~ boid ~ pan ~ uid(blank) ~ subStatus ~ shares
+    //   ~ name1 ~ name2 ~ name3 ~ address1(blank) ~ address2(blank)
+    //   ~ address3(blank) ~ city(blank) ~ state(blank) ~ country(blank)
+    //   ~ pin(blank) ~ dob(blank) ~ bank(blank) ~ mobile(blank)
+    //   ~ email(blank) ~ blockFlag(blank) ~ blockReason(blank)
     lines.push(
-      `01=${seq}~${memberType}~${row.boid ?? ''}~${row.pan ?? ''}~~${row.subStatus ?? ''}~${shares}~${row.name1 ?? ''}~~~~~~~~~~~~~~~`
+      `01=${seq}~${memberType}~${row.boid ?? ''}~${row.pan ?? ''}~~${row.subStatus ?? ''}~${shares}~${row.name1 ?? ''}~${row.name2 ?? ''}~${row.name3 ?? ''}~~~~~~~~~~~~~`
     );
   });
-  return { text: lines.join(CRLF) + CRLF, check: check23Fields(lines) };
+  return { text: lines.join(CRLF), check: check23Fields(lines) };
 }
 
 function buildNsdlText(rows, batch, shrId, isin, cutOffDate, even) {
@@ -88,16 +92,18 @@ function buildNsdlText(rows, batch, shrId, isin, cutOffDate, even) {
           ? String(row.holdings18).padStart(18, '0')
           : String(row.holdings18))
       : '000000000000000000';
+    const rawEmail = String(row.email ?? '').replace(/[\s^]/g, '');
+    const email    = rawEmail.length > 50 ? '' : rawEmail;
     // 19 fields / 18 ^ separators:
     // batch ^ 12 ^ depType ^ accountNo ^ name1 ^ PAN1(blank) ^ name2(blank) ^ PAN2(blank)
     //   ^ name3(blank) ^ PAN3(blank) ^ address1 ^ address2(blank) ^ address3(blank)
-    //   ^ address4(blank) ^ pin ^ mobile(blank) ^ email(blank) ^ holdings18 ^ clientType
+    //   ^ address4(blank) ^ pin ^ mobile(blank) ^ email ^ holdings18 ^ clientType
     lines.push(
-      `${batch}^12^${row.depType ?? ''}^${row.accountNo ?? ''}^${row.name1 ?? ''}^^^^^^${row.address1 ?? ''}^^^^${row.pin ?? ''}^^^${h18}^${row.clientType ?? ''}`
+      `${batch}^12^${row.depType ?? ''}^${row.accountNo ?? ''}^${row.name1 ?? ''}^^^^^^${row.address1 ?? ''}^^^^${row.pin ?? ''}^^${email}^${h18}^${row.clientType ?? ''}`
     );
   });
   lines.push('{}');
-  return { text: lines.join(CRLF) + CRLF, check: check19Fields(lines) };
+  return { text: lines.join(CRLF), check: check19Fields(lines) };
 }
 
 const DEPOSITORY_OPTIONS = ['CDSL', 'NSDL'];
@@ -273,6 +279,20 @@ function EVoting() {
           return;
         }
 
+        // Sort: holdings desc (zero-padded equal-length → string ≡ numeric order),
+        // then accountNo asc, then name1 asc as stable tie-break.
+        rows.sort((a, b) => {
+          const hA = a.holdings18 ?? '000000000000000000';
+          const hB = b.holdings18 ?? '000000000000000000';
+          if (hB > hA) return 1;
+          if (hB < hA) return -1;
+          const acA = a.accountNo ?? '';
+          const acB = b.accountNo ?? '';
+          if (acA < acB) return -1;
+          if (acA > acB) return 1;
+          return (a.name1 ?? '') < (b.name1 ?? '') ? -1 : 1;
+        });
+
         const { text, check } = buildNsdlText(
           rows, evsn.trim(), shrId.trim(), selectedIsin.isin, nsdlCutOffDate, nsdlEven.trim()
         );
@@ -320,6 +340,18 @@ function EVoting() {
         setSkippedRows(skipped);
         return;
       }
+
+      // Sort: shares desc (numeric), then boid asc, then name1 asc as stable tie-break.
+      rows.sort((a, b) => {
+        const sA = parseFloat(a.shares) || 0;
+        const sB = parseFloat(b.shares) || 0;
+        if (sB !== sA) return sB - sA;
+        const boA = a.boid ?? '';
+        const boB = b.boid ?? '';
+        if (boA < boB) return -1;
+        if (boA > boB) return 1;
+        return (a.name1 ?? '') < (b.name1 ?? '') ? -1 : 1;
+      });
 
       const { text, check } = buildCdslText(rows, selectedIsin.isin, evsn.trim());
       setCheckResult(check);

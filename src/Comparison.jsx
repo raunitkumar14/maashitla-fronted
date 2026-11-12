@@ -232,7 +232,10 @@ function Comparison() {
         setMessage('No change in holdings between the two dates.');
         return;
       }
-      await downloadComparisonReport(data);
+      const result = await downloadComparisonReport(data, msg => setMessage(msg));
+      if (isinParam === 'ALL') {
+        setMessage(`${result?.isinCount ?? 0} ISINs exported`);
+      }
     } catch (err) {
       const msg = err.response?.data?.error?.message
         ?? err.response?.data?.message
