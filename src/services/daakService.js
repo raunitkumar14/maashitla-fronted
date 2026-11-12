@@ -123,6 +123,26 @@ export async function getUsersForDropdown() {
   }));
 }
 
+export function normalizeOtherRecipient(raw) {
+  return {
+    name:           raw.name           ?? '',
+    addressLine1:   raw.addressLine1   ?? raw.address_line1   ?? '',
+    addressLine2:   raw.addressLine2   ?? raw.address_line2   ?? '',
+    city:           raw.city           ?? '',
+    state:          raw.state          ?? '',
+    pinCode:        raw.pinCode        ?? raw.pin_code        ?? '',
+    recipientEmail: raw.recipientEmail ?? raw.recipient_email ?? raw.email ?? '',
+    phone:          raw.phone          ?? '',
+  };
+}
+
+export async function getOtherRecipients(search = '') {
+  const res = await api.get('/admin/v1/outward/other-recipients', { params: { search } });
+  const raw = res.data?.data ?? res.data;
+  const arr = Array.isArray(raw) ? raw : (raw?.items ?? raw?.rows ?? []);
+  return arr.map(normalizeOtherRecipient);
+}
+
 export function triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

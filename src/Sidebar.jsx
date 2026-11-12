@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from './api/axios';
+import { hasPermission } from './auth';
 import './Sidebar.css';
 
 /*
@@ -11,7 +12,7 @@ import './Sidebar.css';
  * until their sub-pages are built out.
  */
 const NAV_ITEMS = [
-  { label: 'Dashboard',         icon: '⊞' },
+  { label: 'Dashboard',         icon: '⊞', path: '/dashboard' },
   { label: 'Company',           icon: '🏢', path: '/company' },
   { label: 'Inward',            icon: '📥' },
   { label: 'Outward',           icon: '📤', path: '/outward' },
@@ -23,8 +24,10 @@ const NAV_ITEMS = [
     hasSubmenu: true,
     children: [
       { label: 'BenPos',              icon: '📄', path: '/reports/benpos' },
-      { label: 'PAS-6',              icon: '📋', path: '/reports/pas6' },
-      { label: 'Share Capital Audit', icon: '📑', path: '/reports/share-capital-audit' },
+      { label: 'PAS-6',              icon: '📋', path: '/pas6', permission: 'pas_6:view' },
+      { label: 'Share Capital Audit', icon: '📑', path: '/reports/share-capital-audit', permission: 'share_capital_audit:view' },
+      { label: 'Regulation 13(3)',   icon: '📃', path: '/reg133',                       permission: 'regulation_13_3:view' },
+      { label: 'ROM-MG17',           icon: '📂', path: '/rom-mg17',                      permission: 'rom_mg17:view' },
       { label: 'Comparison',          icon: '📊', path: '/reports/comparison' },
       { label: 'E-Voting',            icon: '🗳️', path: '/reports/e-voting' },
       { label: 'Shareholding Pattern',icon: 'SP', path: '/reports/shareholding-pattern' },
@@ -41,8 +44,10 @@ const NAV_ITEMS = [
   { label: 'ISIN Master',       icon: '📋', path: '/isin-master' },
   { label: 'Complaint',         icon: '💬' },
   { label: 'Category Mapping',  icon: '🔗', badge: 'CM', path: '/category-mapping' },
+  { label: 'DP Master',         icon: '🏦', path: '/dp-master', permission: 'dp_master:view' },
   { label: 'Pan Freeze',        icon: '🔒' },
   { label: 'Shareholder Search',icon: '🔍' },
+  { label: 'PAN Search',        icon: '🔎', path: '/pan-search', permission: 'pan_search:view' },
   {
     label: 'User Management',
     icon: '👥',
@@ -53,6 +58,7 @@ const NAV_ITEMS = [
       { label: 'Login History', icon: '📜', path: '/user-management/login-history' },
     ],
   },
+  { label: 'Company Profile',   icon: '🏛️', path: '/company-profile', permission: 'company_profile:view' },
   { label: 'Profile',           icon: '👤', path: '/profile' },
   { label: 'Logout',            icon: '🚪' },
 ];
@@ -135,7 +141,7 @@ function Sidebar() {
 
       {/* ── Navigation list ── */}
       <nav className="sidebar-nav">
-        {NAV_ITEMS.map((item) => {
+        {NAV_ITEMS.filter(item => !item.permission || hasPermission(item.permission)).map((item) => {
           const isOpen   = openMenu === item.label;
           const isActive = item.path != null && location.pathname === item.path;
 
@@ -158,7 +164,7 @@ function Sidebar() {
               {/* Sub-items — only rendered while this section is expanded */}
               {item.children && isOpen && (
                 <div className="nav-subitems">
-                  {item.children.map((child) => (
+                  {item.children.filter(child => !child.permission || hasPermission(child.permission)).map((child) => (
                     <div
                       key={child.label}
                       className={`nav-subitem ${location.pathname.startsWith(child.path) ? 'nav-subitem--active' : ''}`}

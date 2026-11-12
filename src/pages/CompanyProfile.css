@@ -1,0 +1,166 @@
+/* ─── FORM WRAPPER ──────────────────────────────────────────────────────────── */
+
+.cp-form {
+  padding: 24px;
+}
+
+/* ─── 2-COLUMN GRID ─────────────────────────────────────────────────────────── */
+
+.cp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px 20px;
+}
+
+.cp-field-full {
+  grid-column: 1 / -1;
+}
+
+/* ─── FIELD (floating-label pattern) ───────────────────────────────────────── */
+
+.cp-field {
+  position: relative;
+  margin-top: 8px;
+}
+
+.cp-label {
+  position: absolute;
+  top: -9px;
+  left: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #777;
+  background: #ffffff;
+  padding: 0 4px;
+  z-index: 1;
+  pointer-events: none;
+  transition: color 0.15s ease;
+}
+
+.cp-field:focus-within .cp-label {
+  color: #1976d2;
+}
+
+/* ─── INPUT / TEXTAREA ──────────────────────────────────────────────────────── */
+
+.cp-input {
+  padding: 8px 12px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #333;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #ffffff;
+  transition: border-color 0.15s ease;
+}
+
+.cp-input:focus {
+  border-color: #1976d2;
+}
+
+.cp-input--readonly {
+  background: #f7f8fa;
+  color: #555;
+  cursor: default;
+}
+
+.cp-input--error {
+  border-color: #e53935;
+}
+
+.cp-textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+/* ─── INLINE FIELD ERROR ────────────────────────────────────────────────────── */
+
+.cp-err {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #c0392b;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ─── ACTIONS ROW ────────────────────────────────────────────────────────────── */
+
+.cp-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 28px;
+  align-items: center;
+}
+
+/* ─── TOAST / ERROR BANNER SPACING ─────────────────────────────────────────── */
+
+.cp-toast {
+  margin-bottom: 20px;
+}
+
+/* ─── LAST UPDATED LINE ──────────────────────────────────────────────────────── */
+
+.cp-updated-line {
+  font-size: 12px;
+  color: #999;
+  margin-top: 8px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-style: italic;
+}
+
+/* ─── CONFIRM DIALOG ─────────────────────────────────────────────────────────── */
+
+.cp-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.cp-dialog {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 24px;
+  width: 420px;
+  max-width: 90vw;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.cp-dialog-title {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a2e;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.cp-dialog-body {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: #444;
+  line-height: 1.5;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.cp-dialog-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* ─── RESPONSIVE ─────────────────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .cp-grid {
+    grid-template-columns: 1fr;
+  }
+  .cp-field-full {
+    grid-column: 1;
+  }
+}

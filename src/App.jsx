@@ -31,6 +31,14 @@ import DaakEntry from './DaakEntry';
 import DaakEntryForm from './DaakEntryForm';
 import Outward from './Outward';
 import OutwardForm from './OutwardForm';
+import PanSearch from './PanSearch';
+import Pas6 from './pages/Pas6';
+import ShareCapitalAudit from './pages/ShareCapitalAudit';
+import Reg133 from './pages/Reg133';
+import RomMg17 from './pages/RomMg17';
+import CompanyProfile from './pages/CompanyProfile';
+import Dashboard from './pages/Dashboard';
+import DpMaster from './DpMaster';
 
 /*
  * ── How React Router works ──────────────────────────────────────────────────
@@ -89,6 +97,10 @@ function App() {
     <Routes>
       {/* "/" → redirect to /login so the app always has a starting point */}
       <Route path="/" element={<Navigate to="/login" replace />} />
+
+      <Route path="/dashboard" element={
+        <ProtectedPage pageName="Dashboard"><Dashboard /></ProtectedPage>
+      } />
 
       {/* Login page — full screen, no sidebar */}
       <Route path="/login" element={<LoginPage />} />
@@ -160,6 +172,22 @@ function App() {
         <ProtectedPage breadcrumbs={['Reports', 'E-Voting']}><EVoting /></ProtectedPage>
       } />
 
+      <Route path="/pas6" element={
+        <ProtectedPage breadcrumbs={['Reports', 'PAS-6']}><Pas6 /></ProtectedPage>
+      } />
+
+      <Route path="/reports/share-capital-audit" element={
+        <ProtectedPage breadcrumbs={['Reports', 'Share Capital Audit']}><ShareCapitalAudit /></ProtectedPage>
+      } />
+
+      <Route path="/reg133" element={
+        <ProtectedPage breadcrumbs={['Reports', 'Regulation 13(3)']}><Reg133 /></ProtectedPage>
+      } />
+
+      <Route path="/rom-mg17" element={
+        <ProtectedPage breadcrumbs={['Reports', 'ROM-MG17']}><RomMg17 /></ProtectedPage>
+      } />
+
       <Route path="/category-mapping" element={
         <ProtectedPage pageName="Category Mapping"><CategoryMapping /></ProtectedPage>
       } />
@@ -192,6 +220,21 @@ function App() {
       } />
       <Route path="/outward/:id" element={
         <ProtectedPage breadcrumbs={['Outward', 'Edit']}><OutwardForm /></ProtectedPage>
+      } />
+
+      {/* PAN Search */}
+      <Route path="/pan-search" element={
+        <ProtectedPage pageName="PAN Search"><PanSearch /></ProtectedPage>
+      } />
+
+      {/* Company Profile */}
+      <Route path="/company-profile" element={
+        <ProtectedPage pageName="Company Profile"><CompanyProfile /></ProtectedPage>
+      } />
+
+      {/* DP Master */}
+      <Route path="/dp-master" element={
+        <ProtectedPage pageName="DP Master"><DpMaster /></ProtectedPage>
       } />
 
       {/* Daak Entry */}

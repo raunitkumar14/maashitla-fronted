@@ -1,0 +1,44 @@
+/* ─── SEARCH FORM ROW ──────────────────────────────────────────────────────── */
+
+.ps-form-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 14px 16px;
+  flex-wrap: wrap;
+}
+
+.ps-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ps-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #444;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.ps-required {
+  color: #e91e8c;
+}
+
+.ps-input--error {
+  border-color: #e53935 !important;
+}
+
+.ps-err {
+  font-size: 11px;
+  color: #e53935;
+  margin-top: 2px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.ps-btns {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+

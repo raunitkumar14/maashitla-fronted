@@ -10,7 +10,10 @@ import {
   updateOutward,
   getOutward,
   getUsersForDropdown,
+  getOtherRecipients,
 } from './services/daakService';
+import { getDpOptions } from './services/dpMasterService';
+import { getIssuerOptions } from './services/issuerService';
 import './IsinMaster.css';
 import './BenPos.css';
 import './Comparison.css';
@@ -46,7 +49,28 @@ function OutwardForm() {
   const [selectedCompany,    setSelectedCompany]    = useState(null);
   const compWrapRef = useRef(null);
 
+  // ── Recipient type & DP autocomplete ──────────────────────────────────────
+  const [recipientType, setRecipientType] = useState('OTHER');
+  const [selectedDp,    setSelectedDp]    = useState(null);
+  const [dpQuery,       setDpQuery]       = useState('');
+  const [dpSuggestions, setDpSuggestions] = useState([]);
+  const [showDpDrop,    setShowDpDrop]    = useState(false);
+  const dpWrapRef = useRef(null);
+
+  // ── Recipient company autocomplete ─────────────────────────────────────────
+  const [selectedRecipientComp,  setSelectedRecipientComp]  = useState(null);
+  const [recipCompQuery,         setRecipCompQuery]         = useState('');
+  const [recipCompSuggestions,   setRecipCompSuggestions]   = useState([]);
+  const [showRecipCompDrop,      setShowRecipCompDrop]      = useState(false);
+  const recipCompWrapRef = useRef(null);
+
   const isOthers = selectedCompany?.issuerCode === OTHERS;
+
+  // ── Recipient-name autocomplete (Other radio) ──────────────────────────────
+  const [otherSuggestions, setOtherSuggestions] = useState([]);
+  const [showOtherDrop,    setShowOtherDrop]    = useState(false);
+  const otherWrapRef   = useRef(null);
+  const otherPrefilled = useRef(false);
 
   // ── ISIN ──────────────────────────────────────────────────────────────────
   const [companyIsins, setCompanyIsins] = useState([]);
@@ -89,6 +113,21 @@ function OutwardForm() {
     });
     return map;
   }, [users]);
+
+  // ── Address / phone helpers ────────────────────────────────────────────────
+  const ADDR1_MAX = 100;
+  function splitAddress(addr) {
+    if (!addr) return ['', ''];
+    if (addr.length <= ADDR1_MAX) return [addr, ''];
+    const cut = addr.lastIndexOf(' ', ADDR1_MAX);
+    if (cut <= 0) return [addr.slice(0, ADDR1_MAX), addr.slice(ADDR1_MAX).trim()];
+    return [addr.slice(0, cut), addr.slice(cut + 1).trim()];
+  }
+  function normalizePhone(raw) {
+    const digits = (raw ?? '').replace(/\D/g, '');
+    if (digits.length < 10) return '';
+    return digits.length > 10 ? digits.slice(-10) : digits;
+  }
 
   // ── Validation / status ────────────────────────────────────────────────────
   const [errors,        setErrors]        = useState({});
@@ -159,6 +198,53 @@ function OutwardForm() {
     return () => clearTimeout(timer);
   }, [companyQuery, selectedCompany]);
 
+  // ── DP autocomplete (debounced) ────────────────────────────────────────────
+  useEffect(() => {
+    if (recipientType !== 'DP') return;
+    if (selectedDp) return;
+    const q = dpQuery.trim();
+    if (q.length < 2) { setDpSuggestions([]); setShowDpDrop(false); return; }
+    setShowDpDrop(true);
+    const timer = setTimeout(async () => {
+      try {
+        const opts = await getDpOptions(q);
+        setDpSuggestions(opts);
+      } catch { setDpSuggestions([]); }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [dpQuery, selectedDp, recipientType]);
+
+  // ── Recipient company autocomplete (debounced) ─────────────────────────────
+  useEffect(() => {
+    if (recipientType !== 'COMPANY') return;
+    if (selectedRecipientComp) return;
+    const q = recipCompQuery.trim();
+    if (q.length < 2) { setRecipCompSuggestions([]); setShowRecipCompDrop(false); return; }
+    setShowRecipCompDrop(true);
+    const timer = setTimeout(async () => {
+      try {
+        const opts = await getIssuerOptions(q);
+        setRecipCompSuggestions(opts);
+      } catch { setRecipCompSuggestions([]); }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [recipCompQuery, selectedRecipientComp, recipientType]);
+
+  // ── Recipient-name autocomplete (Other radio, debounced) ───────────────────
+  useEffect(() => {
+    if (recipientType !== 'OTHER') return;
+    if (otherPrefilled.current) { otherPrefilled.current = false; return; }
+    const q = recipientName.trim();
+    const timer = setTimeout(async () => {
+      try {
+        const opts = await getOtherRecipients(q);
+        setOtherSuggestions(opts);
+        if (opts.length > 0) setShowOtherDrop(true);
+      } catch { setOtherSuggestions([]); }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [recipientName, recipientType]);
+
   // ── Load ISINs when company changes ───────────────────────────────────────
   useEffect(() => {
     if (!selectedCompany || isOthers) { setCompanyIsins([]); setSelectedIsin(''); return; }
@@ -177,16 +263,22 @@ function OutwardForm() {
         const rec = await getOutward(id);
         if (!rec) return;
         setDispatchDate(rec.dispatchDate ?? '');
-        if (rec.companyOtherName) {
-          setSelectedCompany({ issuerCode: OTHERS, issuerName: 'Others' });
-          setOtherCompName(rec.companyOtherName);
-          setFreeIsin(rec.isin ?? '');
-        } else if (rec.companyCode) {
-          setSelectedCompany({
-            issuerCode: rec.companyCode,
-            issuerName: rec.companyName || rec.companyCode,
-          });
+        // Top block: company + ISIN
+        if (rec.companyCode) {
+          setSelectedCompany({ issuerCode: rec.companyCode, issuerName: rec.companyName || rec.companyCode });
           setSelectedIsin(rec.isin ?? '');
+        } else {
+          setSelectedCompany({ issuerCode: OTHERS, issuerName: 'Others' });
+          setOtherCompName(rec.companyOtherName ?? '');
+          setFreeIsin(rec.isin ?? '');
+        }
+        // Recipient details
+        const rtype = rec.recipientType ?? 'OTHER';
+        setRecipientType(rtype);
+        if (rtype === 'DP' && rec.dpId) {
+          setSelectedDp({ id: null, dpId: rec.dpId, dpName: rec.dpName || rec.dpId });
+        } else if (rtype === 'OTHER') {
+          otherPrefilled.current = true;
         }
         setRecipientName(rec.recipientName ?? '');
         setRecipientEmail(rec.recipientEmail ?? '');
@@ -219,7 +311,9 @@ function OutwardForm() {
     if (!dispatchDate)                                               e.dispatchDate    = 'Required';
     if (!selectedCompany)                                            e.company         = 'Required';
     if (isOthers && !otherCompName.trim())                           e.otherCompName   = 'Required';
-    if (isOthers ? !freeIsin.trim() : !selectedIsin)                e.isin            = 'Required';
+    if (!isOthers && !selectedIsin)                                  e.isin            = 'Required';
+    if (isOthers && !freeIsin.trim())                                e.isin            = 'Required';
+    if (recipientType === 'DP' && !selectedDp)                       e.dp              = 'Required';
     if (!recipientName.trim())                                       e.recipientName   = 'Required';
     if (!addressLine1.trim())                                        e.addressLine1    = 'Required';
     if (!pinCode.trim())                                             e.pinCode         = 'Required';
@@ -237,8 +331,11 @@ function OutwardForm() {
   function buildPayload() {
     return {
       dispatchDate,
+      recipientType,
       companyCode:      isOthers ? null : (selectedCompany?.issuerCode ?? null),
       companyOtherName: isOthers ? otherCompName.trim() : null,
+      dpId:             recipientType === 'DP' ? (selectedDp?.dpId ?? null) : null,
+      dpName:           recipientType === 'DP' ? (selectedDp?.dpName ?? null) : null,
       isin:             isOthers ? freeIsin.trim() : selectedIsin,
       recipientName:    recipientName.trim(),
       recipientEmail:   recipientEmail.trim() || null,
@@ -332,6 +429,73 @@ function OutwardForm() {
     setAddCrErr('');
   }
 
+  // ── Recipient type handler ─────────────────────────────────────────────────
+  function handleRecipientTypeChange(type) {
+    setRecipientType(type);
+    setSelectedDp(null); setDpQuery(''); setDpSuggestions([]); setShowDpDrop(false);
+    setSelectedRecipientComp(null); setRecipCompQuery(''); setRecipCompSuggestions([]); setShowRecipCompDrop(false);
+    setOtherSuggestions([]); setShowOtherDrop(false); otherPrefilled.current = false;
+    setRecipientName(''); setRecipientEmail(''); setAddressLine1(''); setAddressLine2('');
+    setPinCode(''); setCity(''); setStateField(''); setPhone('');
+    setErrors({});
+  }
+
+  // ── DP combobox handler ────────────────────────────────────────────────────
+  function handleDpSelect(dp) {
+    setSelectedDp(dp);
+    setDpQuery('');
+    setShowDpDrop(false);
+    const [a1, a2] = splitAddress(dp.address);
+    setRecipientName(dp.dpName || '');
+    setRecipientEmail(dp.email || '');
+    setAddressLine1(a1);
+    setAddressLine2(a2);
+    setPinCode(dp.pincode || '');
+    setCity('');
+    setStateField(dp.state || '');
+    setPhone(normalizePhone(dp.mobile));
+    clrErr('dp'); clrErr('recipientName'); clrErr('addressLine1'); clrErr('pinCode'); clrErr('state');
+  }
+
+  // ── Recipient company combobox handlers ────────────────────────────────────
+  function handleRecipientCompSelect(comp) {
+    setSelectedRecipientComp(comp);
+    setRecipCompQuery('');
+    setShowRecipCompDrop(false);
+    setRecipientName(comp.issuerName || '');
+    setRecipientEmail(comp.email || '');
+    const [a1, a2] = splitAddress(comp.address || '');
+    setAddressLine1(a1);
+    setAddressLine2(a2);
+    setPinCode(comp.pincode || '');
+    setCity(comp.city || '');
+    setStateField(comp.state || '');
+    setPhone(normalizePhone(comp.phone));
+    clrErr('recipientName'); clrErr('addressLine1'); clrErr('pinCode'); clrErr('city'); clrErr('state');
+  }
+
+  function clearRecipientComp() {
+    setSelectedRecipientComp(null);
+    setRecipCompQuery('');
+    setRecipCompSuggestions([]);
+    setShowRecipCompDrop(false);
+  }
+
+  // ── Recipient-name pick handler (Other radio) ──────────────────────────────
+  function handleRecipNameSelect(sug) {
+    otherPrefilled.current = true;
+    setRecipientName(sug.name);
+    setShowOtherDrop(false);
+    if (sug.addressLine1)   setAddressLine1(sug.addressLine1);
+    if (sug.addressLine2)   setAddressLine2(sug.addressLine2);
+    if (sug.city)           setCity(sug.city);
+    if (sug.state)          setStateField(sug.state);
+    if (sug.pinCode)        setPinCode(sug.pinCode);
+    if (sug.recipientEmail) setRecipientEmail(sug.recipientEmail);
+    if (sug.phone)          setPhone(normalizePhone(sug.phone));
+    clrErr('recipientName'); clrErr('addressLine1'); clrErr('pinCode'); clrErr('state');
+  }
+
   // ── Company combobox handlers ──────────────────────────────────────────────
   function selectCompany(comp) {
     setSelectedCompany(comp);
@@ -356,7 +520,7 @@ function OutwardForm() {
   }
 
   const companyDisplay = selectedCompany
-    ? (isOthers ? 'Others' : (selectedCompany.issuerName || selectedCompany.issuerCode))
+    ? (selectedCompany.issuerCode === OTHERS ? 'Others' : (selectedCompany.issuerName || selectedCompany.issuerCode))
     : companyQuery;
 
   const title       = isEdit ? 'Edit' : 'Add';
@@ -392,7 +556,7 @@ function OutwardForm() {
             {errors.dispatchDate && <span className="ca-err">{errors.dispatchDate}</span>}
           </div>
 
-          {/* Company Name (span 2) */}
+          {/* Company Name (span 2) — always shown */}
           <div className="benpos-field dk-field-span2" ref={compWrapRef}>
             <label className="benpos-label">Company Name (related company / issuer) *</label>
             <div className="dk-company-wrap">
@@ -425,7 +589,7 @@ function OutwardForm() {
                         key={item.issuerCode}
                         className="dk-company-opt"
                         onMouseDown={e => e.preventDefault()}
-                        onClick={() => selectCompany({ issuerCode: item.issuerCode, issuerName: item.issuerName || item.issuerCode })}
+                        onClick={() => selectCompany(item)}
                       >
                         <strong>{item.issuerCode}</strong> — {item.issuerName || ''}
                       </li>
@@ -444,15 +608,15 @@ function OutwardForm() {
             {errors.company && <span className="ca-err">{errors.company}</span>}
           </div>
 
-          {/* Others company name text box */}
+          {/* Others company name — plain text */}
           {isOthers && (
             <div className="benpos-field">
               <label className="benpos-label">Company Name *</label>
               <input
                 type="text"
-                className="benpos-date-input"
-                style={fldStyle('otherCompName')}
+                className={`benpos-date-input${errors.otherCompName ? ' dk-company-input--error' : ''}`}
                 value={otherCompName}
+                placeholder="Enter company name"
                 onChange={e => { setOtherCompName(e.target.value); clrErr('otherCompName'); }}
               />
               {errors.otherCompName && <span className="ca-err">{errors.otherCompName}</span>}
@@ -462,11 +626,7 @@ function OutwardForm() {
           {/* ISIN */}
           <div className="benpos-field">
             <label className="benpos-label">ISIN *</label>
-            {!selectedCompany ? (
-              <select className="benpos-select" disabled>
-                <option>Select a company first</option>
-              </select>
-            ) : isOthers ? (
+            {isOthers ? (
               <>
                 <input
                   type="text"
@@ -478,6 +638,10 @@ function OutwardForm() {
                 />
                 {errors.isin && <span className="ca-err">{errors.isin}</span>}
               </>
+            ) : !selectedCompany ? (
+              <select className="benpos-select" disabled>
+                <option>Select a company first</option>
+              </select>
             ) : (
               <>
                 <select
@@ -508,18 +672,181 @@ function OutwardForm() {
 
         <div className="dk-form-grid">
 
-          {/* Recipient Name (span 2) */}
-          <div className="benpos-field dk-field-span2">
-            <label className="benpos-label">Recipient Name *</label>
-            <input
-              type="text"
-              className="benpos-date-input"
-              style={fldStyle('recipientName')}
-              value={recipientName}
-              onChange={e => { setRecipientName(e.target.value); clrErr('recipientName'); }}
-            />
-            {errors.recipientName && <span className="ca-err">{errors.recipientName}</span>}
+          {/* Recipient Type (span 4) */}
+          <div className="benpos-field dk-field-span4">
+            <label className="benpos-label">Recipient Type *</label>
+            <div style={{ display: 'flex', gap: 24, marginTop: 6 }}>
+              {[['COMPANY', 'Company'], ['DP', 'DP'], ['OTHER', 'Other']].map(([val, lbl]) => (
+                <label key={val} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, fontFamily: 'Arial, Helvetica, sans-serif' }}>
+                  <input
+                    type="radio"
+                    name="recipientType"
+                    value={val}
+                    checked={recipientType === val}
+                    onChange={() => handleRecipientTypeChange(val)}
+                    style={{ width: 'auto', cursor: 'pointer' }}
+                  />
+                  {lbl}
+                </label>
+              ))}
+            </div>
           </div>
+
+          {/* Recipient company selector (span 2) — COMPANY type only */}
+          {recipientType === 'COMPANY' && (
+            <div className="benpos-field dk-field-span2" ref={recipCompWrapRef}>
+              <label className="benpos-label">Select Recipient Company</label>
+              <div className="dk-company-wrap">
+                <input
+                  type="text"
+                  className="dk-company-input"
+                  value={selectedRecipientComp ? (selectedRecipientComp.issuerName || selectedRecipientComp.issuerCode) : recipCompQuery}
+                  placeholder="— type to search —"
+                  onChange={e => {
+                    if (selectedRecipientComp) clearRecipientComp();
+                    else setRecipCompQuery(e.target.value);
+                  }}
+                  onFocus={() => {
+                    if (!selectedRecipientComp && recipCompSuggestions.length > 0) setShowRecipCompDrop(true);
+                  }}
+                  onBlur={e => {
+                    if (!recipCompWrapRef.current?.contains(e.relatedTarget)) {
+                      setTimeout(() => setShowRecipCompDrop(false), 150);
+                    }
+                  }}
+                />
+                {showRecipCompDrop && !selectedRecipientComp && (
+                  <ul className="dk-company-dropdown">
+                    {recipCompSuggestions.length === 0 ? (
+                      <li className="dk-company-opt dk-company-opt--hint">Searching…</li>
+                    ) : (
+                      recipCompSuggestions.map(item => (
+                        <li
+                          key={item.issuerCode}
+                          className="dk-company-opt"
+                          onMouseDown={e => e.preventDefault()}
+                          onClick={() => handleRecipientCompSelect(item)}
+                        >
+                          <strong>{item.issuerCode}</strong> — {item.issuerName || ''}
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* DP selector (span 2) — DP type only */}
+          {recipientType === 'DP' && (
+            <div className="benpos-field dk-field-span2" ref={dpWrapRef}>
+              <label className="benpos-label">DP *</label>
+              <div className="dk-company-wrap">
+                <input
+                  type="text"
+                  className={`dk-company-input${errors.dp ? ' dk-company-input--error' : ''}`}
+                  value={selectedDp ? (selectedDp.dpName || selectedDp.dpId) : dpQuery}
+                  placeholder="— type to search DP —"
+                  onChange={e => {
+                    if (selectedDp) { setSelectedDp(null); setDpQuery(e.target.value); }
+                    else setDpQuery(e.target.value);
+                    clrErr('dp');
+                  }}
+                  onFocus={() => {
+                    if (!selectedDp && dpSuggestions.length > 0) setShowDpDrop(true);
+                  }}
+                  onBlur={e => {
+                    if (!dpWrapRef.current?.contains(e.relatedTarget)) {
+                      setTimeout(() => setShowDpDrop(false), 150);
+                    }
+                  }}
+                />
+                {showDpDrop && !selectedDp && (
+                  <ul className="dk-company-dropdown">
+                    {dpSuggestions.length === 0 ? (
+                      <li className="dk-company-opt dk-company-opt--hint">Searching…</li>
+                    ) : (
+                      dpSuggestions.map(dp => (
+                        <li
+                          key={dp.id ?? dp.dpId}
+                          className="dk-company-opt"
+                          onMouseDown={e => e.preventDefault()}
+                          onClick={() => handleDpSelect(dp)}
+                        >
+                          <strong>{dp.dpId}</strong> — {dp.dpName}
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                )}
+              </div>
+              {errors.dp && <span className="ca-err">{errors.dp}</span>}
+            </div>
+          )}
+
+          {/* Recipient Name (span 2) — autocomplete for OTHER, plain for DP/COMPANY */}
+          {recipientType === 'OTHER' ? (
+            <div className="benpos-field dk-field-span2" ref={otherWrapRef}>
+              <label className="benpos-label">Recipient Name *</label>
+              <div className="dk-company-wrap">
+                <input
+                  type="text"
+                  className={`dk-company-input${errors.recipientName ? ' dk-company-input--error' : ''}`}
+                  value={recipientName}
+                  placeholder="— type to search or enter name —"
+                  onChange={e => { setRecipientName(e.target.value); clrErr('recipientName'); }}
+                  onFocus={async () => {
+                    if (recipientName.trim() === '' && !otherPrefilled.current) {
+                      try {
+                        const opts = await getOtherRecipients('');
+                        setOtherSuggestions(opts);
+                        if (opts.length > 0) setShowOtherDrop(true);
+                      } catch {}
+                    } else if (otherSuggestions.length > 0) {
+                      setShowOtherDrop(true);
+                    }
+                  }}
+                  onBlur={e => {
+                    if (!otherWrapRef.current?.contains(e.relatedTarget)) {
+                      setTimeout(() => setShowOtherDrop(false), 150);
+                    }
+                  }}
+                />
+                {showOtherDrop && otherSuggestions.length > 0 && (
+                  <ul className="dk-company-dropdown">
+                    {otherSuggestions.map((sug, idx) => (
+                      <li
+                        key={idx}
+                        className="dk-company-opt"
+                        onMouseDown={e => e.preventDefault()}
+                        onClick={() => handleRecipNameSelect(sug)}
+                      >
+                        {sug.name}
+                        {(sug.addressLine1 || sug.state) && (
+                          <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>
+                            {[sug.addressLine1, sug.state].filter(Boolean).join(', ')}
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              {errors.recipientName && <span className="ca-err">{errors.recipientName}</span>}
+            </div>
+          ) : (
+            <div className="benpos-field dk-field-span2">
+              <label className="benpos-label">Recipient Name *</label>
+              <input
+                type="text"
+                className="benpos-date-input"
+                style={fldStyle('recipientName')}
+                value={recipientName}
+                onChange={e => { setRecipientName(e.target.value); clrErr('recipientName'); }}
+              />
+              {errors.recipientName && <span className="ca-err">{errors.recipientName}</span>}
+            </div>
+          )}
 
           {/* Recipient Email (span 2) */}
           <div className="benpos-field dk-field-span2">
